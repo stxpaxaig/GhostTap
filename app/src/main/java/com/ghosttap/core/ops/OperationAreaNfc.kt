@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import com.ghosttap.GhostTapViewModel
 import com.ghosttap.core.NAMED_NFC_COMMANDS
 import com.ghosttap.core.NAMED_NFC_SCRIPTS
+import com.ghosttap.core.EmvEngine
 import com.ghosttap.core.OpResult
 import com.ghosttap.core.buildNamedScript
 import com.ghosttap.core.classicTrailerBlock
@@ -16,7 +17,9 @@ import com.ghosttap.core.toHexString
 import com.ghosttap.core.unknownCardNextStep
 import com.ghosttap.data.ScanTarget
 import com.ghosttap.data.TargetType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /**
  * Package 4 — Area NFC (B-027–B-044 + D-32–D-48 + A-25) operations.
@@ -1066,6 +1069,59 @@ fun registerNfcOperations() {
                 }
             },
             riskLevel = "CONFIGURE",
+            verified = false
+        )
+    )
+
+    // ---- Read a payment card (EMV). ----
+    // One engine, same as the demo card below: holds a real payment
+    // card to the phone and reads what the chip says — brand, number,
+    // expiry, the one-time code it made, and its counter. Reading
+    // charges nothing. The code check stays honest: only the bank can
+    // fully prove a real card's code, so the report says that in plain
+    // words and leans on the counter moving each tap instead.
+    OperationRegistry.register(
+        Operation(
+            id = "nfc.read-payment-card",
+            title = "Read a payment card",
+            description = "Reads a payment card held to the phone — brand, number, expiry, and the one-time code it made. Reading charges nothing.",
+            area = OperationArea.NFC,
+            prerequisites = listOf("Hold a payment card against the back of the phone"),
+            preparation = listOf(
+                PreparationStep("Checking for a card") { ensureTagPresent(it) }
+            ),
+            execute = { context ->
+                val ble = context.ble
+                    ?: return@Operation OpResult(false, "Can't check — the app isn't ready yet.")
+                val tag = ble.lastNfcTag
+                    ?: return@Operation OpResult(
+                        false,
+                        "No card tapped yet — hold a payment card against the phone first."
+                    )
+                val outcome = withContext(Dispatchers.IO) { EmvEngine.readLiveCard(tag) }
+                OpResult(outcome.success, outcome.report)
+            },
+            riskLevel = "READ",
+            verified = false
+        )
+    )
+
+    // ---- Try the demo card (EMV test card). ----
+    // Same engine as the real read, run on the built-in test card
+    // instead of a tapped card: fake number, fake money, can't pay
+    // anywhere. The test card's key is known, so this one CAN prove
+    // the code matches byte for byte — and proves the engine works.
+    OperationRegistry.register(
+        Operation(
+            id = "nfc.demo-payment-card",
+            title = "Try the demo card",
+            description = "Runs the payment-card check on a built-in test card — fake money, can never pay anywhere — and proves its one-time code matches byte for byte.",
+            area = OperationArea.NFC,
+            execute = {
+                val outcome = EmvEngine.runDemoCard()
+                OpResult(outcome.success, outcome.report)
+            },
+            riskLevel = "READ",
             verified = false
         )
     )

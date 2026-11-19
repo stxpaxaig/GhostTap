@@ -84,6 +84,10 @@ import com.ghosttap.core.describeRssi
 import com.ghosttap.core.prettyIdentityKey
 import com.ghosttap.core.translateIdentityValue
 import com.ghosttap.core.ChannelRanker
+import com.ghosttap.core.EmvEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.ghosttap.core.SigUuids
 import com.ghosttap.core.DeviceAction
 import com.ghosttap.core.friendlyTechName
@@ -2124,6 +2128,10 @@ private fun NfcToolsScreen(
     var writeUrl by remember { mutableStateOf("") }
     var emulateText by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("") }
+    // EMV payment-card read: card answers come back off the main
+    // thread (IsoDep blocks while the card answers), so the read runs
+    // on IO and reports back here through say().
+    val emvScope = rememberCoroutineScope()
     // DISCOVER (NFC): true after the user taps "Investigate the unfamiliar"
     // tag" — the reader is armed and the screen says to hold a tag to
     // the phone. A tag cannot be found from a distance, so this arms
@@ -2233,6 +2241,20 @@ private fun NfcToolsScreen(
             Text("Investigate hands the last read to Ghost Tap — it researches the card, checks it, and learns.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
             Text("Long-range cards: read their stored blocks.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
             TerminalButton("Read card blocks") { say(viewModel.nfcReadNfcVBlocks(0, 16), "nfc.read_nfcv") }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("Payment cards: hold a payment card to the phone and read what the chip says — brand, number, expiry, and the one-time code it made. Reading charges nothing.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+            TerminalButton("Read a payment card") {
+                val tag = viewModel.lastNfcTag
+                if (tag == null) {
+                    say("Tap a card first — hold a payment card against the back of the phone, then tap Read a payment card.")
+                } else {
+                    emvScope.launch {
+                        val outcome = withContext(Dispatchers.IO) { EmvEngine.readLiveCard(tag) }
+                        say(outcome.report, "nfc.read_payment_card")
+                    }
+                }
+            }
+            TerminalButton("Try the demo card") { say(EmvEngine.runDemoCard().report, "nfc.demo_payment_card") }
             Spacer(modifier = Modifier.height(4.dp))
             Text("Next: hold a tag or card against the back of your phone.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
         }
