@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -1245,122 +1246,70 @@ private fun HomeScreen(
             (it.likely?.contains(targetFilter, ignoreCase = true) == true)
     }
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(12.dp)
-            .background(Bg),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 12.dp).background(Bg),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+        Column(
+            modifier = Modifier.fillMaxWidth().background(Color(0xFF0B1712), RoundedCornerShape(16.dp))
+                .border(1.dp, Accent.copy(alpha = 0.42f), RoundedCornerShape(16.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+                    Text("DEVICE INTELLIGENCE  /  CONTROL", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(if (btEnabled) "SYSTEM READY" else "CHECK CONNECTION", color = if (btEnabled) Accent else Color(0xFFFF7373), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                    Text(if (isScanning) "SCANNING" else "${targets.size} DEVICES", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                }
+            }
+            Text(status, color = if (btEnabled) Dim else Color(0xFFFF8A8A), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+        }
 
-        // v3.2 — the home command box sits at the top, above the
-        // buttons. Type what you want, Ghost Tap does it and shows
-        // what happened, right there.
+        // Preserve the existing universal DO IT command and its real execution path.
         CommandBox(
-            statusLine = commandStatusLine,
-            request = commandRequest,
-            lines = commandLines,
-            busy = commandBusy,
-            tvCandidates = commandTvCandidates,
-            showTryAgain = commandShowTryAgain,
-            onSubmit = onDoIt ?: {},
-            onPickTv = onPickTv ?: {},
-            onTryAgain = onTryAgain ?: {},
-            onClear = onClearCommand ?: {},
-            showTermuxSetup = showTermuxSetup,
-            onTermuxSetup = onTermuxSetup
+            statusLine = commandStatusLine, request = commandRequest, lines = commandLines,
+            busy = commandBusy, tvCandidates = commandTvCandidates, showTryAgain = commandShowTryAgain,
+            onSubmit = onDoIt ?: {}, onPickTv = onPickTv ?: {}, onTryAgain = onTryAgain ?: {},
+            onClear = onClearCommand ?: {}, showTermuxSetup = showTermuxSetup, onTermuxSetup = onTermuxSetup
         )
 
-        // PIECE 2 (2026-11-18) — the "what this screen does" card is
-        // gone: the home screen's job is obvious from its tiles and
-        // the command box, and the card only re-listed built-ins.
-        Text("STATUS: $status", color = if (btEnabled) Dim else Color.Red, fontFamily = FontFamily.Monospace)
-
-        // Package 2 (A-30) — a denied permission used to surface only as a
-        // status line, with no reason why and no way back. Say why each
-        // permission has a job, and offer to ask again.
         if (status.startsWith("Permission denied")) {
             PanelBox("PERMISSIONS NEEDED") {
-                Text(
-                    "Ghost Tap needs a few permissions to work — each one has a job:",
-                    color = Dim, fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall
-                )
+                Text("Ghost Tap needs a few permissions to work — each one has a job:", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                 Text("· Bluetooth — to find and talk to devices.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                 Text("· Location — Android needs it to find Bluetooth devices.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                 Text("· Camera — to read boards, chips, and labels.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
                 Text("· Microphone — to listen for device sounds.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
-                Spacer(modifier = Modifier.height(6.dp))
                 TerminalButton("Ask again", onScan)
             }
         }
 
-        // Top bubble buttons — wrap to the next line, never run off-screen.
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TerminalButton(if (isScanning) "Finding devices…" else "Find devices", onScan)
-            // DISCOVER (Home / Bluetooth): one tap finds devices AND
-            // checks every one found, including ones already known.
-            // Findings land on the card below and the Investigations
-            // timeline; nothing connects until you tap a device.
-            TerminalButton("Investigate the unfamiliar", onDiscoverBluetooth)
-            TerminalButton("Stop finding", onStop)
-            TerminalButton("Activity log", onOpenLogs)
-        }
-
-        // UI REDESIGN (2026-11-17) — the six functions as tiles:
-        // title (kept exactly) + one plain-words line each, all the
-        // same shape. The descriptions are the same words the old
-        // paragraph below used — the paragraph is gone because the
-        // tiles say it now. One tap opens the function; nothing here
-        // is gated or hidden behind another step.
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            GhostTile("USB UART / ESP32", "Talks to a wired board.", onOpenUsbUart, icon = Icons.Filled.Usb)
-            GhostTile("VIRTUAL ESP32", "Runs a real board on your phone — no physical board needed.", onOpenVesp32, icon = Icons.Filled.Memory)
-            GhostTile("NETWORK TOOLS", "Tests Wi-Fi connections.", onOpenNetworkTools, icon = Icons.Filled.Wifi)
-            GhostTile("NFC TOOLS", "Reads, writes, copies, and pretends to be tap cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
-            GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
-            GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
-            GhostTile("EMV LAB", "Inspect payment-card chip data and run local test fixtures.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc)
-            GhostTile("CAPABILITY ATLAS", "Explore every registered Ghost Tap action and the live intelligence engine.", { onOpenRoute?.invoke("capability_atlas") }, icon = Icons.Filled.Memory)
+            Text("QUICK ACTIONS", color = Accent, style = MaterialTheme.typography.titleSmall, fontFamily = FontFamily.Monospace)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                TerminalButton(if (isScanning) "Finding devices…" else "Find devices", onScan)
+                TerminalButton("Investigate", onDiscoverBluetooth)
+                TerminalButton("Stop scan", onStop)
+                TerminalButton("Activity log", onOpenLogs)
+            }
         }
 
-        // UI REDESIGN (2026-11-17) — the old generic intent box
-        // ("WHAT ARE YOU TRYING TO DO?") is gone from home: two
-        // command boxes confused the #176 field test (he typed into
-        // the old one). The command box at the top is the one way to
-        // type; each function page lists its own actions instead.
-        // onIntent / intentAnswer stay in the signature (unused here)
-        // so the call site does not change.
-
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TerminalButton("Save this list", onSaveBaseline)
-            TerminalButton("Compare with saved list", onCompareBaseline)
-        }
-
-        // (UI REDESIGN: the old plain-English paragraph that explained
-        // every button lived here. Its words now live on the tiles
-        // above, so the paragraph is gone — same words, no duplication.)
-
-        PanelBox(title = "BASELINE") {
-            Text(baselineText, color = Dim, fontFamily = FontFamily.Monospace)
-        }
-
-        // Package 5 (A-30) — cross-session shortcut: the last software
-        // file picked, one tap to load it onto the board again. Only
-        // shown when a file really was picked before.
-        recentFirmware?.let { recent ->
-            PanelBox(title = "LAST SOFTWARE FILE") {
-                Text(
-                    "Last file: ${recent.name} — picked " +
-                        SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-                            .format(java.util.Date(recent.pickedMs)) +
-                        ". Tap to load it onto the board again.",
-                    color = Dim, fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                TerminalButton("LOAD THIS FILE AGAIN", onOpenRecentFirmware)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("YOUR TOOLKIT", color = Accent, style = MaterialTheme.typography.titleSmall, fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
+                Text("8 WORKSPACES", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+            }
+            FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                HomeFunctionCard("USB UART / ESP32", "Wired boards & hardware", Icons.Filled.Usb, onOpenUsbUart)
+                HomeFunctionCard("VIRTUAL ESP32", "Run an ESP32 on this phone", Icons.Filled.Memory, onOpenVesp32)
+                HomeFunctionCard("NETWORK TOOLS", "Wi-Fi, hosts & connectivity", Icons.Filled.Wifi, onOpenNetworkTools)
+                HomeFunctionCard("NFC TOOLS", "Read, write & investigate tags", Icons.Filled.Nfc, onOpenNfcTools)
+                HomeFunctionCard("VISUAL INTEL", "Camera, images & recognition", Icons.Filled.PhotoCamera, onOpenVisualIntel)
+                HomeFunctionCard("INVESTIGATIONS", "Analyze devices & plan checks", Icons.Filled.Search, onOpenInvestigations)
+                HomeFunctionCard("EMV LAB", "Card data & local test tools", Icons.Filled.Nfc) { onOpenRoute?.invoke("emv_lab") }
+                HomeFunctionCard("CAPABILITY ATLAS", "Explore registered capabilities", Icons.Filled.Bolt) { onOpenRoute?.invoke("capability_atlas") }
             }
         }
 
@@ -1563,6 +1512,31 @@ private fun HomeScreen(
  * Every tool explains what it does, what success looks like, and
  * what a failure means. No fake results.
  */
+
+/** Visual dashboard tile; each card invokes the pre-existing destination callback. */
+@Composable
+private fun HomeFunctionCard(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(0.485f).height(126.dp)
+            .background(Color(0xFF101B16), RoundedCornerShape(14.dp))
+            .border(1.dp, Accent.copy(alpha = 0.30f), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick).padding(12.dp),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.background(Color(0xFF183526), RoundedCornerShape(10.dp)).padding(9.dp)) {
+                Icon(imageVector = icon, contentDescription = title, tint = Accent)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("OPEN  ›", color = Cyan, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(title, color = Accent, style = MaterialTheme.typography.labelLarge, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(subtitle, color = Dim, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
 @Composable
 private fun NetworkToolsScreen(
     viewModel: com.ghosttap.NetworkToolsViewModel,
