@@ -1,0 +1,16 @@
+diff --git a/hw/net/can/ctucan_core.h b/hw/net/can/ctucan_core.h
+index 608307a..a3ace15 100644
+--- a/hw/net/can/ctucan_core.h
++++ b/hw/net/can/ctucan_core.h
+@@ -32,8 +32,11 @@
+ #include "net/can_emu.h"
+ 
+ #if !HOST_BIG_ENDIAN
++/* Android/Bionic port: Bionic defines this macro; don't redefine. */
++#ifndef __LITTLE_ENDIAN_BITFIELD
+ #define __LITTLE_ENDIAN_BITFIELD 1
+ #endif
++#endif
+ 
+ #include "ctu_can_fd_frame.h"
+ #include "ctu_can_fd_regs.h"

@@ -1,0 +1,405 @@
+diff --git a/backends/meson.build b/backends/meson.build
+index da714b9..0d0e08e 100644
+--- a/backends/meson.build
++++ b/backends/meson.build
+@@ -13,7 +13,12 @@ system_ss.add([files(
+ if host_os != 'windows'
+   system_ss.add(files('rng-random.c'))
+   system_ss.add(files('hostmem-file.c'))
+-  system_ss.add([files('hostmem-shm.c'), rt])
++  # Android/Bionic port: Bionic lacks shm_open/shm_unlink. ESP32 doesn't need it.
++  if android_host
++    message('Skipping hostmem-shm.c on Android (no shm_open in Bionic)')
++  else
++    system_ss.add([files('hostmem-shm.c'), rt])
++  endif
+ endif
+ if host_os == 'linux'
+   system_ss.add(files('hostmem-memfd.c'))
+diff --git a/hw/gpio/esp32_gpio.c b/hw/gpio/esp32_gpio.c
+index 4fea1f5..758ab09 100644
+--- a/hw/gpio/esp32_gpio.c
++++ b/hw/gpio/esp32_gpio.c
+@@ -29,6 +29,15 @@ static uint64_t esp32_gpio_read(void *opaque, hwaddr addr, unsigned int size)
+     case A_GPIO_STRAP:
+         r = s->strap_mode;
+         break;
++    case A_GPIO_OUT:
++        r = s->gpio_out;
++        break;
++    case A_GPIO_ENABLE:
++        r = s->gpio_enable;
++        break;
++    case A_GPIO_IN:
++        r = s->gpio_in;
++        break;
+ 
+     default:
+         break;
+@@ -36,9 +45,123 @@ static uint64_t esp32_gpio_read(void *opaque, hwaddr addr, unsigned int size)
+     return r;
+ }
+ 
++/* Global for JNI access to the live GPIO state. Set on realize. */
++static Esp32GpioState *g_gpio_state = NULL;
++
++int esp32_gpio_get_output_level(int pin)
++{
++    Esp32GpioState *s = g_gpio_state;
++    if (!s || pin < 0 || pin >= 32) {
++        return -1;
++    }
++    if (!(s->gpio_enable & (1u << pin))) {
++        return -1; /* not configured as output */
++    }
++    return (s->gpio_out >> pin) & 1;
++}
++
++/* qdev input handler: called when an external source drives a GPIO input line.
++ * Updates the GPIO_IN register state that guest firmware reads. */
++static void esp32_gpio_input_handler(void *opaque, int pin, int level)
++{
++    Esp32GpioState *s = ESP32_GPIO(opaque);
++    if (pin < 0 || pin >= 32) {
++        return;
++    }
++    if (level) {
++        s->gpio_in |= (1u << pin);
++    } else {
++        s->gpio_in &= ~(1u << pin);
++    }
++}
++
++/* Injects an external input level via QEMU's qdev GPIO input mechanism.
++ * Gets the pin's input IRQ and drives it, which triggers the input handler
++ * and updates GPIO_IN. This is how host-side (Android) input reaches the
++ * emulated peripheral. */
++void esp32_gpio_inject_input(int pin, int level)
++{
++    Esp32GpioState *s = g_gpio_state;
++    if (!s || pin < 0 || pin >= ESP32_GPIO_PIN_COUNT) {
++        return;
++    }
++    qemu_irq irq = qdev_get_gpio_in(DEVICE(s), pin);
++    qemu_set_irq(irq, level ? 1 : 0);
++}
++
++static void esp32_gpio_update_pin(Esp32GpioState *s, int pin)
++{
++    if (pin < 0 || pin >= ESP32_GPIO_PIN_COUNT) {
++        return;
++    }
++    int level = 0;
++    if (pin < 32 && (s->gpio_enable & (1u << pin))) {
++        level = (s->gpio_out >> pin) & 1;
++    }
++    qemu_set_irq(s->gpio_out_irq[pin], level);
++}
++
+ static void esp32_gpio_write(void *opaque, hwaddr addr,
+                        uint64_t value, unsigned int size)
+ {
++    Esp32GpioState *s = ESP32_GPIO(opaque);
++    uint32_t v = (uint32_t)value;
++    uint32_t changed;
++    int pin;
++
++    switch (addr) {
++    case A_GPIO_OUT:
++        changed = s->gpio_out ^ v;
++        s->gpio_out = v;
++        for (pin = 0; pin < 32; pin++) {
++            if (changed & (1u << pin)) {
++                esp32_gpio_update_pin(s, pin);
++            }
++        }
++        break;
++    case A_GPIO_OUT_W1TS:
++        changed = (~s->gpio_out) & v;
++        s->gpio_out |= v;
++        for (pin = 0; pin < 32; pin++) {
++            if (changed & (1u << pin)) {
++                esp32_gpio_update_pin(s, pin);
++            }
++        }
++        break;
++    case A_GPIO_OUT_W1TC:
++        changed = s->gpio_out & v;
++        s->gpio_out &= ~v;
++        for (pin = 0; pin < 32; pin++) {
++            if (changed & (1u << pin)) {
++                esp32_gpio_update_pin(s, pin);
++            }
++        }
++        break;
++    case A_GPIO_ENABLE:
++        s->gpio_enable = v;
++        for (pin = 0; pin < 32; pin++) {
++            esp32_gpio_update_pin(s, pin);
++        }
++        break;
++    case A_GPIO_ENABLE_W1TS:
++        s->gpio_enable |= v;
++        for (pin = 0; pin < 32; pin++) {
++            if (v & (1u << pin)) {
++                esp32_gpio_update_pin(s, pin);
++            }
++        }
++        break;
++    case A_GPIO_ENABLE_W1TC:
++        s->gpio_enable &= ~v;
++        for (pin = 0; pin < 32; pin++) {
++            if (v & (1u << pin)) {
++                esp32_gpio_update_pin(s, pin);
++            }
++        }
++        break;
++    default:
++        break;
++    }
+ }
+ 
+ static const MemoryRegionOps uart_ops = {
+@@ -49,10 +172,16 @@ static const MemoryRegionOps uart_ops = {
+ 
+ static void esp32_gpio_reset_hold(Object *obj, ResetType type)
+ {
++    Esp32GpioState *s = ESP32_GPIO(obj);
++    s->gpio_out = 0;
++    s->gpio_enable = 0;
++    s->gpio_in = 0;
+ }
+ 
+ static void esp32_gpio_realize(DeviceState *dev, Error **errp)
+ {
++    Esp32GpioState *s = ESP32_GPIO(dev);
++    g_gpio_state = s;
+ }
+ 
+ static void esp32_gpio_init(Object *obj)
+@@ -67,6 +196,12 @@ static void esp32_gpio_init(Object *obj)
+                           TYPE_ESP32_GPIO, 0x1000);
+     sysbus_init_mmio(sbd, &s->iomem);
+     sysbus_init_irq(sbd, &s->irq);
++    /* Per-pin output lines: proper QEMU GPIO architecture. External
++     * observers (or future input-injection) connect here. */
++    qdev_init_gpio_out(DEVICE(obj), s->gpio_out_irq, ESP32_GPIO_PIN_COUNT);
++    /* Per-pin input lines: external sources (host/JNI) drive these to
++     * inject input levels into the emulated peripheral. */
++    qdev_init_gpio_in(DEVICE(obj), esp32_gpio_input_handler, ESP32_GPIO_PIN_COUNT);
+ }
+ 
+ static Property esp32_gpio_properties[] = {
+diff --git a/hw/misc/esp32_flash_enc.c b/hw/misc/esp32_flash_enc.c
+index d866700..407e9a7 100644
+--- a/hw/misc/esp32_flash_enc.c
++++ b/hw/misc/esp32_flash_enc.c
+@@ -7,7 +7,9 @@
+  * it under the terms of the GNU General Public License version 2 or
+  * (at your option) any later version.
+  */
++#ifdef CONFIG_GCRYPT
+ #include <gcrypt.h>
++#endif
+ #include "qemu/osdep.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"
+diff --git a/hw/net/can/ctucan_core.h b/hw/net/can/ctucan_core.h
+index 608307a..a3ace15 100644
+--- a/hw/net/can/ctucan_core.h
++++ b/hw/net/can/ctucan_core.h
+@@ -32,8 +32,11 @@
+ #include "net/can_emu.h"
+ 
+ #if !HOST_BIG_ENDIAN
++/* Android/Bionic port: Bionic defines this macro; don't redefine. */
++#ifndef __LITTLE_ENDIAN_BITFIELD
+ #define __LITTLE_ENDIAN_BITFIELD 1
+ #endif
++#endif
+ 
+ #include "ctu_can_fd_frame.h"
+ #include "ctu_can_fd_regs.h"
+diff --git a/include/hw/gpio/esp32_gpio.h b/include/hw/gpio/esp32_gpio.h
+index 163b41a..866bcef 100644
+--- a/include/hw/gpio/esp32_gpio.h
++++ b/include/hw/gpio/esp32_gpio.h
+@@ -11,6 +11,17 @@
+ 
+ REG32(GPIO_STRAP, 0x0038)
+ 
++/* GPIO output registers (offsets from DR_REG_GPIO_BASE 0x3FF44000) */
++REG32(GPIO_OUT, 0x0004)
++REG32(GPIO_OUT_W1TS, 0x0008)
++REG32(GPIO_OUT_W1TC, 0x000C)
++REG32(GPIO_ENABLE, 0x0020)
++REG32(GPIO_ENABLE_W1TS, 0x0024)
++REG32(GPIO_ENABLE_W1TC, 0x0028)
++REG32(GPIO_IN, 0x003C)
++
++#define ESP32_GPIO_PIN_COUNT 40
++
+ #define ESP32_STRAP_MODE_FLASH_BOOT 0x12
+ #define ESP32_STRAP_MODE_UART_BOOT  0x0f
+ 
+@@ -20,8 +31,26 @@ typedef struct Esp32GpioState {
+     MemoryRegion iomem;
+     qemu_irq irq;
+     uint32_t strap_mode;
++
++    /* Real GPIO output state (pins 0-31). */
++    uint32_t gpio_out;
++    uint32_t gpio_enable;
++    /* Real GPIO input state (pins 0-31), driven by external/host injection
++     * through the qdev input lines. */
++    uint32_t gpio_in;
++    /* Per-pin output lines for proper QEMU GPIO architecture. */
++    qemu_irq gpio_out_irq[ESP32_GPIO_PIN_COUNT];
+ } Esp32GpioState;
+ 
+ typedef struct Esp32GpioClass {
+     SysBusDeviceClass parent_class;
+ } Esp32GpioClass;
++
++/* Returns 0 (LOW), 1 (HIGH), or -1 if the pin is not configured as output
++ * or the GPIO device is not available. Reads the actual emulated state. */
++int esp32_gpio_get_output_level(int pin);
++
++/* Injects an external input level into the emulated GPIO peripheral.
++ * Uses QEMU's qdev GPIO input mechanism: drives the pin's input line,
++ * which updates the GPIO_IN register state that guest firmware reads. */
++void esp32_gpio_inject_input(int pin, int level);
+diff --git a/include/scsi/constants.h b/include/scsi/constants.h
+index 9b98451..34466a4 100644
+--- a/include/scsi/constants.h
++++ b/include/scsi/constants.h
+@@ -168,16 +168,37 @@
+  */
+ 
+ #define GOOD                 0x00
++/* Android/Bionic port: Bionic's scsi headers define these; don't redefine. */
++#ifndef CHECK_CONDITION
+ #define CHECK_CONDITION      0x02
++#endif
++#ifndef CONDITION_GOOD
+ #define CONDITION_GOOD       0x04
++#endif
++#ifndef BUSY
+ #define BUSY                 0x08
++#endif
++#ifndef INTERMEDIATE_GOOD
+ #define INTERMEDIATE_GOOD    0x10
++#endif
++#ifndef INTERMEDIATE_C_GOOD
+ #define INTERMEDIATE_C_GOOD  0x14
++#endif
++#ifndef RESERVATION_CONFLICT
+ #define RESERVATION_CONFLICT 0x18
++#endif
++#ifndef COMMAND_TERMINATED
+ #define COMMAND_TERMINATED   0x22
++#endif
++#ifndef TASK_SET_FULL
+ #define TASK_SET_FULL        0x28
++#endif
++#ifndef ACA_ACTIVE
+ #define ACA_ACTIVE           0x30
++#endif
++#ifndef TASK_ABORTED
+ #define TASK_ABORTED         0x40
++#endif
+ 
+ #define STATUS_MASK          0x3e
+ 
+diff --git a/meson.build b/meson.build
+index 7f28871..0a46b7e 100644
+--- a/meson.build
++++ b/meson.build
+@@ -200,8 +200,13 @@ have_tpm = get_option('tpm') \
+   .allowed()
+ 
+ # vhost
++# Android/Bionic port: probe __ANDROID__ via compiler (QEMU reports host_os='linux'
++# for NDK cross builds). Force vhost-user off on Android: libvhost-user needs
++# Linux-only APIs (memfd_create, full virtio headers) absent from Bionic.
++android_host = cc.get_define('__ANDROID__') != ''
+ have_vhost_user = get_option('vhost_user') \
+   .disable_auto_if(host_os != 'linux') \
++  .disable_auto_if(android_host) \
+   .require(host_os != 'windows',
+            error_message: 'vhost-user is not available on Windows').allowed()
+ have_vhost_vdpa = get_option('vhost_vdpa') \
+@@ -3394,7 +3399,7 @@ if have_system and vfio_user_server_allowed
+ endif
+ 
+ vhost_user = not_found
+-if host_os == 'linux' and have_vhost_user
++if host_os == 'linux' and have_vhost_user and not android_host
+   libvhost_user = subproject('libvhost-user')
+   vhost_user = libvhost_user.get_variable('vhost_user_dep')
+ endif
+@@ -4292,6 +4297,29 @@ foreach target : target_dirs
+                link_args: link_args,
+                win_subsystem: exe['win_subsystem'])
+ 
++    # Android JNI driver for the classic ESP32 backend (VirtualESP32).
++    # Built as a shared library linking the same QEMU objects as the emulator.
++    # Only for xtensa-softmmu on Android (detected via android_host).
++    if target_name == 'xtensa'
++      jni_inc = include_directories('/home/hatch/workspace/virtualesp32/native/android-ndk-r27c/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include')
++      # RSA stub only needed when libgcrypt is unavailable (Android)
++      _jni_srcs = files('android-jni/esp32_qemu_jni.c', 'android-jni/qemu_driver_real.c')
++      if not gcrypt.found()
++        _jni_srcs += files('android-jni/esp32_rsa_stub.c')
++      endif
++      esp32_jni = shared_library('esp32_qemu_android',
++                 _jni_srcs,
++                 include_directories: [jni_inc, include_directories('android-jni')],
++                 c_args: c_args + ['-DQEMU_CORE_AVAILABLE'],
++                 dependencies: arch_deps + exe['dependencies'],
++                 objects: lib.extract_all_objects(recursive: true),
++                 install: false,
++                 name_prefix: 'lib',
++                 override_options: ['b_staticpic=true'],
++                 link_args: ['-llog'])
++      message('Building libesp32_qemu_android.so for VirtualESP32 JNI')
++    endif
++
+     if host_os == 'darwin'
+       icon = 'pc-bios/qemu.rsrc'
+       build_input = [emulator, files(icon)]
+diff --git a/net/meson.build b/net/meson.build
+index bb97b4d..ede7a02 100644
+--- a/net/meson.build
++++ b/net/meson.build
+@@ -33,7 +33,12 @@ system_ss.add(when: 'CONFIG_TCG', if_true: files('filter-replay.c'))
+ if have_l2tpv3
+   system_ss.add(files('l2tpv3.c'))
+ endif
+-system_ss.add(when: slirp, if_true: files('slirp.c'))
++# Android/Bionic port: slirp needs libslirp which we don't build. ESP32 doesn't need it.
++if not android_host
++  system_ss.add(when: slirp, if_true: files('slirp.c'))
++else
++  system_ss.add(files('slirp-stub.c'))
++endif
+ system_ss.add(when: vde, if_true: files('vde.c'))
+ if have_netmap
+   system_ss.add(files('netmap.c'))
+diff --git a/util/meson.build b/util/meson.build
+index 5d8bef9..25b93c0 100644
+--- a/util/meson.build
++++ b/util/meson.build
+@@ -112,7 +112,11 @@ if have_block
+     util_ss.add(files('filemonitor-stub.c'))
+   endif
+   if host_os == 'linux'
+-    util_ss.add(files('vhost-user-server.c'), vhost_user)
++    # Android/Bionic port: skip vhost-user-server.c when libvhost-user is
++    # unavailable (we skip the subproject on Android).
++    if vhost_user.found()
++      util_ss.add(files('vhost-user-server.c'), vhost_user)
++    endif
+     util_ss.add(files('vfio-helpers.c'))
+     util_ss.add(files('chardev_open.c'))
+   endif

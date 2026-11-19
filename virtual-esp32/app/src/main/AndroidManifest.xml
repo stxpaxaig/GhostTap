@@ -1,0 +1,46 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <application android:theme="@android:style/Theme.Material.NoActionBar" android:label="Virtual ESP32" android:allowBackup="false" android:supportsRtl="true">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+        </activity>
+        <service android:name=".VirtualDeviceService" android:exported="false" android:foregroundServiceType="connectedDevice" />
+        <!-- IPC bridge for controller apps (e.g. GHOST TAP). Exported so an
+             external app can send commands. -->
+        <service android:name=".VirtualEsp32BridgeService" android:exported="true">
+            <intent-filter>
+                <action android:name="dev.virtualesp32.action.BRIDGE" />
+            </intent-filter>
+        </service>
+        <!-- Command receiver: GHOST TAP sends commands via explicit broadcast
+             (cross-app startService is blocked on newer Android). Exported so an
+             external app can send commands. -->
+        <receiver android:name=".BridgeCommandReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="dev.virtualesp32.action.LOAD_FIRMWARE" />
+                <action android:name="dev.virtualesp32.action.EJECT_FIRMWARE" />
+                <action android:name="dev.virtualesp32.action.USE_BUILTIN_FIRMWARE" />
+                <action android:name="dev.virtualesp32.action.START_GUEST" />
+                <action android:name="dev.virtualesp32.action.STOP_GUEST" />
+                <action android:name="dev.virtualesp32.action.RESET_GUEST" />
+                <action android:name="dev.virtualesp32.action.SEND_UART" />
+                <action android:name="dev.virtualesp32.action.WRITE_GPIO" />
+                <action android:name="dev.virtualesp32.action.QUERY_STATUS" />
+                <action android:name="dev.virtualesp32.action.READ_GPIO" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

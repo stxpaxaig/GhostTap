@@ -1,0 +1,17 @@
+diff --git a/util/meson.build b/util/meson.build
+index 5d8bef9..25b93c0 100644
+--- a/util/meson.build
++++ b/util/meson.build
+@@ -112,7 +112,11 @@ if have_block
+     util_ss.add(files('filemonitor-stub.c'))
+   endif
+   if host_os == 'linux'
+-    util_ss.add(files('vhost-user-server.c'), vhost_user)
++    # Android/Bionic port: skip vhost-user-server.c when libvhost-user is
++    # unavailable (we skip the subproject on Android).
++    if vhost_user.found()
++      util_ss.add(files('vhost-user-server.c'), vhost_user)
++    endif
+     util_ss.add(files('vfio-helpers.c'))
+     util_ss.add(files('chardev_open.c'))
+   endif

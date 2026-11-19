@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'dev.virtualesp32'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'dev.virtualesp32'
+        minSdk 26
+        targetSdk 35
+        versionCode 2
+        versionName '0.2.0'
+    }
+    // NOTE: The NDK/CMake native build (libesp32_qemu_android) is NOT
+    // configured here. The GitHub Actions workflow builds the Java/Kotlin
+    // app only. The Java layer (ClassicEsp32QemuBackend) handles a missing
+    // native library gracefully via UnsatisfiedLinkError -> reports the
+    // backend as unavailable instead of crashing.
+    //
+    // To build WITH the native QEMU backend locally, see
+    // app/src/main/cpp/qemu/android/BUILD.md and add the externalNativeBuild
+    // cmake block manually.
+}

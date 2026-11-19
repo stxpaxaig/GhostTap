@@ -1,0 +1,2 @@
+origin	https://github.com/espressif/qemu.git (fetch)
+origin	https://github.com/espressif/qemu.git (push)

@@ -1,0 +1,1 @@
+These Espressif provisioning protocol schemas were copied from the supplied `esp-idf-provisioning-android-Provisioning_App_Release_2.2.3` reference source (`provisioning/src/main/proto`). They are included as protocol references, not linked into the Android application. The supplied source carries the Espressif Apache License 2.0; see `LICENSE`.

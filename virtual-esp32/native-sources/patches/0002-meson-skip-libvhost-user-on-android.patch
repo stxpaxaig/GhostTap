@@ -1,0 +1,27 @@
+diff --git a/meson.build b/meson.build
+index 7f28871..93ab2d1 100644
+--- a/meson.build
++++ b/meson.build
+@@ -200,8 +200,13 @@ have_tpm = get_option('tpm') \
+   .allowed()
+ 
+ # vhost
++# Android/Bionic port: probe __ANDROID__ via compiler (QEMU reports host_os='linux'
++# for NDK cross builds). Force vhost-user off on Android: libvhost-user needs
++# Linux-only APIs (memfd_create, full virtio headers) absent from Bionic.
++android_host = cc.get_define('__ANDROID__') != ''
+ have_vhost_user = get_option('vhost_user') \
+   .disable_auto_if(host_os != 'linux') \
++  .disable_auto_if(android_host) \
+   .require(host_os != 'windows',
+            error_message: 'vhost-user is not available on Windows').allowed()
+ have_vhost_vdpa = get_option('vhost_vdpa') \
+@@ -3394,7 +3399,7 @@ if have_system and vfio_user_server_allowed
+ endif
+ 
+ vhost_user = not_found
+-if host_os == 'linux' and have_vhost_user
++if host_os == 'linux' and have_vhost_user and not android_host
+   libvhost_user = subproject('libvhost-user')
+   vhost_user = libvhost_user.get_variable('vhost_user_dep')
+ endif

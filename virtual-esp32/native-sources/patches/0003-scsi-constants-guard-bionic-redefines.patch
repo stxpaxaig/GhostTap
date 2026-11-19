@@ -1,0 +1,42 @@
+diff --git a/include/scsi/constants.h b/include/scsi/constants.h
+index 9b98451..34466a4 100644
+--- a/include/scsi/constants.h
++++ b/include/scsi/constants.h
+@@ -168,16 +168,37 @@
+  */
+ 
+ #define GOOD                 0x00
++/* Android/Bionic port: Bionic's scsi headers define these; don't redefine. */
++#ifndef CHECK_CONDITION
+ #define CHECK_CONDITION      0x02
++#endif
++#ifndef CONDITION_GOOD
+ #define CONDITION_GOOD       0x04
++#endif
++#ifndef BUSY
+ #define BUSY                 0x08
++#endif
++#ifndef INTERMEDIATE_GOOD
+ #define INTERMEDIATE_GOOD    0x10
++#endif
++#ifndef INTERMEDIATE_C_GOOD
+ #define INTERMEDIATE_C_GOOD  0x14
++#endif
++#ifndef RESERVATION_CONFLICT
+ #define RESERVATION_CONFLICT 0x18
++#endif
++#ifndef COMMAND_TERMINATED
+ #define COMMAND_TERMINATED   0x22
++#endif
++#ifndef TASK_SET_FULL
+ #define TASK_SET_FULL        0x28
++#endif
++#ifndef ACA_ACTIVE
+ #define ACA_ACTIVE           0x30
++#endif
++#ifndef TASK_ABORTED
+ #define TASK_ABORTED         0x40
++#endif
+ 
+ #define STATUS_MASK          0x3e
+ 

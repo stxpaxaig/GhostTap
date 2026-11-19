@@ -1,0 +1,10 @@
+ backends/meson.build         |   7 ++-
+ hw/gpio/esp32_gpio.c         | 135 +++++++++++++++++++++++++++++++++++++++++++
+ hw/misc/esp32_flash_enc.c    |   2 +
+ hw/net/can/ctucan_core.h     |   3 +
+ include/hw/gpio/esp32_gpio.h |  29 ++++++++++
+ include/scsi/constants.h     |  21 +++++++
+ meson.build                  |  30 +++++++++-
+ net/meson.build              |   7 ++-
+ util/meson.build             |   6 +-
+ 9 files changed, 236 insertions(+), 4 deletions(-)

@@ -1,0 +1,16 @@
+diff --git a/net/meson.build b/net/meson.build
+index bb97b4d..dc6209c 100644
+--- a/net/meson.build
++++ b/net/meson.build
+@@ -33,7 +33,10 @@ system_ss.add(when: 'CONFIG_TCG', if_true: files('filter-replay.c'))
+ if have_l2tpv3
+   system_ss.add(files('l2tpv3.c'))
+ endif
+-system_ss.add(when: slirp, if_true: files('slirp.c'))
++# Android/Bionic port: slirp needs libslirp which we don't build. ESP32 doesn't need it.
++if not android_host
++  system_ss.add(when: slirp, if_true: files('slirp.c'))
++endif
+ system_ss.add(when: vde, if_true: files('vde.c'))
+ if have_netmap
+   system_ss.add(files('netmap.c'))

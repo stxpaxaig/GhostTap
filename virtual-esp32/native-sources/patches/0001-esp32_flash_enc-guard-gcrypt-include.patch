@@ -1,0 +1,21 @@
+From: VirtualESP32 Android port
+Subject: [PATCH] esp32_flash_enc: guard gcrypt.h include with CONFIG_GCRYPT
+
+The encryption implementation already has an #ifdef CONFIG_GCRYPT branch
+using QEMU's built-in qcrypto API as fallback, but the #include <gcrypt.h>
+was unconditional, breaking builds without libgcrypt (e.g. Android/Bionic
+ports that rely on the qcrypto fallback).
+
+--- a/hw/misc/esp32_flash_enc.c
++++ b/hw/misc/esp32_flash_enc.c
+@@ -7,7 +7,9 @@
+  * This program is free software; you can redistribute it and/or modify
+  * it under the terms of the GNU General Public License version 2 or
+  * (at your option) any later version.
+  */
++#ifdef CONFIG_GCRYPT
+ #include <gcrypt.h>
++#endif
+ #include "qemu/osdep.h"
+ #include "hw/hw.h"
+ #include "hw/sysbus.h"

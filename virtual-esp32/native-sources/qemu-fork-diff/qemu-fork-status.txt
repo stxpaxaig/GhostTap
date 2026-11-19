@@ -1,0 +1,17 @@
+ M backends/meson.build
+ M hw/gpio/esp32_gpio.c
+ M hw/misc/esp32_flash_enc.c
+ M hw/net/can/ctucan_core.h
+ M include/hw/gpio/esp32_gpio.h
+ M include/scsi/constants.h
+ M meson.build
+ M net/meson.build
+ M util/meson.build
+?? android-jni/
+?? net/slirp-stub.c
+?? subprojects/.wraplock
+c73ba51c8135f7e683d49f0ada035df520cd4f5e59a81fc9a96aee039116c01a  /home/hatch/workspace/virtualesp32/native/qemu-src/android-jni/esp32_qemu_jni.c
+6af1ba26325b6678567f51496e0215d6d2e5b5eb089fdd0e1bf6bd87fe1f3345  /home/hatch/workspace/virtualesp32/native/qemu-src/android-jni/esp32_rsa_stub.c
+fee47b48858c2b7dae7647d4508d4ab87b8cb6def41d70610f723944c364449f  /home/hatch/workspace/virtualesp32/native/qemu-src/android-jni/meson.build
+44b6e169501ff617ec9c4cc347cc588c2733278071b36fc7b0581e3dcf61886b  /home/hatch/workspace/virtualesp32/native/qemu-src/android-jni/qemu_driver_real.c
+9dd8a76362c3dbb675912f96ce165dbfc3c817b2204516951faf7ef9741e3366  /home/hatch/workspace/virtualesp32/native/qemu-src/android-jni/qemu_session.h

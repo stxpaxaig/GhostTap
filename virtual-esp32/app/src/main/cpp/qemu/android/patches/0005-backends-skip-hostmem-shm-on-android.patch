@@ -1,0 +1,18 @@
+diff --git a/backends/meson.build b/backends/meson.build
+index da714b9..0d0e08e 100644
+--- a/backends/meson.build
++++ b/backends/meson.build
+@@ -13,7 +13,12 @@ system_ss.add([files(
+ if host_os != 'windows'
+   system_ss.add(files('rng-random.c'))
+   system_ss.add(files('hostmem-file.c'))
+-  system_ss.add([files('hostmem-shm.c'), rt])
++  # Android/Bionic port: Bionic lacks shm_open/shm_unlink. ESP32 doesn't need it.
++  if android_host
++    message('Skipping hostmem-shm.c on Android (no shm_open in Bionic)')
++  else
++    system_ss.add([files('hostmem-shm.c'), rt])
++  endif
+ endif
+ if host_os == 'linux'
+   system_ss.add(files('hostmem-memfd.c'))
