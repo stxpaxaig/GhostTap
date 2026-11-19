@@ -992,7 +992,8 @@ fun GhostTapApp(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                        .padding(horizontal = 12.dp)
+                        .padding(bottom = if (intelVm.bringUpState != BringUpState.IDLE) 104.dp else 10.dp),
                     color = Color(0xFF101B20),
                     shape = RoundedCornerShape(18.dp),
                     border = BorderStroke(1.dp, Accent.copy(alpha = 0.65f)),
