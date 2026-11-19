@@ -304,6 +304,25 @@ fun GhostTapApp(
             operationContext.pendingChoice = null
         }
     }
+    // Direct capability execution for VNIC capabilities that are not
+    // represented by a screen-first Operation. This uses the same
+    // CapabilityRegistry/IntelEngine path as VNIC execution; it does not
+    // replace or bypass the OperationRunner path for registered operations.
+    fun runRegisteredCapability(id: String, args: Map<String, String>) {
+        val capability = CapabilityRegistry.get(id) ?: run {
+            intelVm.noteCommandResult(id, "Capability is no longer registered. Nothing ran.")
+            return
+        }
+        opScope.launch {
+            val result = intelVm.engine.run(id, args)
+            intelVm.noteCommandResult(
+                capability.title,
+                (if (result.ok) "Completed: " else "Did not complete: ") +
+                    result.summary +
+                    if (result.data.isNotBlank()) " — " + result.data else ""
+            )
+        }
+    }
     // ZERO-CONFIG — the intent box (2026-11-06): "what I'm tryna do"
     // in plain words. The words are matched against the REAL
     // registered operations only (IntentRouter — never an invented
@@ -894,6 +913,7 @@ fun GhostTapApp(
                         capabilities = intelVm.vnicEngine.capabilities(),
                         statusFlow = intelVm.vnicEngine.status,
                         onRunOperation = { id -> runLiveCommand(id, null) },
+                        onRunCapability = { id, args -> runRegisteredCapability(id, args) },
                         resultMessage = intelVm.lastCommandAnswer,
                         onBack = { nav.popBackStack() }
                     )
