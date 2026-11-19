@@ -1,6 +1,6 @@
 package com.ghosttap.core.vnic
 
-import com.sun.net.httpserver.HttpServer
+import com.ghosttap.testutil.StubHttpServer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
@@ -570,22 +570,10 @@ class VnicDiagnosticTest {
 
     /** Local stub chat-completions server on an ephemeral loopback port; captures the request body it received. */
     private class CapturingStubServer(status: Int, body: String) {
-        var lastRequestBody: String? = null
-            private set
-        val server: HttpServer = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).also { srv ->
-            srv.createContext("/v1/chat/completions") { exchange ->
-                lastRequestBody = exchange.requestBody.readBytes().toString(Charsets.UTF_8)
-                val bytes = body.toByteArray(Charsets.UTF_8)
-                exchange.responseHeaders.set("Content-Type", "application/json")
-                exchange.sendResponseHeaders(status, bytes.size.toLong())
-                exchange.responseBody.use { it.write(bytes) }
-            }
-            srv.executor = null
-            srv.start()
-        }
-
-        fun stop() = server.stop(0)
-        val port: Int get() = server.address.port
+        private val server = StubHttpServer(status, body)
+        val lastRequestBody: String? get() = server.lastRequestBody
+        val port: Int get() = server.port
+        fun stop() = server.stop()
     }
 
     private fun stubReasoner(stub: CapturingStubServer) = RemoteLlmReasoner(
