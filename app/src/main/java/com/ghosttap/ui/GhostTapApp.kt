@@ -866,6 +866,10 @@ fun GhostTapApp(
                     )
                 }
 
+                composable("emv_lab") {
+                    EmvLabScreen(viewModel = viewModel, onBack = { nav.popBackStack() })
+                }
+
                 composable("visual_intel") {
                     VisualIntelScreen(
                         viewModel = visualIntelVm,
@@ -2255,6 +2259,7 @@ private fun NfcToolsScreen(
                 }
             }
             TerminalButton("Try the demo card") { say(EmvEngine.runDemoCard().report, "nfc.demo_payment_card") }
+            TerminalButton("Open EMV Lab") { onOpenRoute?.invoke("emv_lab") }
             Spacer(modifier = Modifier.height(4.dp))
             Text("Next: hold a tag or card against the back of your phone.", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
         }
