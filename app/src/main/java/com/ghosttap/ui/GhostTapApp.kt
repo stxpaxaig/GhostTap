@@ -888,6 +888,16 @@ fun GhostTapApp(
                     )
                 }
 
+                composable("capability_atlas") {
+                    CapabilityAtlasScreen(
+                        operations = OperationRegistry.all(),
+                        capabilities = intelVm.vnicEngine.capabilities(),
+                        statusFlow = intelVm.vnicEngine.status,
+                        onRunOperation = { id -> runLiveCommand(id, null) },
+                        onBack = { nav.popBackStack() }
+                    )
+                }
+
                 composable("emv_lab") {
                     EmvLabScreen(viewModel = viewModel, onBack = { nav.popBackStack() })
                 }
@@ -1290,6 +1300,7 @@ private fun HomeScreen(
             GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
             GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
             GhostTile("EMV LAB", "Inspect payment-card chip data and run local test fixtures.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc)
+            GhostTile("CAPABILITY ATLAS", "Explore every registered Ghost Tap action and the live intelligence engine.", { onOpenRoute?.invoke("capability_atlas") }, icon = Icons.Filled.Memory)
         }
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
