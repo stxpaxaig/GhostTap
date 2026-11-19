@@ -67,6 +67,7 @@ import com.ghosttap.data.BaselineStore
 import com.ghosttap.data.LogEntry
 import com.ghosttap.data.ScanTarget
 import com.ghosttap.data.TargetType
+import com.ghosttap.core.CapabilityRegistry
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.TermuxPlanSelection
