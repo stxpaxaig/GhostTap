@@ -1032,13 +1032,22 @@ fun GhostTapApp(
                             Text(if (universalCommandExpanded.value) "CLOSE  ▾" else "ASK / DO  ▴",
                                 color = Dim, fontFamily = FontFamily.Monospace)
                         }
+                        if (!universalCommandExpanded.value && homeDoItBusyState.value) {
+                            Text("WORKING — command is running across Ghost Tap's registered capabilities.",
+                                color = Dim, style = MaterialTheme.typography.bodySmall)
+                        } else if (!universalCommandExpanded.value && homeDoItLinesState.value.isNotEmpty()) {
+                            Text(homeDoItLinesState.value.last().take(150),
+                                color = Dim, style = MaterialTheme.typography.bodySmall,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
                         if (universalCommandExpanded.value) {
                             OutlinedTextField(
                                 value = homeDoItRequestState.value,
                                 onValueChange = { homeDoItRequestState.value = it },
                                 modifier = Modifier.fillMaxWidth(),
                                 placeholder = { Text("Tell Ghost Tap what you want to do…") },
-                                singleLine = true,
+                                singleLine = false,
+                                maxLines = 3,
                                 enabled = !homeDoItBusyState.value
                             )
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
