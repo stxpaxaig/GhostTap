@@ -1246,24 +1246,16 @@ private fun HomeScreen(
             (it.likely?.contains(targetFilter, ignoreCase = true) == true)
     }
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 14.dp, vertical = 12.dp).background(Bg),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(12.dp).background(Bg),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().background(Color(0xFF0B1712), RoundedCornerShape(16.dp))
-                .border(1.dp, Accent.copy(alpha = 0.42f), RoundedCornerShape(16.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+        PanelBox("SYSTEM STATUS") {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
-                    Text("DEVICE INTELLIGENCE  /  CONTROL", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(if (btEnabled) "SYSTEM READY" else "CHECK CONNECTION", color = if (btEnabled) Accent else Color(0xFFFF7373), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
-                    Text(if (isScanning) "SCANNING" else "${targets.size} DEVICES", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
-                }
+                Text(if (btEnabled) "SYSTEM READY" else "CHECK CONNECTION", color = if (btEnabled) Accent else Color(0xFFFF7373), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
+                Text(if (isScanning) "SCANNING" else "${targets.size} DEVICES", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
             }
+            Spacer(modifier = Modifier.height(4.dp))
             Text(status, color = if (btEnabled) Dim else Color(0xFFFF8A8A), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
         }
 
@@ -1511,17 +1503,15 @@ private fun HomeScreen(
 private fun HomeFunctionCard(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(0.485f).height(126.dp)
-            .background(Color(0xFF101B16), RoundedCornerShape(14.dp))
-            .border(1.dp, Accent.copy(alpha = 0.30f), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick).padding(12.dp),
+            .background(Panel, RoundedCornerShape(8.dp))
+            .border(1.dp, Accent.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick).padding(10.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.background(Color(0xFF183526), RoundedCornerShape(10.dp)).padding(9.dp)) {
-                Icon(imageVector = icon, contentDescription = title, tint = Accent)
-            }
+            Icon(imageVector = icon, contentDescription = title, tint = Accent, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.width(8.dp))
-            Text("OPEN  ›", color = Cyan, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+            Text("OPEN", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
         }
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(title, color = Accent, style = MaterialTheme.typography.labelLarge, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
