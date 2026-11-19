@@ -539,34 +539,7 @@ class VnicCore(
         if (dropped.isNotEmpty()) {
             phases += "PLAN: dropped ${dropped.size} id(s) not in the capability list — ${dropped.joinToString()}"
         }
-        // Execution authorization is separate from capability discovery.
-        // READ operations may run as investigations. State-changing operations
-        // require an explicit matching verb in the user's current request;
-        // unknown risk levels fail closed. Never let a broad keyword match
-        // silently trigger a write or hardware-control capability.
-        val explicitActionVerbs = when {
-            Regex("\\b(connect|pair|open|attach)\\b", RegexOption.IGNORE_CASE).containsMatchIn(observation.text) ->
-                setOf("CONFIGURE")
-            Regex("\\b(send|write|submit|transfer|upload|post)\\b", RegexOption.IGNORE_CASE).containsMatchIn(observation.text) ->
-                setOf("CONFIGURE", "WRITE")
-            Regex("\\b(turn\\s+on|turn\\s+off|switch\\s+on|switch\\s+off|set|activate|deactivate|control|press|trigger|start|stop)\\b", RegexOption.IGNORE_CASE).containsMatchIn(observation.text) ->
-                setOf("CONFIGURE", "CONTROL")
-            else -> emptySet()
-        }
-        val executablePlan = plan.filter { id ->
-            val capability = capabilities.firstOrNull { it.id == id }
-            val risk = capability?.riskLevel?.uppercase()
-            when (risk) {
-                "READ" -> true
-                "CONFIGURE", "WRITE", "CONTROL" -> risk in explicitActionVerbs
-                else -> false
-            }
-        }
-        val blockedPlan = plan.filterNot { it in executablePlan }
-        if (blockedPlan.isNotEmpty()) {
-            phases += "AUTHORIZE: held ${blockedPlan.size} state-changing or unknown-risk action(s) — request a clear action verb and target before execution"
-        }
-        val selected = executablePlan.firstOrNull()
+        val selected = plan.firstOrNull()
         var reward = 0.5
         var bringUpResult: VnicBringUpResult? = null
         var controlsMapped: List<String> = emptyList()
@@ -584,7 +557,7 @@ class VnicCore(
             val developed = try {
                 developProcedure(
                     observation.text,
-                    executablePlan,
+                    plan,
                     mapOf("subject" to observation.subject, "text" to observation.text)
                 )
             } catch (e: Exception) {
@@ -599,7 +572,7 @@ class VnicCore(
             phases += "DEVELOP: procedure ${developed.id} developed — testPassed=${developed.testPassed} (${developed.notes.joinToString("; ").take(200)})"
         } else if (selected != null) {
             phases += "DEVELOP: plan recorded as candidate procedure (${plan.joinToString()})"
-        } else if (plan.isEmpty()) {
+        } else {
             phases += "PLAN: no capability matches — missing-capability gap recorded"
             memory.remember(
                 VnicMemoryRecord(
@@ -609,8 +582,6 @@ class VnicCore(
                     confidence = 0.4
                 )
             )
-        } else {
-            phases += "AUTHORIZE: a matching capability exists, but none passed the current action authorization check"
         }
 
         // ACT — the closed loop. A determinable bring-up kind + an attached
@@ -629,7 +600,7 @@ class VnicCore(
             phases += "ACT: store_context — added to working memory (no execution)"
         } else {
             val kind = vnicDetectBringUpKind(observation.subject + " " + observation.text, findings)
-            if (kind != null && bringUp != null && "CONFIGURE" in explicitActionVerbs) {
+            if (kind != null && bringUp != null) {
                 phases += "SELECT: bring-up ${kind.name} for ${observation.subject}"
                 val target = VnicBringUpTarget(kind, observation.subject, observation.subject, observation.text.take(200))
                 val result = try {
@@ -659,15 +630,13 @@ class VnicCore(
                 executedId = "bring-up"
                 executedOutcome = VnicExecutionOutcome(executionState, executionEvidence, executionRaw)
             } else {
-                if (kind != null && "CONFIGURE" !in explicitActionVerbs) {
-                    phases += "AUTHORIZE: ${kind.name} connection not started — explicitly ask Ghost Tap to connect or pair with the named target"
-                } else if (kind != null && bringUp == null) {
-                    phases += "ACT: bring-up path exists (${kind.name}) but no bring-up port is attached — no connection will be held"
+                if (kind != null) {
+                    phases += "ACT: bring-up path exists (${kind.name}) but no bring-up port is attached — executing plan steps only, no connection will be held"
                 }
                 if (selected != null && executor != null) {
-                    phases += "SELECT: ${executablePlan.joinToString()} (${executablePlan.size} authorized step(s) in sequence)"
+                    phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
                     var lastOutcome: VnicExecutionOutcome? = null
-                    for (stepId in executablePlan.take(5)) {
+                    for (stepId in plan.take(5)) {
                         val outcome = try {
                             executor.execute(stepId, mapOf("subject" to observation.subject, "text" to observation.text))
                         } catch (e: Exception) {
@@ -696,8 +665,6 @@ class VnicCore(
                     executedOutcome = lastOutcome
                 } else if (selected != null) {
                     phases += "SELECT: ${selected} (no executor attached — plan only, nothing executed)"
-                } else if (blockedPlan.isNotEmpty()) {
-                    phases += "ACT: no action dispatched — authorization gate held the selected operation(s)"
                 }
             }
         }
