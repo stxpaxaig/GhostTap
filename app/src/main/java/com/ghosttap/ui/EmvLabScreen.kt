@@ -99,9 +99,14 @@ fun EmvLabScreen(
                                 resultKind = "LIVE CARD READ"
                                 result = "Reading chip…"
                                 scope.launch {
-                                    val outcome = withContext(Dispatchers.IO) { EmvEngine.readLiveCard(currentTag) }
-                                    result = outcome.report
-                                    running = false
+                                    try {
+                                        val outcome = withContext(Dispatchers.IO) { EmvEngine.readLiveCard(currentTag) }
+                                        result = outcome.report
+                                    } catch (error: Exception) {
+                                        result = "The local card read stopped: ${error.message ?: "unknown error"}"
+                                    } finally {
+                                        running = false
+                                    }
                                 }
                             }
                         },
@@ -132,9 +137,14 @@ fun EmvLabScreen(
                             resultKind = "LOCAL FIXTURE"
                             result = "Running recorded test fixture…"
                             scope.launch {
-                                val outcome = withContext(Dispatchers.Default) { EmvEngine.runDemoCard() }
-                                result = outcome.report
-                                running = false
+                                try {
+                                    val outcome = withContext(Dispatchers.Default) { EmvEngine.runDemoCard() }
+                                    result = outcome.report
+                                } catch (error: Exception) {
+                                    result = "The local test fixture stopped: ${error.message ?: "unknown error"}"
+                                } finally {
+                                    running = false
+                                }
                             }
                         },
                         enabled = !running,
