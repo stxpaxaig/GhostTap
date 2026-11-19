@@ -331,11 +331,38 @@ class VnicCoreTest {
         val exec = FakeExecutor(VnicExecutionOutcome(VnicExecutionState.FAILED, "connection refused"))
         val core = VnicCore(memory = mem, researcher = StubResearcher(emptyList()))
         val result = core.process(
-            VnicObservation("SYNTH-TARGET-01", "Investigate bluetooth device SYNTH-TARGET-01"),
+            VnicObservation("SYNTH-TARGET-01", "Connect to bluetooth device SYNTH-TARGET-01"),
             capabilities = caps, executor = exec
         )
         assertEquals(VnicExecutionState.FAILED, result.executionState)
         assertTrue(result.learned.any { it.contains("reward=0.2") })
+    }
+
+    @Test
+    fun stateChangingCapabilityIsHeldWithoutExplicitActionVerb() = runBlocking {
+        val caps = listOf(VnicCapabilityInfo("ble.connect", "BLE connect", "connect bluetooth", "CONFIGURE", false))
+        val exec = FakeExecutor(VnicExecutionOutcome(VnicExecutionState.CONNECTED, "connected"))
+        val core = VnicCore(memory = InMemoryVnicMemory(), researcher = StubResearcher(emptyList()))
+        val result = core.process(
+            VnicObservation("SYNTH-TARGET-01", "Investigate bluetooth device SYNTH-TARGET-01"),
+            capabilities = caps, executor = exec
+        )
+        assertNull(exec.calledWith)
+        assertTrue(result.phases.any { it.startsWith("AUTHORIZE: held") })
+        assertEquals(VnicExecutionState.IDENTIFIED, result.executionState)
+    }
+
+    @Test
+    fun explicitConnectVerbAllowsMatchingConfigureCapability() = runBlocking {
+        val caps = listOf(VnicCapabilityInfo("ble.connect", "BLE connect", "connect bluetooth", "CONFIGURE", false))
+        val exec = FakeExecutor(VnicExecutionOutcome(VnicExecutionState.CONNECTED, "connected"))
+        val core = VnicCore(memory = InMemoryVnicMemory(), researcher = StubResearcher(emptyList()))
+        val result = core.process(
+            VnicObservation("SYNTH-TARGET-01", "Connect to bluetooth device SYNTH-TARGET-01"),
+            capabilities = caps, executor = exec
+        )
+        assertEquals("ble.connect", exec.calledWith)
+        assertEquals(VnicExecutionState.CONNECTED, result.executionState)
     }
 
     @Test
