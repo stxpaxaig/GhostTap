@@ -378,45 +378,46 @@ fun GhostTapApp(
         homeTryAgainState.value = false
     }
     suspend fun runDoItPlan(text: String) {
-        // One execution trace for every screen: the same registered
-        // capability map, IntelEngine, and operation bridges are used
-        // regardless of where the command was entered.
-        addDoItLine("UNDERSTAND: \"${text.take(180)}\"")
-        val plan = planForCommand(text)
-        if (plan.isEmpty()) {
-            addDoItLine("PLAN: no registered capability matched. Nothing was run.")
-            addDoItLine("Try describing the device or action more specifically.")
-            return
+        // VNIC is the single cognition/orchestration layer for universal
+        // commands. Its runtime capability map resolves to Ghost Tap's
+        // existing native operations; the VNIC execution bridge performs
+        // the action exactly once and returns the real outcome. Do not
+        // run Planner/IntelEngine a second time after this cycle.
+        addDoItLine("OBSERVE: \"${text.take(180)}\"")
+        try {
+            val subject = text.trim().split(Regex("\\s+")).take(8).joinToString(" ").take(80)
+                .ifBlank { "Ghost Tap request" }
+            val result = intelVm.vnicObserve(subject, text)
+            result.phases.forEach { phase ->
+                if (phase.startsWith("INTERPRET:") ||
+                    phase.startsWith("RESEARCH:") ||
+                    phase.startsWith("PLAN:") ||
+                    phase.startsWith("SELECT:") ||
+                    phase.startsWith("ACT:") ||
+                    phase.startsWith("EVALUATE:") ||
+                    phase.startsWith("VERIFY:") ||
+                    phase.startsWith("LEARN:")) {
+                    addDoItLine(phase.take(380))
+                }
+            }
+            if (result.findings.isNotEmpty()) {
+                addDoItLine("RESEARCH RESULTS: " + result.findings.take(3).joinToString(" | ") {
+                    "${it.title}: ${it.snippet}".take(180)
+                }.take(520))
+            }
+            if (result.plan.isNotEmpty()) {
+                addDoItLine("CAPABILITIES: " + result.plan.joinToString().take(260))
+            }
+            addDoItLine(
+                "FINAL: ${result.executionState} — " +
+                    (result.executionEvidence.ifBlank { "No device action was confirmed." }).take(420)
+            )
+            if (result.resultEvaluation.isNotEmpty()) {
+                addDoItLine("NEXT: ${result.resultEvaluation.first().take(260)}")
+            }
+        } catch (e: Exception) {
+            addDoItLine("FAILED SAFELY: VNIC command cycle stopped — ${e.message ?: "unknown error"}")
         }
-        addDoItLine("PLAN: ${plan.size} registered action(s): ${plan.joinToString { it.capabilityId }}")
-        var reportedSuccesses = 0
-        var reportedFailures = 0
-        for ((index, step) in plan.withIndex()) {
-            addDoItLine("ACT ${index + 1}/${plan.size}: ${step.capabilityId}")
-            val result = try {
-                intelVm.engine.run(step.capabilityId, step.args)
-            } catch (e: Exception) {
-                OpResult(false, "That step failed: ${e.message ?: "unknown problem"}")
-            }
-            // A step that needs the user in the real world (an NFC tap)
-            // reports its instruction as-is — never dressed up as done.
-            if (result.data == "manual") {
-                addDoItLine("NEEDS YOU: ${result.summary}")
-                continue
-            }
-            val detail = if (result.data.isNotBlank()) " " + result.data.take(300) else ""
-            if (result.ok) {
-                reportedSuccesses++
-                addDoItLine(("RESULT: ${result.summary} " + detail).trim().take(400))
-            } else {
-                reportedFailures++
-                addDoItLine("RESULT: not successful — ${result.summary}".trim().take(400))
-            }
-        }
-        addDoItLine(
-            "EVALUATE: ${reportedSuccesses} action(s) reported success; ${reportedFailures} reported failure. " +
-                "A dispatched action is not treated as proof beyond the result returned by its capability."
-        )
     }
     fun connectTvCandidate(c: TvCandidate) {
         homeTvCandidatesState.value = emptyList()
