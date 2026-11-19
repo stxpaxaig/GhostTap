@@ -984,11 +984,14 @@ fun GhostTapApp(
                     }
                 }
             }
-            // UNIVERSAL COMMAND DOCK — one shared natural-language entry point
-            // on specialist pages. Home, Network Tools, NFC Tools and
-            // Investigations already render the full DO-IT box themselves.
+            // UNIVERSAL COMMAND DOCK — one app-level command surface pinned
+            // to EVERY route. It shares the same request, execution, retry,
+            // candidate-selection and outcome state as the existing DO-IT
+            // surfaces; it is not a second command engine or a VirtualESP32
+            // shortcut. The dock remains available while a specialist page
+            // is open, so commands can be issued without navigating home.
             val activeRoute = nav.currentBackStackEntryAsState().value?.destination?.route
-            if (activeRoute !in setOf("home", "network_tools", "nfc_tools", "investigations")) {
+            if (activeRoute != null) {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
