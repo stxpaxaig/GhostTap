@@ -113,8 +113,11 @@ fun CapabilityAtlasScreen(
             }
             if (filtered.isEmpty()) Text("No registered actions match this search.", color = Dim)
             val operationIds = operations.map { it.id }.toSet()
+            val selectedCategory = if (selectedArea == "ALL") null
+                else OperationArea.valueOf(selectedArea).capabilityCategory
             val additionalCapabilities = capabilities.filter { it.id !in operationIds }.filter { cap ->
-                query.isBlank() || (cap.id + " " + cap.title + " " + cap.description).contains(query.trim(), ignoreCase = true)
+                (selectedCategory == null || cap.category == selectedCategory) &&
+                    (query.isBlank() || (cap.id + " " + cap.title + " " + cap.description).contains(query.trim(), ignoreCase = true))
             }
             if (additionalCapabilities.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
