@@ -564,7 +564,7 @@ class VnicCore(
         }
         val blockedPlan = plan.filterNot { it in executablePlan }
         if (blockedPlan.isNotEmpty()) {
-            phases += "AUTHORIZE: held \${blockedPlan.size} state-changing or unknown-risk action(s) — request a clear action verb and target before execution"
+            phases += "AUTHORIZE: held ${blockedPlan.size} state-changing or unknown-risk action(s) — request a clear action verb and target before execution"
         }
         val selected = executablePlan.firstOrNull()
         var reward = 0.5
@@ -584,7 +584,7 @@ class VnicCore(
             val developed = try {
                 developProcedure(
                     observation.text,
-                    plan,
+                    executablePlan,
                     mapOf("subject" to observation.subject, "text" to observation.text)
                 )
             } catch (e: Exception) {
@@ -627,7 +627,7 @@ class VnicCore(
             phases += "ACT: store_context — added to working memory (no execution)"
         } else {
             val kind = vnicDetectBringUpKind(observation.subject + " " + observation.text, findings)
-            if (kind != null && bringUp != null) {
+            if (kind != null && bringUp != null && "CONFIGURE" in explicitActionVerbs) {
                 phases += "SELECT: bring-up ${kind.name} for ${observation.subject}"
                 val target = VnicBringUpTarget(kind, observation.subject, observation.subject, observation.text.take(200))
                 val result = try {
@@ -657,11 +657,13 @@ class VnicCore(
                 executedId = "bring-up"
                 executedOutcome = VnicExecutionOutcome(executionState, executionEvidence, executionRaw)
             } else {
-                if (kind != null) {
-                    phases += "ACT: bring-up path exists (${kind.name}) but no bring-up port is attached — executing plan steps only, no connection will be held"
+                if (kind != null && "CONFIGURE" !in explicitActionVerbs) {
+                    phases += "AUTHORIZE: ${kind.name} connection not started — explicitly ask Ghost Tap to connect or pair with the named target"
+                } else if (kind != null && bringUp == null) {
+                    phases += "ACT: bring-up path exists (${kind.name}) but no bring-up port is attached — no connection will be held"
                 }
                 if (selected != null && executor != null) {
-                    phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
+                    phases += "SELECT: ${executablePlan.joinToString()} (${executablePlan.size} authorized step(s) in sequence)"
                     var lastOutcome: VnicExecutionOutcome? = null
                     for (stepId in executablePlan.take(5)) {
                         val outcome = try {
