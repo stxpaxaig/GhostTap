@@ -26,6 +26,7 @@ fun CapabilityAtlasScreen(
     capabilities: List<VnicCapabilityInfo>,
     statusFlow: StateFlow<VnicStatusSnapshot>,
     onRunOperation: (String) -> Unit,
+    onRunCapability: (String, Map<String, String>) -> Unit,
     resultMessage: String,
     onBack: () -> Unit
 ) {
@@ -119,6 +120,11 @@ fun CapabilityAtlasScreen(
                 Spacer(Modifier.height(8.dp))
                 Text("ADDITIONAL VNIC CAPABILITIES", color = Accent, fontFamily = FontFamily.Monospace)
                 additionalCapabilities.forEach { cap ->
+                    val argumentValues = remember(cap.id) {
+                        mutableStateMapOf<String, String>().apply {
+                            cap.inputs.forEach { put(it, "") }
+                        }
+                    }
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF101A16)), shape = RoundedCornerShape(12.dp)) {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -126,7 +132,31 @@ fun CapabilityAtlasScreen(
                                 Text(cap.riskLevel, color = Accent, style = MaterialTheme.typography.labelSmall)
                             }
                             Text(cap.description, color = Dim, style = MaterialTheme.typography.bodySmall)
-                            Text(cap.id + " · " + if (cap.verified) "verified" else "not hardware-verified", color = Color(0xFF9BADA4), style = MaterialTheme.typography.labelSmall)
+                            Text(
+                                listOf(cap.category, if (cap.verified) "hardware exercised" else "not hardware-verified")
+                                    .filter { it.isNotBlank() }.joinToString(" · "),
+                                color = Color(0xFF9BADA4), style = MaterialTheme.typography.labelSmall
+                            )
+                            if (cap.effects.isNotBlank()) Text("Effect: " + cap.effects, color = Dim, style = MaterialTheme.typography.bodySmall)
+                            if (cap.preconditions.isNotEmpty()) Text("Needs: " + cap.preconditions.joinToString(" · "), color = Dim, style = MaterialTheme.typography.bodySmall)
+                            if (cap.outputs.isNotEmpty()) Text("Returns: " + cap.outputs.joinToString(" · "), color = Dim, style = MaterialTheme.typography.bodySmall)
+                            if (cap.inputs.isNotEmpty()) {
+                                Text("INPUTS", color = Accent, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                                cap.inputs.forEach { inputName ->
+                                    OutlinedTextField(
+                                        value = argumentValues[inputName].orEmpty(),
+                                        onValueChange = { argumentValues[inputName] = it },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        label = { Text(inputName) },
+                                        singleLine = true
+                                    )
+                                }
+                            }
+                            Text(cap.id, color = Color(0xFF718078), style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                            Button(
+                                onClick = { onRunCapability(cap.id, argumentValues.toMap()) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("RUN CAPABILITY") }
                         }
                     }
                 }
