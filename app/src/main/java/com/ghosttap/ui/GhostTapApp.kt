@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Nfc
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Search
@@ -1008,7 +1009,7 @@ fun GhostTapApp(
             // shortcut. The dock remains available while a specialist page
             // is open, so commands can be issued without navigating home.
             val activeRoute = nav.currentBackStackEntryAsState().value?.destination?.route
-            if (activeRoute != null) {
+            if (activeRoute != null && activeRoute != "home") {
                 Surface(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -1028,8 +1029,11 @@ fun GhostTapApp(
                             },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("◈  GHOST COMMAND", color = Accent, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                modifier = Modifier.weight(1f))
+                            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                androidx.compose.material3.Icon(Icons.Filled.Bolt, contentDescription = null, tint = Accent)
+                                Text("GHOST COMMAND", color = Accent, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                            }
                             Text(if (universalCommandExpanded.value) "CLOSE  ▾" else "ASK / DO  ▴",
                                 color = Dim, fontFamily = FontFamily.Monospace)
                         }
@@ -1285,6 +1289,7 @@ private fun HomeScreen(
             GhostTile("NFC TOOLS", "Reads, writes, copies, and pretends to be tap cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
             GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
             GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
+            GhostTile("EMV LAB", "Inspect payment-card chip data and run local test fixtures.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc)
         }
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
