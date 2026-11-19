@@ -1,5 +1,6 @@
 package com.ghosttap.core.ops
 
+import com.ghosttap.core.OpResult
 import com.ghosttap.core.DynamicCapabilityDef
 import com.ghosttap.core.DynStep
 import com.ghosttap.core.GhostIdentity
