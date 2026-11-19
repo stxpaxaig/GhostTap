@@ -1267,14 +1267,6 @@ private fun HomeScreen(
             Text(status, color = if (btEnabled) Dim else Color(0xFFFF8A8A), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
         }
 
-        // Preserve the existing universal DO IT command and its real execution path.
-        CommandBox(
-            statusLine = commandStatusLine, request = commandRequest, lines = commandLines,
-            busy = commandBusy, tvCandidates = commandTvCandidates, showTryAgain = commandShowTryAgain,
-            onSubmit = onDoIt ?: {}, onPickTv = onPickTv ?: {}, onTryAgain = onTryAgain ?: {},
-            onClear = onClearCommand ?: {}, showTermuxSetup = showTermuxSetup, onTermuxSetup = onTermuxSetup
-        )
-
         if (status.startsWith("Permission denied")) {
             PanelBox("PERMISSIONS NEEDED") {
                 Text("Ghost Tap needs a few permissions to work — each one has a job:", color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
@@ -1286,32 +1278,33 @@ private fun HomeScreen(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("QUICK ACTIONS", color = Accent, style = MaterialTheme.typography.titleSmall, fontFamily = FontFamily.Monospace)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                TerminalButton(if (isScanning) "Finding devices…" else "Find devices", onScan)
-                TerminalButton("Investigate", onDiscoverBluetooth)
-                TerminalButton("Stop scan", onStop)
-                TerminalButton("Activity log", onOpenLogs)
-            }
-        }
-
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("YOUR TOOLKIT", color = Accent, style = MaterialTheme.typography.titleSmall, fontFamily = FontFamily.Monospace, modifier = Modifier.weight(1f))
-                Text("8 WORKSPACES", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+                Text("10 WORKSPACES", color = Dim, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
             }
             FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                HomeFunctionCard("FIND DEVICES", "Discover nearby hardware", Icons.Filled.Search, onScan)
+                HomeFunctionCard("ACTIVITY LOG", "Review recent actions", Icons.Filled.Bolt, onOpenLogs)
                 HomeFunctionCard("USB UART / ESP32", "Wired boards & hardware", Icons.Filled.Usb, onOpenUsbUart)
                 HomeFunctionCard("VIRTUAL ESP32", "Run an ESP32 on this phone", Icons.Filled.Memory, onOpenVesp32)
                 HomeFunctionCard("NETWORK TOOLS", "Wi-Fi, hosts & connectivity", Icons.Filled.Wifi, onOpenNetworkTools)
                 HomeFunctionCard("NFC TOOLS", "Read, write & investigate tags", Icons.Filled.Nfc, onOpenNfcTools)
-                HomeFunctionCard("VISUAL INTEL", "Camera, images & recognition", Icons.Filled.PhotoCamera, onOpenVisualIntel)
+                HomeFunctionCard("VISUAL INTEL", "Images & recognition", Icons.Filled.PhotoCamera, onOpenVisualIntel)
                 HomeFunctionCard("INVESTIGATIONS", "Analyze devices & plan checks", Icons.Filled.Search, onOpenInvestigations)
                 HomeFunctionCard("EMV LAB", "Card data & local test tools", Icons.Filled.Nfc) { onOpenRoute?.invoke("emv_lab") }
                 HomeFunctionCard("CAPABILITY ATLAS", "Explore registered capabilities", Icons.Filled.Bolt) { onOpenRoute?.invoke("capability_atlas") }
             }
         }
+
+        // Keep DO IT available, but below the visual workspace launcher.
+        // The dashboard tiles are the first interactive controls on launch.
+        CommandBox(
+            statusLine = commandStatusLine, request = commandRequest, lines = commandLines,
+            busy = commandBusy, tvCandidates = commandTvCandidates, showTryAgain = commandShowTryAgain,
+            onSubmit = onDoIt ?: {}, onPickTv = onPickTv ?: {}, onTryAgain = onTryAgain ?: {},
+            onClear = onClearCommand ?: {}, showTermuxSetup = showTermuxSetup, onTermuxSetup = onTermuxSetup
+        )
 
         OutlinedTextField(
             value = targetFilter,
