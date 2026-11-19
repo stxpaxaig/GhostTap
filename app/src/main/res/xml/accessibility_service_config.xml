@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PIECE 2 (2026-11-18) — screen-see-and-tap: Ghost Tap's tap control.
+     Screenshot + gestures are what let Ghost Tap look at the screen and
+     tap where the brain points. The service never reacts to screen
+     events on its own — it only acts when the user asks. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canTakeScreenshot="true"
+    android:canPerformGestures="true"
+    android:description="@string/accessibility_service_description" />

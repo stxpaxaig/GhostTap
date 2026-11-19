@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GHOST TAP</string>
+    <!-- PIECE 2 (2026-11-18) — screen-see-and-tap: what the phone shows the
+         user when they switch Ghost Tap's tap control on. -->
+    <string name="accessibility_service_description">Lets Ghost Tap see the screen and tap where you ask it to — for example, tapping a button you name. Ghost Tap only taps when you ask it to, and never watches the screen on its own.</string>
+</resources>

@@ -1,0 +1,374 @@
+# Paste this WHOLE thing into Termux once, then press Enter.
+# It creates all 11 Ghost Tap helper files. One paste, done.
+# v3 (2026-11-16): File 1 sends answers back the way Ghost Tap
+# actually listens (one plain line over a direct connection), and
+# File 11 lets a Termux script ask Ghost Tap to do one of the six
+# things on its list. If you pasted the v2 version already, paste
+# this once more — it replaces the helper and adds File 11; the
+# other 9 files are unchanged.
+mkdir -p ~/.termux/tasker
+
+cat > ~/.termux/tasker/ghosttap-lib.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+# Ghost Tap helper — shared send functions. Sourced by the ghosttap-*.sh
+# scripts, never run on its own. Ghost Tap never runs this file directly.
+# Every script is called with its own details first, then the bridge port,
+# then the bridge token as the last two arguments.
+#
+# HOW ANSWERS REACH GHOST TAP (v3 — read this before changing it):
+# Ghost Tap's bridge speaks raw JSON lines on a plain TCP socket, NOT
+# HTTP. Each answer is one JSON line sent over a raw socket, and the
+# bridge sends one short reply line back. An HTTP POST never arrives:
+# the bridge reads the first line ("POST / HTTP/1.1"), which is not
+# JSON, and closes the connection — so the v2 helper's python urllib
+# and curl sends were silently dropped, and "What Termux can do" stayed
+# on "not checked yet" even though the probe itself finished fine.
+# That is why every send below uses a raw socket (python3 socket, or
+# bash's own /dev/tcp when there is no Python), never urllib or curl.
+gt_bridge_args() {
+  local args=("$@")
+  local n=${#args[@]}
+  GT_TOKEN="${args[$((n-1))]}"
+  GT_PORT="${args[$((n-2))]}"
+}
+gt_send_result() {
+  # $1 = script id, $2 = exit code, $3 = stdout file, $4 = stderr file
+  local sid="$1" code="$2" out_f="$3" err_f="$4"
+  [ -z "$GT_PORT" ] && return 0
+  if command -v python3 >/dev/null 2>&1; then
+    GT_PORT="$GT_PORT" GT_TOKEN="$GT_TOKEN" GT_SID="$sid" GT_CODE="$code" GT_OUT="$out_f" GT_ERR="$err_f" python3 - <<'PYEOF'
+import json, os, socket, uuid
+def read(p):
+    try:
+        with open(p, 'r', errors='replace') as f: return f.read()
+    except Exception: return ''
+body = (json.dumps({"type":"result","requestId":str(uuid.uuid4()),"token":os.environ["GT_TOKEN"],"scriptId":os.environ["GT_SID"],"stdout":read(os.environ["GT_OUT"])[:8000],"stderr":read(os.environ["GT_ERR"])[:2000],"exitCode":int(os.environ["GT_CODE"])}) + "\n").encode()
+try:
+    s = socket.create_connection(("127.0.0.1", int(os.environ["GT_PORT"])), timeout=10)
+    s.sendall(body)
+    try: s.recv(4096)
+    except Exception: pass
+    s.close()
+except Exception:
+    pass
+PYEOF
+  fi
+}
+gt_send_caps() {
+  # $1 = tools JSON object, e.g. {"python3":true,"git":false}
+  local tools="$1"
+  [ -z "$GT_PORT" ] && return 0
+  if command -v python3 >/dev/null 2>&1; then
+    GT_PORT="$GT_PORT" GT_TOKEN="$GT_TOKEN" GT_TOOLS="$tools" python3 - <<'PYEOF'
+import json, os, socket, uuid
+body = (json.dumps({"type":"capabilities","requestId":str(uuid.uuid4()),"token":os.environ["GT_TOKEN"],"tools":json.loads(os.environ["GT_TOOLS"])}) + "\n").encode()
+try:
+    s = socket.create_connection(("127.0.0.1", int(os.environ["GT_PORT"])), timeout=10)
+    s.sendall(body)
+    try: s.recv(4096)
+    except Exception: pass
+    s.close()
+except Exception:
+    pass
+PYEOF
+  else
+    # No Python: bash itself can open a raw TCP socket. The tools
+    # object is built by the probe, so it is safe to send as-is.
+    if exec 3<>/dev/tcp/127.0.0.1/$GT_PORT 2>/dev/null; then
+      printf '%s\n' "{\"type\":\"capabilities\",\"requestId\":\"gt-$RANDOM-$RANDOM\",\"token\":\"$GT_TOKEN\",\"tools\":$tools}" >&3
+      IFS= read -r -t 10 _gt_reply <&3 || true
+      exec 3<&- 3>&-
+    fi
+  fi
+}
+gt_send_library() {
+  # $1 = scripts JSON array, e.g. [{"file":"my-backup.sh"}]
+  local scripts="$1"
+  [ -z "$GT_PORT" ] && return 0
+  if command -v python3 >/dev/null 2>&1; then
+    GT_PORT="$GT_PORT" GT_TOKEN="$GT_TOKEN" GT_SCRIPTS="$scripts" python3 - <<'PYEOF'
+import json, os, socket, uuid
+body = (json.dumps({"type":"library","requestId":str(uuid.uuid4()),"token":os.environ["GT_TOKEN"],"scripts":json.loads(os.environ["GT_SCRIPTS"])}) + "\n").encode()
+try:
+    s = socket.create_connection(("127.0.0.1", int(os.environ["GT_PORT"])), timeout=10)
+    s.sendall(body)
+    try: s.recv(4096)
+    except Exception: pass
+    s.close()
+except Exception:
+    pass
+PYEOF
+  else
+    # No Python: bash itself can open a raw TCP socket. The scripts
+    # array is built by the lister, so it is safe to send as-is.
+    if exec 3<>/dev/tcp/127.0.0.1/$GT_PORT 2>/dev/null; then
+      printf '%s\n' "{\"type\":\"library\",\"requestId\":\"gt-$RANDOM-$RANDOM\",\"token\":\"$GT_TOKEN\",\"scripts\":$scripts}" >&3
+      IFS= read -r -t 10 _gt_reply <&3 || true
+      exec 3<&- 3>&-
+    fi
+  fi
+}
+gt_send_ask() {
+  # $1 = operation id, $2 = script id (may be empty — only used for
+  # "termux.run-approved-script"). Sends one ask line — Termux asking
+  # Ghost Tap to do something — and prints what Ghost Tap answered:
+  # the answer on success, or the plain-words problem when it refused.
+  # Exit 0 on an answer, 1 on a refusal or no answer.
+  # Same raw-socket rule as every other send here: never HTTP. An HTTP
+  # POST never arrives at the bridge, so it would look like Ghost Tap
+  # ignored the ask.
+  local op="$1" sid="$2"
+  [ -z "$GT_PORT" ] && { echo "Ghost Tap isn't listening right now — open the Termux screen in Ghost Tap first." >&2; return 1; }
+  if command -v python3 >/dev/null 2>&1; then
+    GT_PORT="$GT_PORT" GT_TOKEN="$GT_TOKEN" GT_OP="$op" GT_SID="$sid" python3 - <<'PYEOF'
+import json, os, socket, sys, uuid
+details = {}
+if os.environ["GT_SID"]:
+    details["scriptId"] = os.environ["GT_SID"]
+body = (json.dumps({"type":"ask","requestId":str(uuid.uuid4()),"token":os.environ["GT_TOKEN"],"operation":os.environ["GT_OP"],"details":details}) + "\n").encode()
+try:
+    s = socket.create_connection(("127.0.0.1", int(os.environ["GT_PORT"])), timeout=10)
+    s.sendall(body)
+    s.settimeout(10)
+    data = b""
+    while b"\n" not in data:
+        chunk = s.recv(4096)
+        if not chunk: break
+        data += chunk
+    s.close()
+except Exception:
+    print("Ghost Tap didn't answer — open the Termux screen in Ghost Tap and try again.", file=sys.stderr)
+    sys.exit(1)
+try:
+    reply = json.loads(data.decode(errors="replace").strip())
+except Exception:
+    if not data.strip():
+        # Nothing came back at all — the bridge closed without a
+        # reply, which is what it does for a bad token.
+        print("Ghost Tap didn't answer — open the Termux screen in Ghost Tap and try again.", file=sys.stderr)
+    else:
+        print("Ghost Tap answered, but the answer couldn't be read.", file=sys.stderr)
+    sys.exit(1)
+if reply.get("type") == "ok":
+    print(reply.get("answer", "Done."))
+else:
+    print(reply.get("problem", "Ghost Tap said no."), file=sys.stderr)
+    sys.exit(1)
+PYEOF
+  else
+    # No Python: bash itself can open a raw TCP socket. Script ids
+    # only ever hold letters, numbers, dots, dashes, underscores and
+    # colons, so they are safe to send as-is; anything else is
+    # refused here instead of sent. The reply is printed as it came
+    # back — without Python there is nothing here to pick the answer
+    # out of it neatly.
+    case "$sid" in
+      *[!A-Za-z0-9.:_-]*) echo "That script name isn't allowed." >&2; return 1 ;;
+    esac
+    if exec 3<>/dev/tcp/127.0.0.1/$GT_PORT 2>/dev/null; then
+      printf '%s\n' "{\"type\":\"ask\",\"requestId\":\"gt-$RANDOM-$RANDOM\",\"token\":\"$GT_TOKEN\",\"operation\":\"$op\",\"details\":{\"scriptId\":\"$sid\"}}" >&3
+      IFS= read -r -t 10 _gt_reply <&3 || true
+      exec 3<&- 3>&-
+      printf '%s\n' "$_gt_reply"
+    else
+      echo "Ghost Tap isn't listening right now — open the Termux screen in Ghost Tap first." >&2
+      return 1
+    fi
+  fi
+}
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-hello.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+OUT=$(mktemp); ERR=$(mktemp)
+{
+  echo "Hello from Termux!"
+  echo "Date: $(date)"
+  echo "Termux is answering Ghost Tap."
+} >"$OUT" 2>"$ERR"
+gt_send_result "hello" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-check-python.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+OUT=$(mktemp); ERR=$(mktemp)
+{
+  if command -v python3 >/dev/null 2>&1; then
+    echo "Python: $(python3 --version 2>&1)"
+  else
+    echo "No Python here."
+  fi
+  if command -v pip >/dev/null 2>&1; then
+    echo "Pip: $(pip --version 2>&1 | cut -d' ' -f1-2)"
+  else
+    echo "No pip here."
+  fi
+} >"$OUT" 2>"$ERR"
+gt_send_result "check-python" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-check-network.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+HOST="${1:-google.com}"
+OUT=$(mktemp); ERR=$(mktemp)
+{
+  echo "Checking: $HOST"
+  if ping -c 2 -W 3 "$HOST" >/dev/null 2>&1; then
+    echo "$HOST answered."
+  else
+    echo "$HOST did not answer."
+  fi
+} >"$OUT" 2>"$ERR"
+gt_send_result "check-network" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-list-tools.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+OUT=$(mktemp); ERR=$(mktemp)
+{
+  for t in python3 pip bash git curl wget jq gcc make sqlite3 nmap ssh; do
+    if command -v "$t" >/dev/null 2>&1; then echo "$t: yes"; else echo "$t: no"; fi
+  done
+} >"$OUT" 2>"$ERR"
+gt_send_result "list-tools" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-check-storage.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+OUT=$(mktemp); ERR=$(mktemp)
+{
+  echo "Free space:"
+  df -h "$HOME" 2>/dev/null
+  echo "Termux home size:"
+  du -sh "$HOME" 2>/dev/null
+} >"$OUT" 2>"$ERR"
+gt_send_result "check-storage" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-check-time.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+OUT=$(mktemp); ERR=$(mktemp)
+{
+  echo "Local time: $(date)"
+  echo "UTC time: $(date -u)"
+} >"$OUT" 2>"$ERR"
+gt_send_result "check-time" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-probe.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+TOOLS=""
+add_tool() {
+  local v=false
+  if command -v "$1" >/dev/null 2>&1; then v=true; fi
+  if [ -z "$TOOLS" ]; then TOOLS="\"$1\":$v"; else TOOLS="$TOOLS,\"$1\":$v"; fi
+}
+for t in python3 python pip bash sh grep sed awk tail sort jq ping curl wget nslookup dig getent host nmap arp-scan git ssh scp sqlite3 termux-job-scheduler at crond gcc clang make cargo go termux-battery-status termux-info termux-clipboard-get less; do
+  add_tool "$t"
+done
+COUNT=$(echo "$TOOLS" | tr ',' '\n' | wc -l)
+gt_send_caps "{$TOOLS}"
+OUT=$(mktemp); ERR=$(mktemp)
+echo "Checked $COUNT tools." >"$OUT"
+gt_send_result "probe" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-run.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+CMD="$1"
+OUT=$(mktemp); ERR=$(mktemp)
+bash -c "$CMD" >"$OUT" 2>"$ERR"
+CODE=$?
+gt_send_result "free-command" "$CODE" "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-list-library.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+. "$(dirname "$0")/ghosttap-lib.sh"
+gt_bridge_args "$@"
+ENTRIES=""
+for f in "$HOME/.termux/tasker/"*.sh; do
+  [ -e "$f" ] || continue
+  name=$(basename "$f")
+  if [ -z "$ENTRIES" ]; then ENTRIES="{\"file\":\"$name\"}"; else ENTRIES="$ENTRIES,{\"file\":\"$name\"}"; fi
+done
+gt_send_library "[$ENTRIES]"
+OUT=$(mktemp); ERR=$(mktemp)
+echo "Listed scripts." >"$OUT"
+gt_send_result "list-library" 0 "$OUT" "$ERR"
+rm -f "$OUT" "$ERR"
+GHOSTTAP_EOF
+cat > ~/.termux/tasker/ghosttap-ask.sh <<'GHOSTTAP_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+# Ask Ghost Tap to do something — the other direction. Ghost Tap
+# usually asks Termux to run things; this script lets Termux ask
+# Ghost Tap instead. Ghost Tap stays in charge: it only ever does
+# one of the six things on its list, and anything else is refused.
+#
+# What Termux can ask for (use the short name, or the full name):
+#   check-installed       — is Termux on this phone
+#   check-bridge-health   — is the link to Ghost Tap up
+#   list-capabilities     — what Termux can do
+#   list-library          — your scripts in Termux
+#   refresh-library       — check again what scripts are there
+#   run-approved-script   — run one helper script, or one of your
+#                           own scripts Ghost Tap already found
+# Anything else is refused — including running a typed command.
+# Ghost Tap only runs scripts it already knows; a typed command
+# has to be typed in Ghost Tap.
+#
+# Use it from inside a script Ghost Tap ran (that script was given
+# the port and token as its last two arguments — use the same ones):
+#   ghosttap-ask.sh list-capabilities "$GT_PORT" "$GT_TOKEN"
+#   ghosttap-ask.sh run-approved-script hello "$GT_PORT" "$GT_TOKEN"
+# The port and token are never shown on screen and never written to
+# a file — that is on purpose. The answer prints here; a refusal
+# prints the reason instead.
+. "$(dirname "$0")/ghosttap-lib.sh"
+OP="$1"
+if [ $# -eq 4 ]; then
+  SCRIPT_ID="$2"
+elif [ $# -eq 3 ]; then
+  SCRIPT_ID=""
+else
+  echo "Use it like this: ghosttap-ask.sh <what to ask for> [script name] <port> <token>" >&2
+  echo "What Termux can ask for: check-installed, check-bridge-health, list-capabilities, list-library, refresh-library, run-approved-script." >&2
+  exit 2
+fi
+if [ -z "$OP" ]; then
+  echo "Say what to ask for first." >&2
+  exit 2
+fi
+# The port and token are the last two arguments, as with every
+# other helper script — read them after the count is checked, so a
+# call with no arguments fails cleanly instead of noisily.
+gt_bridge_args "$@"
+# Short names work — the full name is termux.<name>. Anything else is
+# sent as-is and Ghost Tap refuses it, so nothing is ever invented here.
+case "$OP" in
+  termux.*) ;;
+  *) OP="termux.$OP" ;;
+esac
+gt_send_ask "$OP" "$SCRIPT_ID"
+GHOSTTAP_EOF
+
+chmod +x ~/.termux/tasker/ghosttap-*.sh
+ls ~/.termux/tasker/
+# Let Termux accept commands from Ghost Tap (fixes the "allow-external-apps" error).
+echo "allow-external-apps=true" >> ~/.termux/termux.properties
+termux-reload-settings

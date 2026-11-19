@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="firmware" path="firmware/" />
+    <!-- Termux file exchange (additive 2026-11-15): staged request/response/log files. -->
+    <cache-path name="termux" path="termux/" />
+</paths>
