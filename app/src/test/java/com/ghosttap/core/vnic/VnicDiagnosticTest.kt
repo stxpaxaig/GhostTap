@@ -1,6 +1,7 @@
 package com.ghosttap.core.vnic
 
 import com.ghosttap.testutil.StubHttpServer
+import com.ghosttap.testutil.StubHttpServer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
