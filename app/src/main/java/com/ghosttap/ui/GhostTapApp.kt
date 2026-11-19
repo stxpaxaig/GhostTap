@@ -378,12 +378,21 @@ fun GhostTapApp(
         homeTryAgainState.value = false
     }
     suspend fun runDoItPlan(text: String) {
+        // One execution trace for every screen: the same registered
+        // capability map, IntelEngine, and operation bridges are used
+        // regardless of where the command was entered.
+        addDoItLine("UNDERSTAND: \"${text.take(180)}\"")
         val plan = planForCommand(text)
         if (plan.isEmpty()) {
-            addDoItLine("Ghost Tap couldn't put together anything it can do for that — try different words, or tap one of the buttons below.")
+            addDoItLine("PLAN: no registered capability matched. Nothing was run.")
+            addDoItLine("Try describing the device or action more specifically.")
             return
         }
-        for (step in plan) {
+        addDoItLine("PLAN: ${plan.size} registered action(s): ${plan.joinToString { it.capabilityId }}")
+        var reportedSuccesses = 0
+        var reportedFailures = 0
+        for ((index, step) in plan.withIndex()) {
+            addDoItLine("ACT ${index + 1}/${plan.size}: ${step.capabilityId}")
             val result = try {
                 intelVm.engine.run(step.capabilityId, step.args)
             } catch (e: Exception) {
@@ -392,15 +401,22 @@ fun GhostTapApp(
             // A step that needs the user in the real world (an NFC tap)
             // reports its instruction as-is — never dressed up as done.
             if (result.data == "manual") {
-                addDoItLine(result.summary)
+                addDoItLine("NEEDS YOU: ${result.summary}")
                 continue
             }
             val detail = if (result.data.isNotBlank()) " " + result.data.take(300) else ""
-            addDoItLine(
-                if (result.ok) (result.summary + detail).trim().take(400)
-                else "It didn't work: ${result.summary}".trim().take(400)
-            )
+            if (result.ok) {
+                reportedSuccesses++
+                addDoItLine(("RESULT: ${result.summary} " + detail).trim().take(400))
+            } else {
+                reportedFailures++
+                addDoItLine("RESULT: not successful — ${result.summary}".trim().take(400))
+            }
         }
+        addDoItLine(
+            "EVALUATE: ${reportedSuccesses} action(s) reported success; ${reportedFailures} reported failure. " +
+                "A dispatched action is not treated as proof beyond the result returned by its capability."
+        )
     }
     fun connectTvCandidate(c: TvCandidate) {
         homeTvCandidatesState.value = emptyList()
