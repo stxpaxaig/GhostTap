@@ -138,6 +138,7 @@ fun CapabilityAtlasScreen(
                                 color = Color(0xFF9BADA4), style = MaterialTheme.typography.labelSmall
                             )
                             if (cap.effects.isNotBlank()) Text("Effect: " + cap.effects, color = Dim, style = MaterialTheme.typography.bodySmall)
+                            if (cap.sourceMethod.isNotBlank()) Text("Native path: " + cap.sourceMethod, color = Dim, style = MaterialTheme.typography.bodySmall)
                             if (cap.preconditions.isNotEmpty()) Text("Needs: " + cap.preconditions.joinToString(" · "), color = Dim, style = MaterialTheme.typography.bodySmall)
                             if (cap.outputs.isNotEmpty()) Text("Returns: " + cap.outputs.joinToString(" · "), color = Dim, style = MaterialTheme.typography.bodySmall)
                             if (cap.inputs.isNotEmpty()) {
