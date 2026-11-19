@@ -86,7 +86,7 @@ class VnicClosedLoopTest {
         const val IO_TIMEOUT_MS = 3000
         const val SUBJECT = "ESP32-TEST-NODE-01"
         const val OBSERVATION =
-            "Connect to the ESP32-TEST-NODE-01 microcontroller node over TCP — ESP32 WiFi Bluetooth UART GPIO"
+            "Investigate the ESP32-TEST-NODE-01 microcontroller node over TCP — ESP32 WiFi Bluetooth UART GPIO"
     }
 
     // ---- Emulator protocol: pure line -> response, unit-testable without sockets ----
