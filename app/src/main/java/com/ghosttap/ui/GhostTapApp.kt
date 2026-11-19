@@ -894,6 +894,7 @@ fun GhostTapApp(
                         capabilities = intelVm.vnicEngine.capabilities(),
                         statusFlow = intelVm.vnicEngine.status,
                         onRunOperation = { id -> runLiveCommand(id, null) },
+                        resultMessage = intelVm.lastCommandAnswer,
                         onBack = { nav.popBackStack() }
                     )
                 }
