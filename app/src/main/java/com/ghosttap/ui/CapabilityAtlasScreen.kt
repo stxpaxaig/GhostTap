@@ -26,6 +26,7 @@ fun CapabilityAtlasScreen(
     capabilities: List<VnicCapabilityInfo>,
     statusFlow: StateFlow<VnicStatusSnapshot>,
     onRunOperation: (String) -> Unit,
+    resultMessage: String,
     onBack: () -> Unit
 ) {
     val status by statusFlow.collectAsState()
@@ -85,6 +86,11 @@ fun CapabilityAtlasScreen(
                 }
             }
         }
+        if (resultMessage.isNotBlank()) {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF17231D)), shape = RoundedCornerShape(12.dp)) {
+                Text(resultMessage, color = Color.White, modifier = Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
+            }
+        }
         Text(filtered.size.toString() + " OF " + operations.size + " REGISTERED ACTIONS", color = Accent, fontFamily = FontFamily.Monospace)
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             filtered.forEach { op ->
@@ -105,6 +111,26 @@ fun CapabilityAtlasScreen(
                 }
             }
             if (filtered.isEmpty()) Text("No registered actions match this search.", color = Dim)
+            val operationIds = operations.map { it.id }.toSet()
+            val additionalCapabilities = capabilities.filter { it.id !in operationIds }.filter { cap ->
+                query.isBlank() || (cap.id + " " + cap.title + " " + cap.description).contains(query.trim(), ignoreCase = true)
+            }
+            if (additionalCapabilities.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text("ADDITIONAL VNIC CAPABILITIES", color = Accent, fontFamily = FontFamily.Monospace)
+                additionalCapabilities.forEach { cap ->
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF101A16)), shape = RoundedCornerShape(12.dp)) {
+                        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(cap.title, color = Color.White, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                                Text(cap.riskLevel, color = Accent, style = MaterialTheme.typography.labelSmall)
+                            }
+                            Text(cap.description, color = Dim, style = MaterialTheme.typography.bodySmall)
+                            Text(cap.id + " · " + if (cap.verified) "verified" else "not hardware-verified", color = Color(0xFF9BADA4), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
         }
     }
 }
