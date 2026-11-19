@@ -223,7 +223,8 @@ class Package6OperationsTest {
                 category = "NETWORK",
                 readOnly = true,
                 riskLevel = "READ",
-                sourceMethod = "test"
+                sourceMethod = "test",
+                run = { _ -> OpResult(true, "pong") }
             )
         )
         val draft = buildExtensionDraft(
