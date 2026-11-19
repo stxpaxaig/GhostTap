@@ -11,6 +11,9 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Unit tests for the operation registry and its CapabilityRegistry
@@ -41,6 +44,49 @@ class OperationRegistryTest {
     @After
     fun tearDown() {
         OperationRegistry.clear()
+    }
+
+    @Test
+    fun concurrentRegistrationAndCapabilityPublicationUseStableSnapshots() {
+        val workers = 8
+        val perWorker = 20
+        val start = CountDownLatch(1)
+        val pool = Executors.newFixedThreadPool(workers)
+        try {
+            val tasks = (0 until workers).map { worker ->
+                pool.submit {
+                    start.await()
+                    repeat(perWorker) { index ->
+                        val id = "test.pkg0.concurrent.$worker.$index"
+                        OperationRegistry.register(
+                            testOp(
+                                id,
+                                if (index % 2 == 0) OperationArea.NETWORK else OperationArea.BLE
+                            )
+                        )
+                        // Exercise reads while other threads are still registering.
+                        OperationRegistry.all()
+                        OperationRegistry.byArea(OperationArea.NETWORK)
+                        OperationRegistry.areas()
+                        CapabilityRegistry.all()
+                    }
+                }
+            }
+            start.countDown()
+            tasks.forEach { it.get(15, TimeUnit.SECONDS) }
+
+            // Publish once after all writers finish, then verify every operation
+            // is visible through the same capability registry used by VNIC.
+            OperationRegistry.publishToCapabilityRegistry(OperationContext())
+            val expected = workers * perWorker
+            val operations = OperationRegistry.all().filter { it.id.startsWith("test.pkg0.concurrent.") }
+            val published = CapabilityRegistry.all().filter { it.id.startsWith("test.pkg0.concurrent.") }
+            assertEquals(expected, operations.size)
+            assertEquals(expected, operations.map { it.id }.toSet().size)
+            assertEquals(expected, published.size)
+        } finally {
+            pool.shutdownNow()
+        }
     }
 
     @Test
