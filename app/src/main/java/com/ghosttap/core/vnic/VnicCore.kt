@@ -260,7 +260,13 @@ data class VnicCapabilityInfo(
     val title: String,
     val description: String,
     val riskLevel: String,
-    val verified: Boolean
+    val verified: Boolean,
+    val category: String = "",
+    val inputs: List<String> = emptyList(),
+    val outputs: List<String> = emptyList(),
+    val preconditions: List<String> = emptyList(),
+    val effects: String = "",
+    val sourceMethod: String = ""
 )
 
 /**
