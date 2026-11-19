@@ -599,7 +599,7 @@ class VnicCore(
             phases += "DEVELOP: procedure ${developed.id} developed — testPassed=${developed.testPassed} (${developed.notes.joinToString("; ").take(200)})"
         } else if (selected != null) {
             phases += "DEVELOP: plan recorded as candidate procedure (${plan.joinToString()})"
-        } else {
+        } else if (plan.isEmpty()) {
             phases += "PLAN: no capability matches — missing-capability gap recorded"
             memory.remember(
                 VnicMemoryRecord(
@@ -609,6 +609,8 @@ class VnicCore(
                     confidence = 0.4
                 )
             )
+        } else {
+            phases += "AUTHORIZE: a matching capability exists, but none passed the current action authorization check"
         }
 
         // ACT — the closed loop. A determinable bring-up kind + an attached
