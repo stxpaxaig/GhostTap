@@ -550,14 +550,15 @@ class VnicCore(
             Regex("\\b(send|write|submit|transfer|upload|post)\\b", RegexOption.IGNORE_CASE).containsMatchIn(observation.text) ->
                 setOf("CONFIGURE", "WRITE")
             Regex("\\b(turn\\s+on|turn\\s+off|switch\\s+on|switch\\s+off|set|activate|deactivate|control|press|trigger|start|stop)\\b", RegexOption.IGNORE_CASE).containsMatchIn(observation.text) ->
-                setOf("CONFIGURE", "WRITE", "CONTROL")
+                setOf("CONFIGURE", "CONTROL")
             else -> emptySet()
         }
         val executablePlan = plan.filter { id ->
             val capability = capabilities.firstOrNull { it.id == id }
-            when (capability?.riskLevel?.uppercase()) {
+            val risk = capability?.riskLevel?.uppercase()
+            when (risk) {
                 "READ" -> true
-                "CONFIGURE", "WRITE", "CONTROL" -> capability.riskLevel.uppercase() in explicitActionVerbs
+                "CONFIGURE", "WRITE", "CONTROL" -> risk in explicitActionVerbs
                 else -> false
             }
         }
