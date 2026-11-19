@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ghosttap.GhostTapViewModel
@@ -194,6 +195,8 @@ fun GhostTapApp(
     // Wi-Fi scan runs once per session, so the status line is a real
     // answer instead of a stale default.
     val homeChecksRanState = remember { mutableStateOf(false) }
+    // Persistent command access for specialist pages without their own DO-IT box.
+    val universalCommandExpanded = remember { mutableStateOf(false) }
     LaunchedEffect(operationContext) {
         registerSeedOperations()
         // Package 2 — Area A operations overwrite the six seed screen
@@ -977,6 +980,56 @@ fun GhostTapApp(
                             onBack = { nav.popBackStack() },
                             area = area
                         )
+                    }
+                }
+            }
+            // UNIVERSAL COMMAND DOCK — one shared natural-language entry point
+            // on specialist pages. Home, Network Tools, NFC Tools and
+            // Investigations already render the full DO-IT box themselves.
+            val activeRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+            if (activeRoute !in setOf("home", "network_tools", "nfc_tools", "investigations")) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    color = Color(0xFF101B20),
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(1.dp, Accent.copy(alpha = 0.65f)),
+                    shadowElevation = 12.dp
+                ) {
+                    Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                universalCommandExpanded.value = !universalCommandExpanded.value
+                            },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("◈  GHOST COMMAND", color = Accent, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                modifier = Modifier.weight(1f))
+                            Text(if (universalCommandExpanded.value) "CLOSE  ▾" else "ASK / DO  ▴",
+                                color = Dim, fontFamily = FontFamily.Monospace)
+                        }
+                        if (universalCommandExpanded.value) {
+                            OutlinedTextField(
+                                value = homeDoItRequestState.value,
+                                onValueChange = { homeDoItRequestState.value = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("Tell Ghost Tap what you want to do…") },
+                                singleLine = true,
+                                enabled = !homeDoItBusyState.value
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Button(
+                                    onClick = { executeHomeCommand(homeDoItRequestState.value) },
+                                    enabled = homeDoItRequestState.value.isNotBlank() && !homeDoItBusyState.value
+                                ) { Text(if (homeDoItBusyState.value) "WORKING…" else "DO IT") }
+                                TextButton(onClick = { clearDoItCommand() }) { Text("CLEAR") }
+                            }
+                            homeDoItLinesState.value.takeLast(3).forEach { line ->
+                                Text(line, color = Dim, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
             }
