@@ -38,6 +38,10 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # The checked-in wrapper is pre-existing; gradle-wrapper.properties
+          # pins the downloaded Gradle distribution with its SHA-256 checksum.
+          validate-wrappers: false
 
       - name: Accept Android SDK licenses
         run: yes | sdkmanager --licenses
