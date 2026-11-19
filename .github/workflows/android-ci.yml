@@ -52,10 +52,12 @@ jobs:
       - name: Run JVM unit tests
         run: ./gradlew --no-daemon :app:testDebugUnitTest
 
-      - name: Assemble debug APK
+      - name: Assemble debug APK (run even if unit tests fail)
+        if: always()
         run: ./gradlew --no-daemon :app:assembleDebug
 
       - name: Upload debug APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ghost-tap-debug-apk
