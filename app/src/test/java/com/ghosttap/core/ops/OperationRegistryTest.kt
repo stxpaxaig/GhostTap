@@ -68,6 +68,7 @@ class OperationRegistryTest {
                         OperationRegistry.all()
                         OperationRegistry.byArea(OperationArea.NETWORK)
                         OperationRegistry.areas()
+                        OperationRegistry.publishToCapabilityRegistry(OperationContext())
                         CapabilityRegistry.all()
                     }
                 }
