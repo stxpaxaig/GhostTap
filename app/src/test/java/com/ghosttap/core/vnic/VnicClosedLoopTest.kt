@@ -654,9 +654,9 @@ class VnicClosedLoopTest {
             note("findings: " + result.findings.joinToString(" | ") { "${it.title} (${it.source}, ${it.confidence})" })
             assertTrue("plan must select esp32 capabilities", result.plan.any { it.startsWith("esp32.") })
             assertEquals(VnicExecutionState.CONTROLLABLE, result.executionState)
-            assertNotNull(result.bringUp)
-            assertTrue(result.bringUp!!.ready)
-            assertTrue("connection must still be held after the cycle", result.bringUp.connectionHeld)
+            val bringUp = requireNotNull(result.bringUp) { "bring-up result must be present after a controllable cycle" }
+            assertTrue(bringUp.ready)
+            assertTrue("connection must still be held after the cycle", bringUp.connectionHeld)
             assertEquals(listOf("UART", "GPIO2", "GPIO4"), result.controlsMapped)
             assertTrue(result.learned.any { it.contains("reward=0.9") })
             assertTrue(result.phases.any { it.contains("ACT: bring-up ESP32 -> CONTROLLABLE") })
