@@ -1,5 +1,62 @@
 plugins { id 'com.android.application' }
 
+import java.security.MessageDigest
+
+def qemuNativeLibrary = layout.buildDirectory.file("generated/qemuJniLibs/arm64-v8a/libesp32_qemu_android.so")
+def bundledFirmware = layout.buildDirectory.file("generated/virtualesp32Assets/virtualesp32-test-micropython-4mb.bin")
+def qemuNativeUrl = "https://github.com/stxpaxaig/GhostTap/releases/download/ghosttap-v2-191/libesp32_qemu_android.so"
+def qemuNativeSha256 = "6a1fde2ceea5d9c7c9802fea161824b40dbfb392266aae2a72d2708833694894"
+def firmwareSource = file("../../app/src/main/assets/virtualesp32-test-micropython-4mb.bin")
+
+tasks.register("prepareVirtualEsp32RuntimeAssets") {
+    outputs.files(qemuNativeLibrary, bundledFirmware)
+    doLast {
+        // The released native library is the real QEMU-core build, not the
+        // default CMake JNI stub. Pin and verify it before packaging.
+        File nativeFile = qemuNativeLibrary.get().asFile
+        nativeFile.parentFile.mkdirs()
+        String currentHash = nativeFile.exists()
+            ? MessageDigest.getInstance("SHA-256").digest(nativeFile.bytes).encodeHex().toString()
+            : ""
+        if (currentHash != qemuNativeSha256) {
+            File temporary = new File(nativeFile.parentFile, nativeFile.name + ".download")
+            temporary.delete()
+            try {
+                new URL(qemuNativeUrl).withInputStream { input ->
+                    temporary.withOutputStream { output -> output << input }
+                }
+                String downloadedHash = MessageDigest.getInstance("SHA-256").digest(temporary.bytes).encodeHex().toString()
+                if (downloadedHash != qemuNativeSha256) {
+                    throw new GradleException("Downloaded QEMU library SHA-256 mismatch: " + downloadedHash)
+                }
+                if (nativeFile.exists() && !nativeFile.delete()) {
+                    throw new GradleException("Could not replace stale QEMU native library")
+                }
+                if (!temporary.renameTo(nativeFile)) {
+                    throw new GradleException("Could not install verified QEMU native library")
+                }
+            } finally {
+                temporary.delete()
+            }
+        }
+
+        if (!firmwareSource.isFile() || firmwareSource.length() != 4194304L) {
+            throw new GradleException("Expected bundled MicroPython firmware at " + firmwareSource +
+                " (exactly 4,194,304 bytes); refusing to build without it.")
+        }
+        File firmwareOutput = bundledFirmware.get().asFile
+        firmwareOutput.parentFile.mkdirs()
+        if (!firmwareOutput.isFile() || firmwareOutput.length() != firmwareSource.length() ||
+                !MessageDigest.isEqual(MessageDigest.getInstance("SHA-256").digest(firmwareOutput.bytes),
+                    MessageDigest.getInstance("SHA-256").digest(firmwareSource.bytes))) {
+            firmwareSource.withInputStream { input ->
+                firmwareOutput.withOutputStream { output -> output << input }
+            }
+        }
+        logger.lifecycle("VirtualESP32 runtime assets ready: verified QEMU arm64 library and bundled MicroPython image.")
+    }
+}
+
 android {
     namespace 'dev.virtualesp32'
     compileSdk 35
@@ -7,16 +64,20 @@ android {
         applicationId 'dev.virtualesp32'
         minSdk 26
         targetSdk 35
-        versionCode 2
-        versionName '0.2.0'
+        versionCode 3
+        versionName '0.3.0'
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
     }
-    // NOTE: The NDK/CMake native build (libesp32_qemu_android) is NOT
-    // configured here. The GitHub Actions workflow builds the Java/Kotlin
-    // app only. The Java layer (ClassicEsp32QemuBackend) handles a missing
-    // native library gracefully via UnsatisfiedLinkError -> reports the
-    // backend as unavailable instead of crashing.
-    //
-    // To build WITH the native QEMU backend locally, see
-    // app/src/main/cpp/qemu/android/BUILD.md and add the externalNativeBuild
-    // cmake block manually.
+    sourceSets {
+        main {
+            assets.srcDir(bundledFirmware.get().asFile.parentFile)
+            jniLibs.srcDir(qemuNativeLibrary.get().asFile.parentFile.parentFile)
+        }
+    }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(tasks.named("prepareVirtualEsp32RuntimeAssets"))
 }
