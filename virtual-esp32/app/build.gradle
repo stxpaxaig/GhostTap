@@ -1,6 +1,6 @@
-plugins { id 'com.android.application' }
-
 import java.security.MessageDigest
+
+plugins { id 'com.android.application' }
 
 def qemuNativeLibrary = layout.buildDirectory.file("generated/qemuJniLibs/arm64-v8a/libesp32_qemu_android.so")
 def bundledFirmware = layout.buildDirectory.file("generated/virtualesp32Assets/virtualesp32-test-micropython-4mb.bin")
