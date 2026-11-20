@@ -44,6 +44,39 @@ tasks.register("prepareVirtualEsp32RuntimeAssets") {
             throw new GradleException("Expected bundled MicroPython firmware at " + firmwareSource +
                 " (exactly 4,194,304 bytes); refusing to build without it.")
         }
+        // Fail the build if the bundled file is not the merged Classic ESP32
+        // flash layout that FirmwareImageManager and the QEMU machine require.
+        RandomAccessFile flash = new RandomAccessFile(firmwareSource, "r")
+        try {
+            if (flash.length() != 4194304L) throw new GradleException("MicroPython flash image is not 4 MiB")
+            flash.seek(0x1000L)
+            if (flash.readUnsignedByte() != 0xE9) {
+                throw new GradleException("MicroPython image has no second-stage bootloader header at 0x1000")
+            }
+            int appPartitions = 0
+            for (long offset = 0x8000L; offset + 32L <= flash.length(); offset += 32L) {
+                flash.seek(offset)
+                int magic0 = flash.readUnsignedByte()
+                int magic1 = flash.readUnsignedByte()
+                if ((magic0 == 0xFF && magic1 == 0xFF) || (magic0 == 0xEB && magic1 == 0xEB)) break
+                if (magic0 != 0xAA || magic1 != 0x50) break
+                int type = flash.readUnsignedByte()
+                flash.skipBytes(1)
+                long appOffset = flash.readUnsignedByte() & 0xFFL
+                appOffset |= (flash.readUnsignedByte() & 0xFFL) << 8
+                appOffset |= (flash.readUnsignedByte() & 0xFFL) << 16
+                appOffset |= (flash.readUnsignedByte() & 0xFFL) << 24
+                if (type == 0 && appOffset < flash.length()) {
+                    flash.seek(appOffset)
+                    if (flash.readUnsignedByte() == 0xE9) appPartitions++
+                }
+            }
+            if (appPartitions == 0) {
+                throw new GradleException("MicroPython image has no app partition with an ESP image header; expected merged ESP-IDF flash layout.")
+            }
+        } finally {
+            flash.close()
+        }
         File firmwareOutput = bundledFirmware.get().asFile
         firmwareOutput.parentFile.mkdirs()
         if (!firmwareOutput.isFile() || firmwareOutput.length() != firmwareSource.length() ||
