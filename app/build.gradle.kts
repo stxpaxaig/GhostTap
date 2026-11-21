@@ -92,6 +92,8 @@ dependencies {
     implementation("org.mozilla:rhino:1.7.14")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM tests; android.jar exposes a throwing stub.
+    testImplementation("org.json:json:20240303")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(composeBom)
