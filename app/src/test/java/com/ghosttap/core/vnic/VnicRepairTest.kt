@@ -1,10 +1,8 @@
 package com.ghosttap.core.vnic
 
-import com.sun.net.httpserver.HttpServer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
-import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import kotlinx.coroutines.runBlocking
@@ -249,22 +247,11 @@ class VnicRepairTest {
     }
 
     /** Local stub chat-completions server on an ephemeral loopback port. */
-    private fun stubChatServer(status: Int, body: String): HttpServer {
-        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        server.createContext("/v1/chat/completions") { exchange ->
-            val bytes = body.toByteArray(Charsets.UTF_8)
-            exchange.responseHeaders.set("Content-Type", "application/json")
-            exchange.sendResponseHeaders(status, bytes.size.toLong())
-            exchange.responseBody.use { it.write(bytes) }
-        }
-        server.executor = null // default executor
-        server.start()
-        return server
-    }
+    private fun stubChatServer(status: Int, body: String) = TestHttpStub(status, body)
 
-    private fun stubReasoner(server: HttpServer) = RemoteLlmReasoner(
+    private fun stubReasoner(server: TestHttpStub) = RemoteLlmReasoner(
         VnicLlmConfig(
-            endpoint = "http://127.0.0.1:${server.address.port}/v1/chat/completions",
+            endpoint = "http://127.0.0.1:${server.port}/v1/chat/completions",
             apiKey = "stub-test-key",
             connectTimeoutMs = 2000,
             readTimeoutMs = 2000
