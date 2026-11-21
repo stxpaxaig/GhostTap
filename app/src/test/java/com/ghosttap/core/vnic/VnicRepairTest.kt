@@ -276,7 +276,7 @@ class VnicRepairTest {
             assertFalse(remote.lastPlanFellBackToLocal)
             assertNull(remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -297,7 +297,7 @@ class VnicRepairTest {
             assertTrue(reason!!.contains("500"))
             assertFalse(reason.contains("stub-test-key"))
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
