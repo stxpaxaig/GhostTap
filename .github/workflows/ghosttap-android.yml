@@ -79,3 +79,11 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon --stacktrace :app:testDebugUnitTest
+
+      - name: Upload JVM test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghosttap-jvm-test-reports
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn
