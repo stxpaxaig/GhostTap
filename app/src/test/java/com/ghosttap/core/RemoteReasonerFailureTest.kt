@@ -114,7 +114,7 @@ class RemoteReasonerFailureTest {
             assertEquals(AiFailureReason.TOO_BUSY, remote.lastFailureReason)
             assertTrue(remote.lastFailureReason!!.plainWords().contains("busy"))
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -128,7 +128,7 @@ class RemoteReasonerFailureTest {
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
             assertTrue(remote.lastFailureReason!!.plainWords().contains("problem on its side"))
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -141,7 +141,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.backgroundOn("test topic"))
             assertEquals(AiFailureReason.KEY_REJECTED, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -165,7 +165,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.backgroundOn("test topic"))
             assertEquals(AiFailureReason.UNREADABLE_ANSWER, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -182,7 +182,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.backgroundOn("test topic"))
             assertEquals(AiFailureReason.EMPTY_ANSWER, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -197,7 +197,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.draftCapabilityJson("gap", emptyList()))
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -210,7 +210,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.draftScriptJson("gap", emptyList()))
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -225,7 +225,7 @@ class RemoteReasonerFailureTest {
             assertEquals(base, refined)
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -238,7 +238,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.draftCapabilityJson("gap", emptyList()))
             assertEquals(AiFailureReason.TOO_BUSY, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 }
