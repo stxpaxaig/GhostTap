@@ -151,16 +151,27 @@ public class BridgeCommandReceiver extends BroadcastReceiver {
                     break;
                 }
                 case "dev.virtualesp32.action.USE_BUILTIN_FIRMWARE": {
-                    // B-2: re-added as a recognised command (removed in the
-                    // repaired build, D8), but there is NO built-in firmware in
-                    // this build to load: the only bundled .bin files are the
-                    // QEMU ROMs (esp32-v3-rom.bin / esp32-v3-rom-app.bin,
-                    // 455,722 bytes each), which are not merged flash images
-                    // and fail validation. Answer with an explicit honest error
-                    // — never a fake success, and never a FIRMWARE_LOADED with
-                    // isBuiltin=true for a file that does not exist.
-                    sendError(context, "USE_BUILTIN_FIRMWARE failed: no built-in firmware bundled in this VirtualESP32 build — load a firmware file instead");
-                    log(context, "USE_BUILTIN FAILED: no built-in firmware bundled");
+                    FirmwareImageManager.Inspection imported =
+                            FirmwareImageManager.importBuiltinAndInspect(context);
+                    if (!imported.valid || imported.image == null) {
+                        sendError(context, "USE_BUILTIN_FIRMWARE rejected: " + imported.summary);
+                        log(context, "USE_BUILTIN REJECTED: " + imported.summary);
+                        break;
+                    }
+                    VirtualHal hal = VirtualHal.get(context);
+                    hal.put("firmwareImagePath", imported.image.getAbsolutePath());
+                    hal.put("firmwareImageSummary", imported.summary);
+                    hal.log("EMU", imported.summary + "; bundled MicroPython firmware imported, not yet executed");
+                    Intent loaded = new Intent("dev.virtualesp32.event.FIRMWARE_LOADED");
+                    loaded.putExtra("fileName", "virtualesp32-test-micropython-4mb.bin");
+                    loaded.putExtra("filePath", imported.image.getAbsolutePath());
+                    loaded.putExtra("fileSize", imported.image.length());
+                    loaded.putExtra("imageType", "Bundled Classic ESP32 MicroPython merged flash image");
+                    loaded.putExtra("validationSummary", imported.summary);
+                    loaded.putExtra("isBuiltin", true);
+                    loaded.putExtra("summary", imported.summary);
+                    sendEvent(context, loaded);
+                    log(context, "USE_BUILTIN OK: " + imported.image.length() + " bytes");
                     break;
                 }
                 case "dev.virtualesp32.action.START_GUEST": {
