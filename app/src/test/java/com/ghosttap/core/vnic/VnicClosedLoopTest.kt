@@ -567,9 +567,19 @@ class VnicClosedLoopTest {
             note("Registered real capabilities: esp32.tcp_connect, esp32.enumerate, esp32.send_uart, esp32.status")
 
             // Research: real researcher, replay over the fresh live-captured bodies.
-            val ddgBody = File(DEMO_DIR, "ddg-esp32.html").readText(Charsets.UTF_8)
-            val wikiBody = File(DEMO_DIR, "wiki-esp32.json").readText(Charsets.UTF_8)
-            val pageBody = File(DEMO_DIR, "page-esp32.html").readText(Charsets.UTF_8)
+            // These are live-captured research fixtures, not synthetic data. They
+            // are intentionally not fabricated in CI; run the full replay demo
+            // only when the capture bundle has been supplied.
+            val requiredFixtures = listOf("ddg-esp32.html", "wiki-esp32.json", "page-esp32.html")
+                .map { File(DEMO_DIR, it) }
+            Assume.assumeTrue(
+                "Live-captured VNIC research fixtures are not present in this checkout; " +
+                    "supply the capture bundle at ${DEMO_DIR} to run the full replay demo.",
+                requiredFixtures.all { it.isFile }
+            )
+            val ddgBody = requiredFixtures[0].readText(Charsets.UTF_8)
+            val wikiBody = requiredFixtures[1].readText(Charsets.UTF_8)
+            val pageBody = requiredFixtures[2].readText(Charsets.UTF_8)
             val researcher = VnicResearcher(
                 providersOverride = listOf(
                     ReplayProvider("duckduckgo", ddgBody) { q, b -> DuckDuckGoProvider().parseResults(q, b) },
