@@ -6,6 +6,7 @@ import com.ghosttap.core.GhostIdentity
 import com.ghosttap.core.IntelCapability
 import com.ghosttap.core.CapabilityRegistry
 import com.ghosttap.core.IntelTarget
+import com.ghosttap.core.OpResult
 import com.ghosttap.core.ProcedureKinds
 import com.ghosttap.core.RuleBasedReasoner
 import com.ghosttap.core.ScriptDef
@@ -223,7 +224,8 @@ class Package6OperationsTest {
                 category = "NETWORK",
                 readOnly = true,
                 riskLevel = "READ",
-                sourceMethod = "test"
+                sourceMethod = "test",
+                run = { OpResult(ok = true, summary = "stubbed") }
             )
         )
         val draft = buildExtensionDraft(
