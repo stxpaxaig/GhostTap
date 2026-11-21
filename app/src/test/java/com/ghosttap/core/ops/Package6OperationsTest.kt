@@ -225,7 +225,9 @@ class Package6OperationsTest {
                 readOnly = true,
                 riskLevel = "READ",
                 sourceMethod = "test",
-                run = { OpResult(ok = true, summary = "stubbed") }
+                run = { _: Map<String, String> ->
+                    OpResult(ok = true, summary = "stubbed")
+                },
             )
         )
         val draft = buildExtensionDraft(
