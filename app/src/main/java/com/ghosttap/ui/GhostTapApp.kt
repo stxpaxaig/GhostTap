@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -866,6 +867,25 @@ fun GhostTapApp(
                     )
                 }
 
+                composable("emv_lab") {
+                    EmvLabScreen(
+                        viewModel = viewModel,
+                        onBack = { nav.popBackStack() },
+                        commandStatusLine = commandStatusLine,
+                        commandRequest = homeDoItRequestState.value,
+                        commandLines = homeDoItLinesState.value,
+                        commandBusy = homeDoItBusyState.value,
+                        commandTvCandidates = homeTvCandidatesState.value,
+                        commandShowTryAgain = homeTryAgainState.value,
+                        onDoIt = { text -> executeHomeCommand(text) },
+                        onPickTv = { candidate -> pickTvCandidate(candidate) },
+                        onTryAgain = { retryDoItCommand() },
+                        onClearCommand = { clearDoItCommand() },
+                        showTermuxSetup = termuxSetupNeeded,
+                        onTermuxSetup = { setupTermuxFromStatusLine() }
+                    )
+                }
+
                 composable("visual_intel") {
                     VisualIntelScreen(
                         viewModel = visualIntelVm,
@@ -1127,7 +1147,17 @@ private fun HomeScreen(
             .background(Bg),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+                Text("CONTROL CENTER  /  ALL SYSTEMS", color = Cyan, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+            }
+            Text(if (btEnabled) "BLUETOOTH ON" else "BLUETOOTH OFF", color = if (btEnabled) Accent else Color.Red, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+        }
 
         // v3.2 — the home command box sits at the top, above the
         // buttons. Type what you want, Ghost Tap does it and shows
@@ -1150,7 +1180,9 @@ private fun HomeScreen(
         // PIECE 2 (2026-11-18) — the "what this screen does" card is
         // gone: the home screen's job is obvious from its tiles and
         // the command box, and the card only re-listed built-ins.
-        Text("STATUS: $status", color = if (btEnabled) Dim else Color.Red, fontFamily = FontFamily.Monospace)
+        PanelBox("SYSTEM STATUS") {
+            Text(status, color = if (btEnabled) Dim else Color.Red, fontFamily = FontFamily.Monospace)
+        }
 
         // Package 2 (A-30) — a denied permission used to surface only as a
         // status line, with no reason why and no way back. Say why each
@@ -1171,6 +1203,7 @@ private fun HomeScreen(
             }
         }
 
+        Text("QUICK ACTIONS", color = Cyan, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
         // Top bubble buttons — wrap to the next line, never run off-screen.
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TerminalButton(if (isScanning) "Finding devices…" else "Find devices", onScan)
@@ -1189,13 +1222,22 @@ private fun HomeScreen(
         // paragraph below used — the paragraph is gone because the
         // tiles say it now. One tap opens the function; nothing here
         // is gated or hidden behind another step.
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            GhostTile("USB UART / ESP32", "Talks to a wired board.", onOpenUsbUart, icon = Icons.Filled.Usb)
-            GhostTile("VIRTUAL ESP32", "Runs a real board on your phone — no physical board needed.", onOpenVesp32, icon = Icons.Filled.Memory)
-            GhostTile("NETWORK TOOLS", "Tests Wi-Fi connections.", onOpenNetworkTools, icon = Icons.Filled.Wifi)
-            GhostTile("NFC TOOLS", "Reads, writes, copies, and pretends to be tap cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
-            GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
-            GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
+        Text("CAPABILITY WORKSPACES", color = Cyan, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
+        // Restore the approved visual-command-center card treatment from
+        // 7169a77: prominent recognizable icons, generous cards, and a
+        // consistent two-column workspace grid. Only the home dashboard changes.
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            HomeFunctionCard("USB UART / ESP32", "Wired boards, serial tools & firmware", Icons.Filled.Usb, onOpenUsbUart)
+            HomeFunctionCard("VIRTUAL ESP32", "Run an ESP32 on this phone", Icons.Filled.Memory, onOpenVesp32)
+            HomeFunctionCard("NETWORK TOOLS", "Wi-Fi, hosts & connectivity", Icons.Filled.Wifi, onOpenNetworkTools)
+            HomeFunctionCard("NFC TOOLS", "Read, write & investigate tags", Icons.Filled.Nfc, onOpenNfcTools)
+            HomeFunctionCard("EMV LAB", "Chip data & isolated local tests", Icons.Filled.Nfc) { onOpenRoute?.invoke("emv_lab") }
+            HomeFunctionCard("VISUAL INTEL", "Camera, images & recognition", Icons.Filled.PhotoCamera, onOpenVisualIntel)
+            HomeFunctionCard("INVESTIGATIONS", "Analyze devices & plan checks", Icons.Filled.Search, onOpenInvestigations)
         }
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
@@ -2187,6 +2229,12 @@ private fun NfcToolsScreen(
             onClear = onClearCommand ?: {},
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
+        )
+        GhostActionCard(
+            title = "EMV LAB",
+            description = "Open the dedicated payment-chip inspection and synthetic test workspace.",
+            buttonText = "OPEN EMV LAB",
+            onClick = { onOpenRoute?.invoke("emv_lab") }
         )
         // DISCOVER (NFC): a tap card cannot be found from a distance —
         // the phone only reads one when it is held to the back. This
@@ -4976,8 +5024,8 @@ internal fun TerminalButton(text: String, onClick: () -> Unit, enabled: Boolean 
         enabled = enabled,
         // UI REDESIGN (2026-11-17) — one button style everywhere:
         // dark fill, neon-green edge, rounded corners.
-        border = BorderStroke(1.dp, Accent.copy(alpha = 0.45f)),
-        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Accent.copy(alpha = 0.55f)),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF161616),
             contentColor = Accent
@@ -4992,11 +5040,15 @@ internal fun PanelBox(title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Panel, RoundedCornerShape(8.dp))
-            // UI REDESIGN (2026-11-17) — one panel style everywhere:
-            // dark fill, faint neon-green edge.
-            .border(1.dp, Accent.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
-            .padding(10.dp)
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(Color(0xFF14211F), Color(0xFF0B1114), Panel)
+                ),
+                RoundedCornerShape(16.dp)
+            )
+            // Shared visual system: readable hierarchy, soft depth, and a restrained neon edge.
+            .border(1.dp, Accent.copy(alpha = 0.28f), RoundedCornerShape(16.dp))
+            .padding(14.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(title, color = Accent, fontFamily = FontFamily.Monospace, maxLines = 1)
@@ -5031,3 +5083,67 @@ private fun formatBaselineDiff(viewModel: GhostTapViewModel, snapshot: BaselineS
         }
     }
 }
+
+// Approved home-dashboard visual card treatment (reference commit 7169a77).
+// Kept local to the home UI; feature destinations and their screens are untouched.
+@Composable
+private fun HomeFunctionCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(0.485f)
+            .height(136.dp)
+            .background(Color(0xFF101B16), RoundedCornerShape(14.dp))
+            .border(1.dp, Accent.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(Color(0xFF183526), RoundedCornerShape(12.dp))
+                    .padding(10.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = Accent,
+                    modifier = Modifier.height(30.dp).width(30.dp)
+                )
+            }
+            Text(
+                "OPEN  ›",
+                color = Cyan,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                title,
+                color = Accent,
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                subtitle,
+                color = Dim,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
