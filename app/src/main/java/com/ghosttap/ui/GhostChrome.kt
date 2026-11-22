@@ -68,6 +68,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ghosttap.core.CapabilityRegistry
 import com.ghosttap.core.ops.OperationArea
 import com.ghosttap.core.ops.OperationRegistry
 import androidx.compose.ui.unit.dp
@@ -301,6 +302,9 @@ internal fun OperatorCapabilityPanel(
     val operations = remember(area, operationIdPrefix) {
         OperationRegistry.byArea(area).filter { operationIdPrefix == null || it.id.startsWith(operationIdPrefix) }
     }
+    val intelligenceCapabilities = remember(area) {
+        CapabilityRegistry.byCategory(area.capabilityCategory)
+    }
     Column(
         modifier = Modifier
             .ghostCardChrome(true)
@@ -313,6 +317,26 @@ internal fun OperatorCapabilityPanel(
         Text(operations.joinToString("\n") { "• ${it.title}: ${it.description}" }
             .ifBlank { "Capabilities are still loading. Reopen this panel after the operation registry initializes." },
             color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("REGISTERED INTELLIGENCE CAPABILITIES", color = Cyan, fontFamily = FontFamily.Monospace)
+        Text(
+            intelligenceCapabilities.joinToString("\\n\\n") { capability ->
+                buildString {
+                    append(capability.title)
+                    append(" [").append(capability.id).append("]")
+                    append("\\n").append(capability.detail)
+                    if (capability.inputs.isNotEmpty()) append("\\nINPUTS: ").append(capability.inputs.joinToString(", "))
+                    if (capability.outputs.isNotEmpty()) append("\\nOUTPUTS: ").append(capability.outputs.joinToString(", "))
+                    if (capability.preconditions.isNotEmpty()) append("\\nREQUIRES: ").append(capability.preconditions.joinToString("; "))
+                    if (capability.effects.isNotBlank()) append("\\nEFFECT: ").append(capability.effects)
+                    append("\\nSOURCE: ").append(capability.sourceMethod.ifBlank { "not specified" })
+                    append(" • RISK: ").append(capability.riskLevel)
+                    append(" • VERIFIED: ").append(if (capability.verified) "YES" else "NOT YET")
+                }
+            }.ifBlank { "No intelligence capabilities are registered in this category yet." },
+            color = Dim,
+            fontFamily = FontFamily.Monospace,
+            style = MaterialTheme.typography.bodySmall
+        )
         Text("HOW IT CONNECTS", color = Cyan, fontFamily = FontFamily.Monospace)
         Text(connectionGuide, color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
         Text("HOW YOU CONTROL IT", color = Cyan, fontFamily = FontFamily.Monospace)
