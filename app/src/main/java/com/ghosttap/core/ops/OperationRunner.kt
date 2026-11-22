@@ -182,7 +182,7 @@ class OperationRunner(private val context: OperationContext) {
                 finish(
                     operation,
                     OperationResult.Done(
-                        reason = execResult.summary.ifBlank { "Done: ${operation.title}" },
+                        reason = "${operation.title}: ${execResult.summary.ifBlank { "Done" }}",
                         evidence = verified.evidence
                     )
                 )
