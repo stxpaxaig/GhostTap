@@ -185,10 +185,11 @@ internal fun GhostTile(
     description: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
-    icon: ImageVector
+    icon: ImageVector,
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .ghostCardChrome(enabled)
             .clickable(enabled = enabled) { onClick() }
             .padding(16.dp),
