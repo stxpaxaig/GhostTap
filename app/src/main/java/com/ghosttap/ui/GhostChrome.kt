@@ -291,13 +291,16 @@ internal fun GhostActionCard(
 @Composable
 internal fun OperatorCapabilityPanel(
     area: OperationArea,
+    operationIdPrefix: String? = null,
     connectionGuide: String,
     controlGuide: String,
     intelligenceGuide: String,
     liveState: String
 ) {
     var expanded by remember(area) { mutableStateOf(true) }
-    val operations = remember(area) { OperationRegistry.byArea(area) }
+    val operations = remember(area, operationIdPrefix) {
+        OperationRegistry.byArea(area).filter { operationIdPrefix == null || it.id.startsWith(operationIdPrefix) }
+    }
     Column(
         modifier = Modifier
             .ghostCardChrome(true)
