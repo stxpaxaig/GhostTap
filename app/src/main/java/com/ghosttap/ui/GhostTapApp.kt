@@ -866,6 +866,10 @@ fun GhostTapApp(
                     )
                 }
 
+                composable("emv_lab") {
+                    EmvLabScreen(viewModel = viewModel, onBack = { nav.popBackStack() })
+                }
+
                 composable("visual_intel") {
                     VisualIntelScreen(
                         viewModel = visualIntelVm,
@@ -1127,7 +1131,17 @@ private fun HomeScreen(
             .background(Bg),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+                Text("CONTROL CENTER  /  ALL SYSTEMS", color = Cyan, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+            }
+            Text(if (btEnabled) "READY" else "CHECK STATUS", color = if (btEnabled) Accent else Color.Red, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+        }
 
         // v3.2 — the home command box sits at the top, above the
         // buttons. Type what you want, Ghost Tap does it and shows
@@ -1171,6 +1185,7 @@ private fun HomeScreen(
             }
         }
 
+        Text("QUICK ACTIONS", color = Cyan, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
         // Top bubble buttons — wrap to the next line, never run off-screen.
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TerminalButton(if (isScanning) "Finding devices…" else "Find devices", onScan)
@@ -1189,11 +1204,13 @@ private fun HomeScreen(
         // paragraph below used — the paragraph is gone because the
         // tiles say it now. One tap opens the function; nothing here
         // is gated or hidden behind another step.
+        Text("CAPABILITY WORKSPACES", color = Cyan, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             GhostTile("USB UART / ESP32", "Talks to a wired board.", onOpenUsbUart, icon = Icons.Filled.Usb)
             GhostTile("VIRTUAL ESP32", "Runs a real board on your phone — no physical board needed.", onOpenVesp32, icon = Icons.Filled.Memory)
             GhostTile("NETWORK TOOLS", "Tests Wi-Fi connections.", onOpenNetworkTools, icon = Icons.Filled.Wifi)
-            GhostTile("NFC TOOLS", "Reads, writes, copies, and pretends to be tap cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
+            GhostTile("NFC TOOLS", "Reads, writes, copies, emulates, and investigates supported tags and cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
+            GhostTile("EMV LAB", "Inspects supported payment-chip data and runs isolated synthetic EMV tests.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc)
             GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
             GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
         }
