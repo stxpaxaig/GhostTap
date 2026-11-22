@@ -206,7 +206,7 @@ internal fun GhostTile(
         Text(
             title,
             color = Accent,
-            fontFamily = FontFamily.Monospace,
+            fontFamily = FontFamily.Default,
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
@@ -362,14 +362,20 @@ internal fun GhostActionCard(
         ) {
             Icon(
                 imageVector = icon ?: iconForAction(title),
-                contentDescription = null,
-                tint = Accent,
-                modifier = Modifier.size(24.dp)
+                contentDescription = title,
+                tint = Color(0xFFB8FFD0),
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(
+                        Brush.linearGradient(listOf(Color(0xFF174B40), Color(0xFF173A50))),
+                        RoundedCornerShape(12.dp)
+                    )
+                    .padding(9.dp)
             )
             Text(
                 title,
                 color = Accent,
-                fontFamily = FontFamily.Monospace,
+                fontFamily = FontFamily.Default,
                 style = MaterialTheme.typography.bodyLarge
             )
         }
