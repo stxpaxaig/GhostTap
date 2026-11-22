@@ -2196,6 +2196,14 @@ private fun NfcToolsScreen(
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
         )
+        OperatorCapabilityPanel(
+            area = OperationArea.NFC,
+            connectionGuide = "NFC uses the phone's built-in reader/writer interface. Hold a compatible tag or card against the phone's NFC antenna; the screen reports the detected technology and available operations.",
+            controlGuide = "Use READ/INVESTIGATE to inspect a presented tag. Select a supported write, copy, emulate, or command operation and provide its required data. Reader and emulator state are shown in the NFC controls.",
+            intelligenceGuide = "Ghost Tap can classify tag technologies, interpret identifiers and readable records, map supported commands, compare observed responses, and suggest technology-specific follow-up reads. Unknown or unsupported responses should remain visible as raw evidence.",
+            liveState = "Last tag: ${viewModel.lastNfcTag?.id?.toHexString() ?: "none detected"} • Emulation: ${if (viewModel.isNfcEmulating) "active" else "inactive"}"
+        )
+
         // DISCOVER (NFC): a tap card cannot be found from a distance —
         // the phone only reads one when it is held to the back. This
         // button gets the reader ready and says so; the next tag tapped
