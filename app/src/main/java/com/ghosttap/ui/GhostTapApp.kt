@@ -867,7 +867,22 @@ fun GhostTapApp(
                 }
 
                 composable("emv_lab") {
-                    EmvLabScreen(viewModel = viewModel, onBack = { nav.popBackStack() })
+                    EmvLabScreen(
+                        viewModel = viewModel,
+                        onBack = { nav.popBackStack() },
+                        commandStatusLine = commandStatusLine,
+                        commandRequest = homeDoItRequestState.value,
+                        commandLines = homeDoItLinesState.value,
+                        commandBusy = homeDoItBusyState.value,
+                        commandTvCandidates = homeTvCandidatesState.value,
+                        commandShowTryAgain = homeTryAgainState.value,
+                        onDoIt = { text -> executeHomeCommand(text) },
+                        onPickTv = { candidate -> pickTvCandidate(candidate) },
+                        onTryAgain = { retryDoItCommand() },
+                        onClearCommand = { clearDoItCommand() },
+                        showTermuxSetup = termuxSetupNeeded,
+                        onTermuxSetup = { setupTermuxFromStatusLine() }
+                    )
                 }
 
                 composable("visual_intel") {
