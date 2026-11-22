@@ -35,7 +35,22 @@ import kotlinx.coroutines.withContext
 
 /** EMV workspace. Live chip inspection and synthetic fixture testing stay separate. */
 @Composable
-fun EmvLabScreen(viewModel: GhostTapViewModel, onBack: () -> Unit) {
+fun EmvLabScreen(
+    viewModel: GhostTapViewModel,
+    onBack: () -> Unit,
+    commandStatusLine: String = "",
+    commandRequest: String = "",
+    commandLines: List<String> = emptyList(),
+    commandBusy: Boolean = false,
+    commandTvCandidates: List<com.ghosttap.core.TvCandidate> = emptyList(),
+    commandShowTryAgain: Boolean = false,
+    onDoIt: ((String) -> Unit)? = null,
+    onPickTv: ((com.ghosttap.core.TvCandidate) -> Unit)? = null,
+    onTryAgain: (() -> Unit)? = null,
+    onClearCommand: (() -> Unit)? = null,
+    showTermuxSetup: Boolean = false,
+    onTermuxSetup: (() -> Unit)? = null
+) {
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var resultTitle by remember { mutableStateOf("") }
@@ -57,6 +72,21 @@ fun EmvLabScreen(viewModel: GhostTapViewModel, onBack: () -> Unit) {
                 "Payment-chip inspection and controlled test workspace. Live card reading and synthetic testing stay separate.",
                 color = Dim,
                 style = MaterialTheme.typography.bodyMedium
+            )
+
+            CommandBox(
+                statusLine = commandStatusLine,
+                request = commandRequest,
+                lines = commandLines,
+                busy = commandBusy,
+                tvCandidates = commandTvCandidates,
+                showTryAgain = commandShowTryAgain,
+                onSubmit = onDoIt ?: {},
+                onPickTv = onPickTv ?: {},
+                onTryAgain = onTryAgain ?: {},
+                onClear = onClearCommand ?: {},
+                showTermuxSetup = showTermuxSetup,
+                onTermuxSetup = onTermuxSetup
             )
 
             GhostActionCard(
