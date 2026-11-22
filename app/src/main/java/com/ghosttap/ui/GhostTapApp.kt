@@ -1155,7 +1155,7 @@ private fun HomeScreen(
                 Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
                 Text("CONTROL CENTER  /  ALL SYSTEMS", color = Cyan, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
             }
-            Text(if (btEnabled) "READY" else "CHECK STATUS", color = if (btEnabled) Accent else Color.Red, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
+            Text(if (btEnabled) "BLUETOOTH ON" else "BLUETOOTH OFF", color = if (btEnabled) Accent else Color.Red, style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
         }
 
         // v3.2 — the home command box sits at the top, above the
