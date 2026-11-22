@@ -62,8 +62,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
@@ -92,12 +94,19 @@ internal val Cyan = Color(0xFF4DD8FF)
 /** Card background — same value as the private Panel in GhostTapApp.kt. */
 internal val GhostCard = Color(0xFF101010)
 
-private val GhostCardShape = RoundedCornerShape(8.dp)
+private val GhostCardShape = RoundedCornerShape(16.dp)
 
 private fun Modifier.ghostCardChrome(enabled: Boolean): Modifier = this
     .fillMaxWidth()
-    .background(GhostCard, GhostCardShape)
-    .border(1.dp, Accent.copy(alpha = if (enabled) 0.35f else 0.15f), GhostCardShape)
+    .background(
+        Brush.linearGradient(listOf(Color(0xFF14211F), Color(0xFF0B1114), Color(0xFF101010))),
+        GhostCardShape
+    )
+    .border(
+        1.dp,
+        Brush.linearGradient(listOf(Accent.copy(alpha = if (enabled) 0.42f else 0.16f), Cyan.copy(alpha = 0.18f))),
+        GhostCardShape
+    )
 
 /**
  * The icon for an action, from its title. Specific phrases win over
@@ -182,7 +191,7 @@ internal fun GhostTile(
         modifier = Modifier
             .ghostCardChrome(enabled)
             .clickable(enabled = enabled) { onClick() }
-            .padding(12.dp),
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Row(
@@ -193,13 +202,14 @@ internal fun GhostTile(
                 imageVector = icon,
                 contentDescription = null,
                 tint = Accent,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(30.dp)
             )
             Text(
                 title,
                 color = Accent,
                 fontFamily = FontFamily.Monospace,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
             )
         }
         Text(
@@ -252,7 +262,7 @@ internal fun GhostActionCard(
                 imageVector = icon ?: iconForAction(title),
                 contentDescription = null,
                 tint = Accent,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(24.dp)
             )
             Text(
                 title,
