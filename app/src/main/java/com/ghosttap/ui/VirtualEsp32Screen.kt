@@ -266,7 +266,8 @@ fun VirtualEsp32Screen(
         )
 
         OperatorCapabilityPanel(
-            area = OperationArea.SYSTEM,
+            area = OperationArea.USB,
+            operationIdPrefix = "vesp32.",
             connectionGuide = "Ghost Tap connects to the VirtualESP32 companion service over Android IPC. The guest firmware runs in the emulated ESP32 runtime; UART and GPIO commands travel through that bridge. Check the connection state below before sending controls.",
             controlGuide = "Use LOAD SOFTWARE, CONNECT, START, STOP, RESTART, UART SEND/TEST REPLY, and GPIO controls below. Each control is explicit. UART transmission is not proof that guest firmware acted; look for its reply or a GPIO state change.",
             intelligenceGuide = "Ghost Tap can inspect firmware metadata, compare local and guest-side validation, query guest status, inspect UART replies, and read GPIO state. It should use those observations to suggest the next probe rather than assume an unknown firmware behavior.",
