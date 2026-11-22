@@ -1179,7 +1179,9 @@ private fun HomeScreen(
         // PIECE 2 (2026-11-18) — the "what this screen does" card is
         // gone: the home screen's job is obvious from its tiles and
         // the command box, and the card only re-listed built-ins.
-        Text("STATUS: $status", color = if (btEnabled) Dim else Color.Red, fontFamily = FontFamily.Monospace)
+        PanelBox("SYSTEM STATUS") {
+            Text(status, color = if (btEnabled) Dim else Color.Red, fontFamily = FontFamily.Monospace)
+        }
 
         // Package 2 (A-30) — a denied permission used to surface only as a
         // status line, with no reason why and no way back. Say why each
@@ -1221,13 +1223,19 @@ private fun HomeScreen(
         // is gated or hidden behind another step.
         Text("CAPABILITY WORKSPACES", color = Cyan, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            GhostTile("USB UART / ESP32", "Talks to a wired board.", onOpenUsbUart, icon = Icons.Filled.Usb)
-            GhostTile("VIRTUAL ESP32", "Runs a real board on your phone — no physical board needed.", onOpenVesp32, icon = Icons.Filled.Memory)
-            GhostTile("NETWORK TOOLS", "Tests Wi-Fi connections.", onOpenNetworkTools, icon = Icons.Filled.Wifi)
-            GhostTile("NFC TOOLS", "Reads, writes, copies, emulates, and investigates supported tags and cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
-            GhostTile("EMV LAB", "Inspects supported payment-chip data and runs isolated synthetic EMV tests.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc)
-            GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
-            GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GhostTile("USB UART / ESP32", "Connects to wired boards, serial tools, and firmware workflows.", onOpenUsbUart, icon = Icons.Filled.Usb, modifier = Modifier.weight(1f))
+                GhostTile("VIRTUAL ESP32", "Runs and controls the virtual board on this phone.", onOpenVesp32, icon = Icons.Filled.Memory, modifier = Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GhostTile("NETWORK TOOLS", "Wi-Fi discovery, network tests, hotspot, and diagnostics.", onOpenNetworkTools, icon = Icons.Filled.Wifi, modifier = Modifier.weight(1f))
+                GhostTile("NFC TOOLS", "Read, write, copy, emulate, and investigate supported tags.", onOpenNfcTools, icon = Icons.Filled.Nfc, modifier = Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GhostTile("EMV LAB", "Inspect supported payment-chip data and run isolated synthetic tests.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc, modifier = Modifier.weight(1f))
+                GhostTile("VISUAL INTEL", "Use camera, OCR, and barcode tools to understand devices and labels.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera, modifier = Modifier.weight(1f))
+            }
+            GhostTile("INVESTIGATIONS", "Research targets, build plans, run checks, and learn from results.", onOpenInvestigations, icon = Icons.Filled.Search)
         }
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
