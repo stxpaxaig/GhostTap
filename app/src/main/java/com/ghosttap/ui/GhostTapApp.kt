@@ -2944,6 +2944,20 @@ private fun TargetScreen(
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        OperatorCapabilityPanel(
+            area = if (target.type == TargetType.NFC) OperationArea.NFC else OperationArea.BLE,
+            connectionGuide = if (target.type == TargetType.NFC)
+                "This target is a tap-card record. Present the physical tag to the phone's NFC antenna to refresh its live data; the NFC tools use the detected technology and tag session."
+            else
+                "This target is a Bluetooth device. Ghost Tap uses its existing BLE GATT discovery/connection path; where supported, Classic Bluetooth text transport is a separate selectable connection path.",
+            controlGuide = if (target.type == TargetType.NFC)
+                "Use the NFC tools to inspect the tag, review supported technology operations, and choose an available read, write, or emulation control."
+            else
+                "Use CONNECT / DISCONNECT and the device's CONTROL, RAW, and advanced panels. Select a discovered service or characteristic, read values, write supported data, subscribe to notifications, and inspect raw responses.",
+            intelligenceGuide = "Ghost Tap should combine the target's advertised name, address, services, characteristics, identifiers, signal observations, and actual responses. It can then identify likely device roles, explain each exposed control, and suggest the next read or protocol test.",
+            liveState = "Target: ${target.name} • Type: ${target.type} • Connected: ${target.connected} • Identifier: ${target.id}"
+        )
+
         // PIECE 2 (2026-11-18) — the "WHAT TO DO" panel is gone: its
         // connection-state line is already in WATCH below, and its two
         // paragraphs only described what the buttons under it do.
