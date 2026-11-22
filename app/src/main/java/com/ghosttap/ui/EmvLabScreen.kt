@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -55,6 +54,8 @@ fun EmvLabScreen(
     var busy by remember { mutableStateOf(false) }
     var resultTitle by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("") }
+    @Suppress("UNUSED_VARIABLE")
+    val tick = viewModel.uiTick
     val tagAvailable = viewModel.lastNfcTag != null
 
     Surface(modifier = Modifier.fillMaxSize(), color = Bg) {
