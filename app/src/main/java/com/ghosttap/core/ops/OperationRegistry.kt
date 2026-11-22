@@ -108,7 +108,7 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
             try {
                 when (val result = OperationRunner(context).run(this)) {
                     is OperationResult.Done ->
-                        OpResult(true, result.reason, result.evidence)
+                        OpResult(true, result.reason.removePrefix("${title}: "), result.evidence)
                     is OperationResult.Failed ->
                         OpResult(false, result.reason, result.evidence)
                     is OperationResult.NeedsUserAction ->
