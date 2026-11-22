@@ -1,5 +1,6 @@
 package com.ghosttap.ui
 
+import com.ghosttap.core.ops.OperationArea
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -154,6 +155,14 @@ fun InvestigationsScreen(
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
         )
+        OperatorCapabilityPanel(
+            area = OperationArea.INVESTIGATIONS,
+            connectionGuide = "Investigations coordinates the existing Bluetooth, USB, network, visual, NFC, Termux, and VirtualESP32 capability registries. It uses the active target context and the operation runner to connect findings to available tools.",
+            controlGuide = "Describe an objective or target, review discovered evidence and proposed operations, choose a procedure, run individual operations, and inspect the timeline. Saved investigations and procedures provide repeatable workflows.",
+            intelligenceGuide = "The intelligence layer should maintain target context, compare observations over time, research unknown identifiers and protocols, explain why a tool is relevant, and update its recommended next steps as evidence arrives.",
+            liveState = "Active investigation: ${active?.title ?: "none"} • Registered capabilities: ${CapabilityRegistry.all().size}"
+        )
+
         // MASTER PROMPT — INVESTIGATE THE UNFAMILIAR: one tap checks
         // across the sections this screen can reach — Bluetooth, USB,
         // and networks — with no typing. Findings land as LIVE TARGETS
