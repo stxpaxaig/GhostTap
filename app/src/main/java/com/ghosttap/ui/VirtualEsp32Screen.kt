@@ -265,6 +265,14 @@ fun VirtualEsp32Screen(
             onTermuxSetup = onTermuxSetup
         )
 
+        OperatorCapabilityPanel(
+            area = OperationArea.SYSTEM,
+            connectionGuide = "Ghost Tap connects to the VirtualESP32 companion service over Android IPC. The guest firmware runs in the emulated ESP32 runtime; UART and GPIO commands travel through that bridge. Check the connection state below before sending controls.",
+            controlGuide = "Use LOAD SOFTWARE, CONNECT, START, STOP, RESTART, UART SEND/TEST REPLY, and GPIO controls below. Each control is explicit. UART transmission is not proof that guest firmware acted; look for its reply or a GPIO state change.",
+            intelligenceGuide = "Ghost Tap can inspect firmware metadata, compare local and guest-side validation, query guest status, inspect UART replies, and read GPIO state. It should use those observations to suggest the next probe rather than assume an unknown firmware behavior.",
+            liveState = "Service installed: ${if (installed) "YES" else "NO"} • Connection: ${connState} • Firmware: ${firmwareInfo?.fileName ?: "not loaded"} • GPIO4: ${gpio4 ?: "unknown"}"
+        )
+
         // DISCOVER (Virtual ESP32): one tap checks the practice board's
         // reported state right now — no typing, no setup. It asks the
         // board for its current state first, then runs the same check
