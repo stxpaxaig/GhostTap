@@ -7,7 +7,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.StrokeCap
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -280,7 +280,7 @@ private fun CapabilityArtwork(title: String) {
                     drawLine(green,Offset(cx+27*s,py),Offset(cx+33*s,py),2*s)
                 }
                 drawRoundRect(dark, Offset(cx-15*s,cy-12*s), Size(30*s,24*s), androidx.compose.ui.geometry.CornerRadius(4*s), style=Stroke(2*s))
-                drawCircle(cyan,3.5*s,Offset(cx,cy))
+                drawCircle(cyan,3.5f*s,Offset(cx,cy))
                 drawLine(cyan,Offset(cx,cy-7*s),Offset(cx,cy+7*s),1.5f*s)
                 drawLine(cyan,Offset(cx-7*s,cy),Offset(cx+7*s,cy),1.5f*s)
             }
