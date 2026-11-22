@@ -166,7 +166,7 @@ class TermuxCapabilitiesTest {
 
     @Test
     fun `script titles come from the file name in plain words`() {
-        assertEquals("My backup", TermuxRegistry.scriptTitleFromFile("my-backup.sh"))
+        assertEquals("My Backup", TermuxRegistry.scriptTitleFromFile("my-backup.sh"))
         assertEquals("Check Disk Space", TermuxRegistry.scriptTitleFromFile("check_disk_space.sh"))
         assertEquals("Hello", TermuxRegistry.scriptTitleFromFile("hello.sh"))
         assertEquals("Photos 2026", TermuxRegistry.scriptTitleFromFile("photos-2026.sh"))
@@ -180,7 +180,7 @@ class TermuxCapabilitiesTest {
         assertEquals(listOf("my-backup.sh", "check-disk.sh"), merged.map { it.fileName })
         assertEquals(listOf("lib:my-backup.sh", "lib:check-disk.sh"), merged.map { it.id })
         assertTrue(merged.all { it.origin == ScriptOrigin.ADDED })
-        assertEquals("My backup", merged[0].title)
+        assertEquals("My Backup", merged[0].title)
         assertEquals("Check Disk", merged[1].title)
         assertTrue(TermuxRegistry.mergeLibrary(emptyList()).isEmpty())
     }

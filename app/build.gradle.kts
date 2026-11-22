@@ -64,6 +64,8 @@ dependencies {
     implementation(composeBom)
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    // Supplies the Android View theme parent used by Theme.GhostTap in themes.xml.
+    implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.compose.material:material-icons-extended")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
@@ -90,6 +92,8 @@ dependencies {
     implementation("org.mozilla:rhino:1.7.14")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM tests; android.jar exposes a throwing stub.
+    testImplementation("org.json:json:20240303")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation(composeBom)

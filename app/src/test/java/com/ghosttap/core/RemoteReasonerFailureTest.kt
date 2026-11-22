@@ -2,7 +2,6 @@ package com.ghosttap.core
 
 import com.ghosttap.core.investigate.AiFailureReason
 import com.ghosttap.core.investigate.plainWords
-import com.sun.net.httpserver.HttpServer
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.InetAddress
@@ -80,21 +79,10 @@ class RemoteReasonerFailureTest {
         false
     }
 
-    private fun stubServer(status: Int, body: String): HttpServer {
-        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        server.createContext("/v1/chat/completions") { exchange ->
-            val bytes = body.toByteArray(Charsets.UTF_8)
-            exchange.responseHeaders.set("Content-Type", "application/json")
-            exchange.sendResponseHeaders(status, bytes.size.toLong())
-            exchange.responseBody.use { it.write(bytes) }
-        }
-        server.executor = null
-        server.start()
-        return server
-    }
+    private fun stubServer(status: Int, body: String) = TestHttpStub(status, body)
 
-    private fun stubReasoner(server: HttpServer) = RemoteLlmReasoner(
-        "http://127.0.0.1:${server.address.port}/v1/chat/completions",
+    private fun stubReasoner(server: TestHttpStub) = RemoteLlmReasoner(
+        "http://127.0.0.1:${server.port}/v1/chat/completions",
         "stub-test-key"
     )
 
@@ -126,7 +114,7 @@ class RemoteReasonerFailureTest {
             assertEquals(AiFailureReason.TOO_BUSY, remote.lastFailureReason)
             assertTrue(remote.lastFailureReason!!.plainWords().contains("busy"))
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -140,7 +128,7 @@ class RemoteReasonerFailureTest {
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
             assertTrue(remote.lastFailureReason!!.plainWords().contains("problem on its side"))
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -153,7 +141,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.backgroundOn("test topic"))
             assertEquals(AiFailureReason.KEY_REJECTED, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -177,7 +165,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.backgroundOn("test topic"))
             assertEquals(AiFailureReason.UNREADABLE_ANSWER, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -194,7 +182,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.backgroundOn("test topic"))
             assertEquals(AiFailureReason.EMPTY_ANSWER, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -209,7 +197,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.draftCapabilityJson("gap", emptyList()))
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -222,7 +210,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.draftScriptJson("gap", emptyList()))
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -237,7 +225,7 @@ class RemoteReasonerFailureTest {
             assertEquals(base, refined)
             assertEquals(AiFailureReason.SERVER_ERROR, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 
@@ -250,7 +238,7 @@ class RemoteReasonerFailureTest {
             assertEquals("", remote.draftCapabilityJson("gap", emptyList()))
             assertEquals(AiFailureReason.TOO_BUSY, remote.lastFailureReason)
         } finally {
-            server.stop(0)
+            server.stop()
         }
     }
 }

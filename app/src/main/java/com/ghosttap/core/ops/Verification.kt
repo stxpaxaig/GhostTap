@@ -40,7 +40,8 @@ fun defaultVerify(result: OpResult): VerificationOutcome {
             result.summary.ifBlank { "It didn't work." }
         )
     }
-    val observed = (result.summary + " " + result.data).trim()
+    // Prefer the operation's structured response; summary is a fallback only.
+    val observed = result.data.ifBlank { result.summary }.trim()
     return verifyContent(expected = "", observed = observed)
 }
 

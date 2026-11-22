@@ -14,10 +14,20 @@ final class FirmwareImageManager {
         Inspection(boolean ok,File f,String s){valid=ok;image=f;summary=s;}
     }
     static Inspection importAndInspect(Context context,Uri uri)throws Exception {
+        InputStream in=context.getContentResolver().openInputStream(uri);
+        if(in==null)throw new IllegalArgumentException("Selected file could not be opened");
+        return importAndInspect(context,in);
+    }
+    /** Imports the repository-bundled MicroPython image through the same validation
+     * and atomic replacement path as a user-selected image. */
+    static Inspection importBuiltinAndInspect(Context context)throws Exception {
+        return importAndInspect(context,context.getAssets().open("virtualesp32-test-micropython-4mb.bin"));
+    }
+    private static Inspection importAndInspect(Context context,InputStream source)throws Exception {
         File dir=new File(context.getFilesDir(),"esp32-qemu");if(!dir.exists()&&!dir.mkdirs())throw new IllegalStateException("Cannot create private firmware directory");
         File temp=new File(dir,"flash-image.importing");File image=new File(dir,"flash-image.bin");
-        try(InputStream in=context.getContentResolver().openInputStream(uri);FileOutputStream out=new FileOutputStream(temp)){
-            if(in==null)throw new IllegalArgumentException("Selected file could not be opened");byte[] b=new byte[65536];int n;while((n=in.read(b))!=-1)out.write(b,0,n);out.getFD().sync();
+        try(InputStream in=source;FileOutputStream out=new FileOutputStream(temp)){
+            byte[] b=new byte[65536];int n;while((n=in.read(b))!=-1)out.write(b,0,n);out.getFD().sync();
         }
         Inspection check=inspect(temp);
         if(!check.valid){temp.delete();return new Inspection(false,null,check.summary);}
