@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -1222,20 +1223,21 @@ private fun HomeScreen(
         // tiles say it now. One tap opens the function; nothing here
         // is gated or hidden behind another step.
         Text("CAPABILITY WORKSPACES", color = Cyan, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GhostTile("USB UART / ESP32", "Connects to wired boards, serial tools, and firmware workflows.", onOpenUsbUart, icon = Icons.Filled.Usb, modifier = Modifier.weight(1f))
-                GhostTile("VIRTUAL ESP32", "Runs and controls the virtual board on this phone.", onOpenVesp32, icon = Icons.Filled.Memory, modifier = Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GhostTile("NETWORK TOOLS", "Wi-Fi discovery, network tests, hotspot, and diagnostics.", onOpenNetworkTools, icon = Icons.Filled.Wifi, modifier = Modifier.weight(1f))
-                GhostTile("NFC TOOLS", "Read, write, copy, emulate, and investigate supported tags.", onOpenNfcTools, icon = Icons.Filled.Nfc, modifier = Modifier.weight(1f))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GhostTile("EMV LAB", "Inspect supported payment-chip data and run isolated synthetic tests.", { onOpenRoute?.invoke("emv_lab") }, icon = Icons.Filled.Nfc, modifier = Modifier.weight(1f))
-                GhostTile("VISUAL INTEL", "Use camera, OCR, and barcode tools to understand devices and labels.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera, modifier = Modifier.weight(1f))
-            }
-            GhostTile("INVESTIGATIONS", "Research targets, build plans, run checks, and learn from results.", onOpenInvestigations, icon = Icons.Filled.Search)
+        // Restore the approved visual-command-center card treatment from
+        // 7169a77: prominent recognizable icons, generous cards, and a
+        // consistent two-column workspace grid. Only the home dashboard changes.
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            HomeFunctionCard("USB UART / ESP32", "Wired boards, serial tools & firmware", Icons.Filled.Usb, onOpenUsbUart)
+            HomeFunctionCard("VIRTUAL ESP32", "Run an ESP32 on this phone", Icons.Filled.Memory, onOpenVesp32)
+            HomeFunctionCard("NETWORK TOOLS", "Wi-Fi, hosts & connectivity", Icons.Filled.Wifi, onOpenNetworkTools)
+            HomeFunctionCard("NFC TOOLS", "Read, write & investigate tags", Icons.Filled.Nfc, onOpenNfcTools)
+            HomeFunctionCard("EMV LAB", "Chip data & isolated local tests", Icons.Filled.Nfc) { onOpenRoute?.invoke("emv_lab") }
+            HomeFunctionCard("VISUAL INTEL", "Camera, images & recognition", Icons.Filled.PhotoCamera, onOpenVisualIntel)
+            HomeFunctionCard("INVESTIGATIONS", "Analyze devices & plan checks", Icons.Filled.Search, onOpenInvestigations)
         }
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
@@ -5081,3 +5083,67 @@ private fun formatBaselineDiff(viewModel: GhostTapViewModel, snapshot: BaselineS
         }
     }
 }
+
+// Approved home-dashboard visual card treatment (reference commit 7169a77).
+// Kept local to the home UI; feature destinations and their screens are untouched.
+@Composable
+private fun HomeFunctionCard(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(0.485f)
+            .height(136.dp)
+            .background(Color(0xFF101B16), RoundedCornerShape(14.dp))
+            .border(1.dp, Accent.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(Color(0xFF183526), RoundedCornerShape(12.dp))
+                    .padding(10.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = Accent,
+                    modifier = Modifier.height(30.dp).width(30.dp)
+                )
+            }
+            Text(
+                "OPEN  ›",
+                color = Cyan,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                title,
+                color = Accent,
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = FontFamily.Monospace,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                subtitle,
+                color = Dim,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
