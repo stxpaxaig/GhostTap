@@ -104,6 +104,56 @@ fun OperationEntryScreen(
 
         TerminalButton("Back", onBack)
 
+        val operatorGuidance = when (area) {
+            OperationArea.BLE -> Triple(
+                "Bluetooth discovery exposes nearby advertisements and device identifiers. BLE GATT and Classic Bluetooth RFCOMM are distinct transports; a target may support one or both.",
+                "Select a discovered target, connect using its supported transport, then inspect services and characteristics. Read, write, subscribe, pair, and disconnect using the controls shown for that target.",
+                "Correlate advertisements, services, characteristic properties, signal observations, and actual responses to infer device role and discover useful controls."
+            )
+            OperationArea.USB -> Triple(
+                "USB tools communicate with attached USB and serial hardware through Ghost Tap's USB/UART subsystem. Device descriptors and driver matches identify the available interface.",
+                "Select a device, inspect VID/PID and interface details, connect at the required serial settings, then send and receive UART data or use supported firmware controls.",
+                "Use descriptors, serial output, firmware metadata, and observed responses to identify protocols, baud rates, board families, and useful next diagnostics."
+            )
+            OperationArea.NETWORK -> Triple(
+                "Network tools use the phone's active network interfaces and direct TCP, UDP, DNS, HTTP, and host-discovery functions.",
+                "Provide the host, port, protocol, and payload required by each tool. Run discovery, ping, port checks, DNS, traceroute, or socket tests separately and inspect the returned evidence.",
+                "Correlate reachable hosts, open ports, service banners, DNS records, route hops, and responses to map the environment and choose the next probe."
+            )
+            OperationArea.NFC -> Triple(
+                "NFC tools use the phone's reader/writer interface and the presented tag's actual technology and protocol response.",
+                "Present a tag to the phone, inspect the detected technology, then choose a supported read, write, command, copy, or emulation operation.",
+                "Interpret tag technology, identifiers, readable records, raw responses, and command behavior to determine what the tag supports and what to test next."
+            )
+            OperationArea.VISUAL -> Triple(
+                "Visual tools use a live camera preview or selected image to extract text, barcodes, QR data, labels, and component markings.",
+                "Capture or select an image, review extracted findings, then send a chosen identifier to a relevant lookup, network, or Bluetooth workflow.",
+                "Combine OCR, code data, part markings, image context, and reference research. Keep uncertain matches visibly marked as candidates and refine them as evidence arrives."
+            )
+            OperationArea.INVESTIGATIONS -> Triple(
+                "The intelligence workspace coordinates registered Ghost Tap capabilities and the active target's observations, findings, and investigation history.",
+                "Describe an objective, review the proposed plan, select individual operations, run or repeat procedures, and inspect the evidence timeline.",
+                "Maintain target context, research unfamiliar identifiers and protocols, compare observations, explain why each tool is relevant, and adapt the next steps to new evidence."
+            )
+            OperationArea.TERMUX -> Triple(
+                "Ghost Tap's Termux bridge communicates with the installed Termux runtime through its local TCP/JSON bridge and helper scripts. The helper library reports capabilities and returns execution results.",
+                "Check bridge health, list available capabilities and scripts, refresh the library, then choose a script or enter a command through the existing Termux controls. Inspect stdout, stderr, and exit status.",
+                "Use the runtime's available packages and scripts as an extensible local toolset. Discover installed tools, inspect their help and versions, and use results to select or compose the next operation."
+            )
+            OperationArea.SYSTEM -> Triple(
+                "System operations expose Ghost Tap's own registered app, navigation, intelligence, and runtime functions.",
+                "Choose a named operation from this list. Its prerequisites, execution progress, result, and evidence are shown here.",
+                "Use the live capability registry as the source of truth; inspect what is registered, identify missing integrations, and connect new functions through the existing operation framework."
+            )
+        }
+        OperatorCapabilityPanel(
+            area = area,
+            connectionGuide = operatorGuidance.first,
+            controlGuide = operatorGuidance.second,
+            intelligenceGuide = operatorGuidance.third,
+            liveState = "${operations.size} operations registered in this section • Current operation: ${lastOp?.title ?: "none"} • Running: ${runningId ?: "none"}"
+        )
+
         // PIECE 2 (2026-11-18) — the "pick what you want to happen"
         // card is gone: the heading above says the section, and each
         // row below says what it does.
