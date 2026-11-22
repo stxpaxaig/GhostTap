@@ -251,12 +251,23 @@ class RuleBasedReasoner : ReasoningProvider {
         return ScriptDraft.toJson(title, sb.toString())
     }
 
-    private fun gapKeywords(gapDescription: String): List<String> =
-        gapDescription.split(Regex("[^A-Za-z0-9]+"))
+    private fun gapKeywords(gapDescription: String): List<String> {
+        // Ignore structural prose from the generated gap description. Only
+        // target-specific terms should be allowed to select existing tools.
+        val stopWords = setOf(
+            "capability", "capabilities", "target", "kind", "needed",
+            "unregistered", "text", "this", "that", "with", "from",
+            "unknown", "thing", "matching", "tools", "tool", "there",
+            "into", "about", "what", "when", "where", "which", "have",
+            "just", "some", "them", "their", "they", "does", "could",
+            "would", "should", "nothing", "at", "all", "for"
+        )
+        return gapDescription.split(Regex("[^A-Za-z0-9]+"))
             .map { it.trim() }
-            .filter { it.length >= 4 }
+            .filter { it.length >= 4 && it.lowercase() !in stopWords }
             .distinct()
             .take(8)
+    }
 
     /**
      * READ-only registry tools matching the gap's keywords, with args filled
