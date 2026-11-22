@@ -64,6 +64,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.ghosttap.core.ops.OperationArea
+import com.ghosttap.core.ops.OperationRegistry
 import androidx.compose.ui.unit.dp
 
 /**
@@ -272,5 +278,71 @@ internal fun GhostActionCard(
             TerminalButton(buttonText, onClick, enabled = enabled)
         }
         content()
+    }
+}
+
+
+/**
+ * Operator-facing capability dossier. This is deliberately separate
+ * from execution: it tells the operator what exists, what is required,
+ * how to drive it, and what level of verification the operation has.
+ * The registry is the same source used by the planner and operation runner.
+ */
+@Composable
+internal fun OperatorCapabilityPanel(
+    area: OperationArea,
+    connectionGuide: String,
+    controlGuide: String,
+    intelligenceGuide: String,
+    liveState: String
+) {
+    var expanded by remember(area) { mutableStateOf(true) }
+    val operations = remember(area) { OperationRegistry.byArea(area) }
+    Column(
+        modifier = Modifier
+            .ghostCardChrome(true)
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Text("OPERATOR CAPABILITY / INTELLIGENCE", color = Accent,
+            fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.titleSmall)
+        Text("WHAT IT CAN DO", color = Cyan, fontFamily = FontFamily.Monospace)
+        Text(operations.joinToString("\n") { "• ${it.title}: ${it.description}" }
+            .ifBlank { "Capabilities are still loading. Reopen this panel after the operation registry initializes." },
+            color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("HOW IT CONNECTS", color = Cyan, fontFamily = FontFamily.Monospace)
+        Text(connectionGuide, color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("HOW YOU CONTROL IT", color = Cyan, fontFamily = FontFamily.Monospace)
+        Text(controlGuide, color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("ADAPTIVE INTELLIGENCE", color = Cyan, fontFamily = FontFamily.Monospace)
+        Text(intelligenceGuide, color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text("CURRENT STATE", color = Cyan, fontFamily = FontFamily.Monospace)
+        Text(liveState, color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+        Text(if (expanded) "HIDE OPERATION REQUIREMENTS" else "SHOW OPERATION REQUIREMENTS",
+            color = Accent, fontFamily = FontFamily.Monospace,
+            modifier = Modifier.clickable { expanded = !expanded })
+        if (expanded) {
+            operations.forEach { operation ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF080D0B), RoundedCornerShape(6.dp))
+                        .padding(9.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(operation.title, color = Accent, fontFamily = FontFamily.Monospace)
+                    Text("CONTROL: ${operation.description}", color = Dim,
+                        fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
+                    if (operation.prerequisites.isNotEmpty()) {
+                        Text("NEEDS: ${operation.prerequisites.joinToString("; ")}",
+                            color = Dim, fontFamily = FontFamily.Monospace,
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text("RISK: ${operation.riskLevel}  •  DEVICE-VERIFIED: ${if (operation.verified) "YES" else "NOT YET VERIFIED"}",
+                        color = if (operation.verified) Accent else Cyan,
+                        fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
     }
 }
