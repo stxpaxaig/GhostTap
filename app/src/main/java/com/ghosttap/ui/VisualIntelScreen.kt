@@ -1,5 +1,6 @@
 package com.ghosttap.ui
 
+import com.ghosttap.core.ops.OperationArea
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -146,6 +147,15 @@ fun VisualIntelScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
+
+    OperatorCapabilityPanel(
+        area = OperationArea.VISUAL,
+        connectionGuide = "Visual Intelligence uses the camera preview or a selected image. It extracts visible text, codes, labels, and component markings, then passes candidate identifiers to the existing device and network tools.",
+        controlGuide = "Point the camera at a device, board, chip, connector, label, or screen; capture or select an image; inspect the extracted findings; then choose a follow-up such as web lookup, network inspection, or Bluetooth matching.",
+        intelligenceGuide = "Combine OCR, barcode/QR data, part markings, visual context, and external reference lookups. Keep uncertain matches as candidates, show the evidence behind each match, and adapt the next investigation to the object identified.",
+        liveState = "Camera permission: ${if (cameraGranted) "available" else "not granted"} • Latest finding: ${viewModel.lastFinding?.title ?: "none"}"
+    )
+
 
     // Runs one suggested action: each one says what it does before it runs.
     // One tap does the whole chain — no config screens, no scan-first.
