@@ -4993,8 +4993,8 @@ internal fun TerminalButton(text: String, onClick: () -> Unit, enabled: Boolean 
         enabled = enabled,
         // UI REDESIGN (2026-11-17) — one button style everywhere:
         // dark fill, neon-green edge, rounded corners.
-        border = BorderStroke(1.dp, Accent.copy(alpha = 0.45f)),
-        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, Accent.copy(alpha = 0.55f)),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(0xFF161616),
             contentColor = Accent
@@ -5009,11 +5009,15 @@ internal fun PanelBox(title: String, content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Panel, RoundedCornerShape(8.dp))
-            // UI REDESIGN (2026-11-17) — one panel style everywhere:
-            // dark fill, faint neon-green edge.
-            .border(1.dp, Accent.copy(alpha = 0.25f), RoundedCornerShape(8.dp))
-            .padding(10.dp)
+            .background(
+                androidx.compose.ui.graphics.Brush.linearGradient(
+                    listOf(Color(0xFF14211F), Color(0xFF0B1114), Panel)
+                ),
+                RoundedCornerShape(16.dp)
+            )
+            // Shared visual system: readable hierarchy, soft depth, and a restrained neon edge.
+            .border(1.dp, Accent.copy(alpha = 0.28f), RoundedCornerShape(16.dp))
+            .padding(14.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(title, color = Accent, fontFamily = FontFamily.Monospace, maxLines = 1)
