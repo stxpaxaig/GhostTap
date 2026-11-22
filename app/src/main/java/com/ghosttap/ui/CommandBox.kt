@@ -3,6 +3,7 @@ package com.ghosttap.ui
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -91,7 +92,8 @@ fun CommandBox(
             value = text,
             onValueChange = { text = it },
             label = { Text("What do you want Ghost Tap to do?") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp)
         )
         Spacer(modifier = Modifier.height(6.dp))
         TerminalButton(
