@@ -319,16 +319,16 @@ internal fun OperatorCapabilityPanel(
             color = Dim, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall)
         Text("REGISTERED INTELLIGENCE CAPABILITIES", color = Cyan, fontFamily = FontFamily.Monospace)
         Text(
-            intelligenceCapabilities.joinToString("\\n\\n") { capability ->
+            intelligenceCapabilities.joinToString("\n\n") { capability ->
                 buildString {
                     append(capability.title)
                     append(" [").append(capability.id).append("]")
-                    append("\\n").append(capability.detail)
-                    if (capability.inputs.isNotEmpty()) append("\\nINPUTS: ").append(capability.inputs.joinToString(", "))
-                    if (capability.outputs.isNotEmpty()) append("\\nOUTPUTS: ").append(capability.outputs.joinToString(", "))
-                    if (capability.preconditions.isNotEmpty()) append("\\nREQUIRES: ").append(capability.preconditions.joinToString("; "))
-                    if (capability.effects.isNotBlank()) append("\\nEFFECT: ").append(capability.effects)
-                    append("\\nSOURCE: ").append(capability.sourceMethod.ifBlank { "not specified" })
+                    append("\n").append(capability.detail)
+                    if (capability.inputs.isNotEmpty()) append("\nINPUTS: ").append(capability.inputs.joinToString(", "))
+                    if (capability.outputs.isNotEmpty()) append("\nOUTPUTS: ").append(capability.outputs.joinToString(", "))
+                    if (capability.preconditions.isNotEmpty()) append("\nREQUIRES: ").append(capability.preconditions.joinToString("; "))
+                    if (capability.effects.isNotBlank()) append("\nEFFECT: ").append(capability.effects)
+                    append("\nSOURCE: ").append(capability.sourceMethod.ifBlank { "not specified" })
                     append(" • RISK: ").append(capability.riskLevel)
                     append(" • VERIFIED: ").append(if (capability.verified) "YES" else "NOT YET")
                 }
