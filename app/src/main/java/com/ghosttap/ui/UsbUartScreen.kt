@@ -1,5 +1,6 @@
 package com.ghosttap.ui
 
+import com.ghosttap.core.ops.OperationArea
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -150,6 +151,14 @@ fun UsbUartScreen(
             onClear = onClearCommand ?: {},
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
+        )
+
+        OperatorCapabilityPanel(
+            area = OperationArea.USB,
+            connectionGuide = "USB tools communicate with attached serial/USB devices through the existing USB-UART subsystem. Select a detected device, inspect its identifiers and interface details, then establish the serial session at the device's supported settings.",
+            controlGuide = "Select a device and serial parameters, connect or disconnect, send UART data, inspect received bytes, and use the firmware tools to inspect or transfer firmware images where supported.",
+            intelligenceGuide = "Correlate VID/PID, interface descriptors, serial output, baud-rate responses, firmware metadata, and observed device behavior. Use the evidence to suggest likely protocols, pin/baud checks, and next diagnostic commands.",
+            liveState = "Selected device: ${viewModel.selectedDevice?.deviceName ?: "none"} • Connected: ${viewModel.isConnected} • Permission needed: ${viewModel.permissionNeeded}"
         )
 
         // DISCOVER (USB): one tap checks what is plugged in right now —
