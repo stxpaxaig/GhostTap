@@ -2205,6 +2205,12 @@ private fun NfcToolsScreen(
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
         )
+        GhostActionCard(
+            title = "EMV LAB",
+            description = "Open the dedicated payment-chip inspection and synthetic test workspace.",
+            buttonText = "OPEN EMV LAB",
+            onClick = { onOpenRoute?.invoke("emv_lab") }
+        )
         // DISCOVER (NFC): a tap card cannot be found from a distance —
         // the phone only reads one when it is held to the back. This
         // button gets the reader ready and says so; the next tag tapped
