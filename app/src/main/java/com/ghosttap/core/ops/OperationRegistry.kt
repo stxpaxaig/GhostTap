@@ -107,7 +107,7 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
             try {
                 when (val result = OperationRunner(context).run(this)) {
                     is OperationResult.Done ->
-                        OpResult(true, result.reason.removePrefix("\${title}: "), result.evidence)
+                        OpResult(true, result.reason.removePrefix("${title}: "), result.evidence)
                     is OperationResult.Failed ->
                         OpResult(false, result.reason, result.evidence)
                     is OperationResult.NeedsUserAction ->
@@ -116,7 +116,7 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
                         OpResult(false, result.reason, result.evidence)
                 }
             } catch (e: Exception) {
-                OpResult(false, "Operation '$id' failed: \${e.message ?: "unknown problem"}")
+                OpResult(false, "Operation '$id' failed: ${e.message ?: "unknown problem"}")
             } finally {
                 context.pendingChoice = savedChoice
                 context.pendingArgs = savedArgs
