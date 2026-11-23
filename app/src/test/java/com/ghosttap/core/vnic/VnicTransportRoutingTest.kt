@@ -12,7 +12,7 @@ class VnicTransportRoutingTest {
     fun esp32IsFirstAndSpecificTransportCandidate() {
         val targets = vnicDetectBringUpTargets(
             subject = "LED controller",
-            text = "Find the ESP32 controller using Bluetooth at AA:BB:CC:DD:EE:FF and Wi-Fi at 192.168.4.27"
+            text = "Find the VirtualESP32 practice board using Bluetooth at AA:BB:CC:DD:EE:FF and Wi-Fi at 192.168.4.27"
         )
         assertEquals(VnicBringUpKind.ESP32, targets.first().kind)
         assertTrue(targets.any { it.kind == VnicBringUpKind.BLE })
@@ -190,6 +190,16 @@ class VnicTransportRoutingTest {
                 "Strongest device found: Unknown peripheral AA:BB:CC:DD:EE:FF"
             )
         )
+    }
+
+    @Test
+    fun physicalEsp32DiscoveryDoesNotSubstituteTheVirtualCompanion() {
+        val targets = vnicDetectBringUpTargets(
+            subject = "ESP32 LED controller",
+            text = "Find the physical ESP32 controller over Bluetooth at AA:BB:CC:DD:EE:FF"
+        )
+        assertFalse(targets.any { it.kind == VnicBringUpKind.ESP32 })
+        assertTrue(targets.any { it.kind == VnicBringUpKind.BLE && it.id == "AA:BB:CC:DD:EE:FF" })
     }
 
 }
