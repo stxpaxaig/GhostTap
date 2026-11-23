@@ -17,6 +17,7 @@ import com.ghosttap.core.esp32.VirtualEsp32Client
 import com.ghosttap.data.VnicDriveOutcome
 import com.ghosttap.data.VnicDrivePolicyState
 import com.ghosttap.data.VnicSessionStore
+import com.ghosttap.data.VnicTransportSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -187,6 +188,22 @@ class VnicEngine(
      */
     private val _driveOutcome = MutableStateFlow(sessionStore.loadDriveOutcome())
     val driveOutcome: StateFlow<VnicDriveOutcome?> = _driveOutcome.asStateFlow()
+
+    /**
+     * Persisted target metadata survives restarts, but links are never
+     * claimed live after process death. Previously-held links require
+     * a fresh bring-up before control resumes.
+     */
+    private val _transportSessions = MutableStateFlow(
+        sessionStore.loadTransportSessions().map {
+            if (it.connectionHeld) it.copy(
+                state = "RESTORE_REQUIRED",
+                connectionHeld = false,
+                evidence = "Previous process ended; reconnect and verify before control resumes."
+            ) else it
+        }
+    )
+    val transportSessions: StateFlow<List<VnicTransportSession>> = _transportSessions.asStateFlow()
 
     /** Name of the last procedure developed this run (for the "that was right/wrong" feedback). */
     var lastDevelopedProcedureName: String? = null
@@ -392,6 +409,7 @@ class VnicEngine(
         )
         refreshStatus(result)
         saveDriveOutcomeFor(result)
+        recordTransportSession(result)
         persistSession()
         return result
     }
@@ -539,6 +557,23 @@ class VnicEngine(
         val report = runCatching { DynamicCapabilityRuntime.test(def, engine) }.getOrNull() ?: return false
         if (!report.passed) return false
         return runCatching { DynamicCapabilityRuntime.register(def, engine, report, null) }.getOrElse { false }
+    }
+
+    /** Record a real bring-up result as a target session; saved metadata never implies a live link. */
+    private fun recordTransportSession(result: VnicCycleResult) {
+        val bringUp = result.bringUp ?: return
+        val entry = VnicTransportSession(
+            subject = result.subject,
+            route = bringUp.route,
+            state = if (bringUp.ready && bringUp.connectionHeld) "CONNECTED" else result.executionState.name,
+            controls = bringUp.controlLines,
+            evidence = result.executionEvidence,
+            connectionHeld = bringUp.ready && bringUp.connectionHeld
+        )
+        val key = entry.subject.trim().lowercase()
+        val next = (_transportSessions.value.filterNot { it.subject.trim().lowercase() == key } + entry).takeLast(50)
+        _transportSessions.value = next
+        runCatching { sessionStore.saveTransportSessions(next) }
     }
 
     /** Persist the drive outcome after a cycle that ran a bring-up (E-29), plus the policy pins it changed. */
