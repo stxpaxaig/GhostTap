@@ -252,7 +252,6 @@ class VnicEngine(
             termux == null -> "Termux: runtime not yet probed"
             !termux.termuxInstalled -> "Termux: companion not installed"
             !termux.hasRunPermission -> "Termux: installed; run permission not granted"
-            !termux.useTermuxInPlans -> "Termux: installed and permitted; automatic plan use is switched off"
             else -> "Termux: ready; ${termux.availableCapabilities.size} probed capabilities available"
         }
         val groups = listOf(
