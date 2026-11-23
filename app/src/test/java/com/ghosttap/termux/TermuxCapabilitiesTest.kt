@@ -76,7 +76,6 @@ class TermuxCapabilitiesTest {
     }
 
     @Test
-    @Test
     fun `Aircrack tools are detected as a separate wireless diagnostics capability`() {
         val caps = TermuxRegistry.defaultCapabilities()
         val wireless = caps.first { it.id == "wireless-audit" }
