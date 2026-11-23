@@ -2,6 +2,7 @@ package com.ghosttap.core.vnic
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -160,6 +161,35 @@ class VnicTransportRoutingTest {
         assertEquals("192.168.4.27", bringUpTarget?.id)
         assertEquals(VnicExecutionState.CONTROLLABLE, result.executionState)
         assertTrue(result.bringUp?.connectionHeld == true)
+    }
+
+    @Test
+    fun discoveryDoesNotConnectToAnUnrelatedNamedDevice() {
+        assertFalse(
+            vnicDiscoveryMatchesTarget(
+                "LED sign",
+                "Find the LED sign nearby",
+                "Strongest device found: Smart bulb AA:BB:CC:DD:EE:FF"
+            )
+        )
+        assertTrue(
+            vnicDiscoveryMatchesTarget(
+                "LED sign",
+                "Find the LED sign nearby",
+                "Found device: LED Controller AA:BB:CC:DD:EE:FF"
+            )
+        )
+    }
+
+    @Test
+    fun genericDiscoveryCanUseTheBestAvailableCandidate() {
+        assertTrue(
+            vnicDiscoveryMatchesTarget(
+                "Bluetooth controller",
+                "Find a Bluetooth controller",
+                "Strongest device found: Unknown peripheral AA:BB:CC:DD:EE:FF"
+            )
+        )
     }
 
 }
