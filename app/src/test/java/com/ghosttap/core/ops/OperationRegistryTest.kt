@@ -175,7 +175,7 @@ class OperationRegistryTest {
             description = "Echoes the pending args back.",
             area = OperationArea.SYSTEM,
             execute = { ctx ->
-                OpResult(true, "args were: \${ctx.pendingArgs}")
+                OpResult(true, "args were: ${ctx.pendingArgs}")
             }
         )
         val cap = op.asCapability(context)
@@ -201,7 +201,7 @@ class OperationRegistryTest {
             title = "Test: restore",
             description = "Reads the choice, then succeeds.",
             area = OperationArea.SYSTEM,
-            execute = { ctx -> OpResult(true, "saw: \${ctx.pendingChoice}") }
+            execute = { ctx -> OpResult(true, "saw: ${ctx.pendingChoice}") }
         )
         val cap = op.asCapability(context)
         val result = cap.run(mapOf("command" to "ping -c 3 192.168.1.42"))
