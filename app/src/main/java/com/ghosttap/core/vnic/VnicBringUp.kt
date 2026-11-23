@@ -82,6 +82,8 @@ fun vnicDetectBringUpTargets(
         .findAll(evidence).map { it.value }
         .firstOrNull { ip -> ip.split(".").all { it.toIntOrNull() in 0..255 } }
     val mac = Regex("""(?i)(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}""").find(evidence)?.value
+    val hostname = Regex("""(?i)\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:local|lan|com|net|org|io|dev)\\b""")
+        .find(evidence)?.value
     val candidates = mutableListOf<VnicBringUpTarget>()
     fun add(kind: VnicBringUpKind, id: String, title: String) {
         if (candidates.none { it.kind == kind && it.id == id }) {
@@ -92,15 +94,15 @@ fun vnicDetectBringUpTargets(
     // VirtualESP32 is the most specific route when the target is explicitly
     // identified as an ESP32; its BLE/Wi-Fi interfaces are guest capabilities.
     if ("esp32" in hay || "espressif" in hay) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
-    if (("bluetooth" in hay || Regex("""\bble\b""").containsMatchIn(hay) || "gatt" in hay) && (mac != null || subject.isNotBlank())) {
-        add(VnicBringUpKind.BLE, mac ?: subject, subject)
+    // A transport keyword is not a device address. Only attempt direct
+    // BLE/NETWORK bring-up after discovery or research supplies a real id;
+    // otherwise the VNIC planner must run the matching discovery operation.
+    if (mac != null && ("bluetooth" in hay || Regex("""\\bble\\b""").containsMatchIn(hay) || "gatt" in hay)) {
+        add(VnicBringUpKind.BLE, mac, subject)
     }
-    if ("nfc" in hay) add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
-    if ("usb" in hay || "serial" in hay || "uart" in hay || "ch340" in hay) {
-        add(VnicBringUpKind.USB, "usb", subject.ifBlank { "USB/UART target" })
-    }
-    if (ipv4 != null || Regex("""\bwi-?fi\b""").containsMatchIn(hay) || "ssid" in hay || "network" in hay || "host" in hay || "ip address" in hay) {
-        add(VnicBringUpKind.NETWORK, ipv4 ?: subject, subject.ifBlank { ipv4 ?: "Network target" })
+    if (ipv4 != null || hostname != null) {
+        val hostId = ipv4 ?: hostname!!
+        add(VnicBringUpKind.NETWORK, hostId, subject.ifBlank { hostId })
     }
     return candidates
 }
