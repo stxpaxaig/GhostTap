@@ -24,7 +24,10 @@ import kotlinx.coroutines.delay
  * The QEMU backend inside VirtualESP32 is NOT built (the JNI boundary is
  * deliberately unavailable) — this bridge never claims QEMU execution.
  */
-class VnicEsp32Bridge(\n    private val client: VirtualEsp32Client,\n    private val recordResult: suspend (String, OpResult) -> Unit = { _, _ -> }\n) : VnicBringUpPort {
+class VnicEsp32Bridge(
+    private val client: VirtualEsp32Client,
+    private val recordResult: suspend (String, OpResult) -> Unit = { _, _ -> }
+) : VnicBringUpPort {
 
     /** Register all vesp32.* capabilities. Safe to call once; re-registering replaces the same ids. */
     fun register() {
