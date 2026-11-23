@@ -617,7 +617,7 @@ class VnicCore(
                             failReason = "Bring-up threw: ${e.message ?: "unknown error"}."
                         )
                     }
-                    attemptLog += "[${target.kind}] ${attempt.log.joinToString(" | ").take(500)}"
+                    attemptLog += "[${target.kind}] ${attempt.log.joinToString(" | ").take(400)}" + (attempt.failReason?.let { " — reason: ${it.take(300)}" } ?: "")
                     if (attempt.ready && attempt.connectionHeld && attempt.controlLines.isNotEmpty()) {
                         selectedResult = attempt
                         selectedTarget = target
