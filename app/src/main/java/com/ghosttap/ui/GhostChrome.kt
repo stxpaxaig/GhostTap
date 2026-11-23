@@ -299,10 +299,11 @@ internal fun OperatorCapabilityPanel(
     liveState: String
 ) {
     var expanded by remember(area) { mutableStateOf(true) }
-    val operations = remember(area, operationIdPrefix) {
+    val registryRevision = CapabilityRegistry.revision
+    val operations = remember(area, operationIdPrefix, registryRevision) {
         OperationRegistry.byArea(area).filter { operationIdPrefix == null || it.id.startsWith(operationIdPrefix) }
     }
-    val intelligenceCapabilities = remember(area) {
+    val intelligenceCapabilities = remember(area, registryRevision) {
         CapabilityRegistry.byCategory(area.capabilityCategory)
     }
     Column(
