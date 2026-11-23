@@ -171,7 +171,7 @@ class LocalRuleReasoner : VnicReasoningProvider {
                 }
             }
             val sideEffectRequested = Regex(
-                """(?i)\\b(turn|switch|set|toggle|send|write|display|show|print|restart|reboot|flash|erase|start|stop|activate|deactivate|unlock|lock|open|close)\\b"""
+                """(?i)\b(turn|switch|set|toggle|send|write|display|show|print|restart|reboot|flash|erase|start|stop|activate|deactivate|unlock|lock|open|close)\b"""
             ).containsMatchIn(goal)
             val requiresExplicitAction = cap.riskLevel.equals("WRITE", ignoreCase = true) ||
                 cap.riskLevel.equals("CONTROL", ignoreCase = true)
