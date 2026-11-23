@@ -27,7 +27,7 @@ class VnicCapabilityBridge(private val engine: IntelEngine) {
     /** Everything Ghost Tap can do right now, as the VNIC sees it. */
     fun mapCapabilities(): List<VnicCapabilityInfo> =
         CapabilityRegistry.all().map {
-            VnicCapabilityInfo(it.id, it.title, it.detail, it.riskLevel, it.verified)
+            VnicCapabilityInfo(it.id, it.title, it.detail, it.riskLevel, it.verified, it.category, it.inputs, it.outputs, it.preconditions)
         }
 
     /** Capability ids whose title/detail words overlap the goal text. */
