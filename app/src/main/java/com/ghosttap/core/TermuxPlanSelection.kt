@@ -442,7 +442,7 @@ object TermuxPlanSelection {
             "curl", "wget" -> "http"
             "nslookup", "dig", "host" -> "dns"
             "nmap", "arp-scan" -> "discovery"
-            "aircrack-ng", "airmon-ng", "airodump-ng", "aireplay-ng" -> "wireless-audit"
+            "aircrack-ng", "airmon-ng", "airodump-ng", "aireplay-ng", "iw", "rfkill" -> "wireless-audit"
             "python3", "python", "pip" -> "python"
             "jq" -> "json"
             "git", "ssh", "scp" -> "dev"
