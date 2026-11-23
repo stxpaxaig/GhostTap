@@ -1,5 +1,7 @@
 package com.ghosttap.core
 
+import androidx.compose.runtime.mutableStateOf
+
 /**
  * Machine-readable description of one real Ghost Tap operation.
  *
@@ -66,6 +68,9 @@ data class OpResult(
  */
 object CapabilityRegistry {
     private val caps = LinkedHashMap<String, IntelCapability>()
+    // Observable registry revision: panels refresh when new capabilities are wired.
+    private val revisionState = mutableStateOf(0)
+    val revision: Int get() = revisionState.value
 
     /**
      * THE integration contract — any new Ghost Tap tool becomes visible to the
@@ -111,6 +116,7 @@ object CapabilityRegistry {
      */
     fun register(c: IntelCapability) {
         caps[c.id] = c
+        revisionState.value++
     }
 
     fun all(): List<IntelCapability> = caps.values.toList()
