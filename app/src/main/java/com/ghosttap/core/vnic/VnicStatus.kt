@@ -61,6 +61,21 @@ fun VnicStatusPanel(
                 fontFamily = FontFamily.Monospace,
                 style = MaterialTheme.typography.bodySmall
             )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                "LIVE TRANSPORT INVENTORY",
+                color = Accent,
+                fontFamily = FontFamily.Monospace,
+                style = MaterialTheme.typography.bodySmall
+            )
+            status.transportLines.forEach { line ->
+                Text(
+                    "• $line",
+                    color = Dim,
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             val counts = status.memoryCounts
             Text(
                 "What it remembers — past events ${counts["episodic"] ?: 0} · facts ${counts["semantic"] ?: 0} · how-to steps ${counts["procedural"] ?: 0} · right now ${counts["working"] ?: 0}",
