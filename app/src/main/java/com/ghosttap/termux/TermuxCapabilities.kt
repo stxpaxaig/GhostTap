@@ -315,6 +315,12 @@ object TermuxRegistry {
             probeTools = listOf("curl", "wget")
         ),
         TermuxCapability(
+            id = "wireless-audit", category = "Wireless diagnostics",
+            title = "Aircrack-ng wireless diagnostics",
+            detail = "Detects Aircrack-ng and exposes its local version/help and wireless adapter diagnostics. Does not capture handshakes, deauthenticate clients, or attempt password recovery.",
+            probeTools = listOf("aircrack-ng", "airmon-ng", "airodump-ng", "aireplay-ng")
+        ),
+        TermuxCapability(
             id = "discovery", category = "Finding things nearby",
             title = "Finding things on the network",
             detail = "Look for other devices and services on the Wi-Fi.",
