@@ -1,6 +1,7 @@
 package com.ghosttap.core.vnic
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -77,4 +78,35 @@ class VnicReasoningPlannerTest {
         )
         assertEquals(8, plan.size)
     }
+    @Test
+    fun investigationDoesNotSelectWriteOrControlOperations() {
+        val capabilities = listOf(
+            VnicCapabilityInfo(
+                id = "led.read-status",
+                title = "Read LED status",
+                description = "Reads the current LED state.",
+                riskLevel = "READ",
+                verified = true,
+                category = "ESP32"
+            ),
+            VnicCapabilityInfo(
+                id = "led.gpio4.control",
+                title = "Turn LED GPIO4 on",
+                description = "Changes the requested LED output state.",
+                riskLevel = "CONTROL",
+                verified = false,
+                category = "ESP32",
+                inputs = listOf("pin", "state")
+            )
+        )
+        val plan = LocalRuleReasoner().planFor(
+            "Investigate the LED sign and identify its controls",
+            capabilities,
+            emptyList(),
+            emptyList()
+        )
+        assertTrue(plan.contains("led.read-status"))
+        assertFalse(plan.contains("led.gpio4.control"))
+    }
+
 }
