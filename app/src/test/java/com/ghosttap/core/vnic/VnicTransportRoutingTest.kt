@@ -114,4 +114,52 @@ class VnicTransportRoutingTest {
         assertTrue(result.controlsMapped.contains("write"))
     }
 
+    @Test
+    fun discoveredNetworkAddressTriggersHeldSessionBringUp() = runBlocking {
+        var bringUpTarget: VnicBringUpTarget? = null
+        val researcher = object : VnicResearchPort {
+            override suspend fun research(query: String) =
+                VnicResearchReport(query, emptyList(), emptyList(), 0, 0)
+        }
+        val core = VnicCore(memory = InMemoryVnicMemory(), researcher = researcher)
+        val result = core.process(
+            VnicObservation("Wi-Fi device", "Find a device on Wi-Fi"),
+            capabilities = listOf(
+                VnicCapabilityInfo(
+                    id = "net.find-on-wifi",
+                    title = "Find what's on my Wi-Fi",
+                    description = "Finds live devices on the local wireless network.",
+                    riskLevel = "READ",
+                    verified = false,
+                    category = "NETWORK"
+                )
+            ),
+            executor = object : VnicExecutor {
+                override suspend fun execute(capabilityId: String, args: Map<String, String>) =
+                    VnicExecutionOutcome(
+                        VnicExecutionState.VERIFIED,
+                        "Found 1 live device: 192.168.4.27",
+                        "net:1"
+                    )
+            },
+            bringUp = object : VnicBringUpPort {
+                override suspend fun bringUp(target: VnicBringUpTarget, observation: String): VnicBringUpResult {
+                    bringUpTarget = target
+                    return VnicBringUpResult(
+                        ready = true,
+                        route = "tcp://192.168.4.27:80",
+                        controlLines = listOf("HTTP service"),
+                        log = listOf("TCP session held"),
+                        connectionHeld = true,
+                        failReason = null
+                    )
+                }
+            }
+        )
+        assertEquals(VnicBringUpKind.NETWORK, bringUpTarget?.kind)
+        assertEquals("192.168.4.27", bringUpTarget?.id)
+        assertEquals(VnicExecutionState.CONTROLLABLE, result.executionState)
+        assertTrue(result.bringUp?.connectionHeld == true)
+    }
+
 }
