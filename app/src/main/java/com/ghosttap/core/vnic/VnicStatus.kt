@@ -47,6 +47,7 @@ fun VnicStatusPanel(
 ) {
     val status by engine.status.collectAsState()
     val driveOutcome by engine.driveOutcome.collectAsState()
+    val transportSessions by engine.transportSessions.collectAsState()
     PanelBox("VNIC — NEURAL CORE") {
         Column(modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -75,6 +76,33 @@ fun VnicStatusPanel(
                     fontFamily = FontFamily.Monospace,
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+            if (transportSessions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "KNOWN TARGET SESSIONS",
+                    color = Accent,
+                    fontFamily = FontFamily.Monospace,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                transportSessions.takeLast(8).asReversed().forEach { session ->
+                    Text(
+                        "• " + session.subject + " · " + session.route.ifBlank { "route pending" } +
+                            " · " + session.state +
+                            if (session.connectionHeld) " · link verified held" else " · reconnect/verification required",
+                        color = if (session.connectionHeld) Accent else Dim,
+                        fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    session.controls.take(3).forEach { control ->
+                        Text(
+                            "  control: $control",
+                            color = Dim,
+                            fontFamily = FontFamily.Monospace,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
             val counts = status.memoryCounts
             Text(
