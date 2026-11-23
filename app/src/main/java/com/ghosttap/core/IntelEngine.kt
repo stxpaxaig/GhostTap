@@ -498,6 +498,31 @@ class IntelEngine(
             }
         )
         reg(
+            id = "net.held_tcp_send", title = "Send data over a held TCP session",
+            riskLevel = "WRITE", verified = true,
+            sourceMethod = "NetworkToolsViewModel.sendHeldTcpMessage",
+            effects = "Sends only the operator-supplied payload over an already-held TCP connection and reads the response. No protocol payload is invented.",
+            detail = "Exchanges an explicit message with a network device without closing the held connection.",
+            category = "NETWORK",
+            inputs = listOf("host", "port", "message"),
+            outputs = listOf("sent bytes and received response"),
+            preconditions = listOf("a persistent TCP session is currently held", "operator supplies the device protocol payload"),
+            run = { args ->
+                try {
+                    val host = args["host"].orEmpty()
+                    val port = args["port"]?.toIntOrNull() ?: 0
+                    val message = args["message"].orEmpty()
+                    if (host.isBlank() || port !in 1..65535 || message.isEmpty()) {
+                        OpResult(false, "Need a host, valid port, and explicit message.")
+                    } else {
+                        OpResult(true, net.sendHeldTcpMessage(host, port, message))
+                    }
+                } catch (e: Exception) {
+                    OpResult(false, "Held TCP exchange failed: ${e.message ?: "unknown problem"}")
+                }
+            }
+        )
+        reg(
             id = "net.udp_send", title = "Send a message and listen for a reply",
             riskLevel = "WRITE", verified = true,
             sourceMethod = "NetworkToolsViewModel.udpTest",
