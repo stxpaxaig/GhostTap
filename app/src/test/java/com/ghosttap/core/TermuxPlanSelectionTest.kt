@@ -242,14 +242,16 @@ class TermuxPlanSelectionTest {
     }
 
     @Test
-    fun `explicit Aircrack request offers read-only local tool diagnostics`() {
+    fun `wireless request automatically runs live adapter diagnostics`() {
         TermuxPlanSelection.gateProvider = { gate() }
         val steps = TermuxPlanSelection.stepsFor(
             target("Check Aircrack-ng availability for my wireless adapter"), emptySet()
         )
-        val audit = steps.firstOrNull { it.args["command"] == "aircrack-ng --help" }
+        val audit = steps.firstOrNull { it.args["command"]?.contains("aircrack-ng --version") == true }
         assertEquals("termux.run-command", audit?.capabilityId)
-        assertTrue(audit?.auto == false)
+        assertTrue(audit?.args?.get("command")?.contains("iw dev") == true)
+        assertTrue(audit?.args?.get("command")?.contains("airmon-ng") == true)
+        assertTrue(audit?.auto == true)
     }
 
     @Test
@@ -258,7 +260,7 @@ class TermuxPlanSelectionTest {
         val steps = TermuxPlanSelection.stepsFor(
             target("Check Aircrack-ng availability"), emptySet()
         )
-        assertFalse(steps.any { it.args["command"] == "aircrack-ng --help" })
+        assertFalse(steps.any { it.args["command"]?.contains("aircrack-ng --version") == true })
     }
     @Test
     fun `command tools map to their capability`() {
