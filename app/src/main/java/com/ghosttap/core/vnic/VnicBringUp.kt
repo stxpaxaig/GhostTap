@@ -115,6 +115,22 @@ fun vnicDetectBringUpTargets(
     return candidates
 }
 
+fun vnicDiscoveryMatchesTarget(subject: String, objective: String, evidence: String): Boolean {
+    val generic = setOf(
+        "find", "locate", "discover", "identify", "investigate", "connect", "scan", "control",
+        "device", "devices", "controller", "target", "thing", "board", "nearby", "strongest",
+        "bluetooth", "wireless", "wifi", "network", "usb", "serial", "uart", "nfc",
+        "the", "and", "for", "with", "from", "onto", "into", "this", "that", "my", "near"
+    )
+    fun words(value: String): Set<String> =
+        Regex("[a-z0-9]+").findAll(value.lowercase()).map { it.value }
+            .filter { it.length > 2 && it !in generic }.toSet()
+    val targetWords = words("$subject $objective")
+    if (targetWords.isEmpty()) return true
+    val evidenceWords = words(evidence)
+    return targetWords.any { it in evidenceWords }
+}
+
 fun vnicDetectBringUpKind(text: String, findings: List<VnicFinding> = emptyList()): VnicBringUpKind? {
     val hay = (text + " " + findings.joinToString(" ") { "${it.title} ${it.snippet}" }).lowercase()
     return when {
