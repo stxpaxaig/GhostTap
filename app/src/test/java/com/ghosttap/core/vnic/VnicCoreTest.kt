@@ -189,6 +189,9 @@ class VnicCoreTest {
         assertEquals("question", core.interpret("What is this device?").intent)
         assertEquals("instruction", core.interpret("Investigate the SYNTH-TARGET-01 device").intent)
         assertEquals("statement", core.interpret("The SYNTH-TARGET-01 is a synthetic test target").intent)
+        assertEquals("instruction", core.interpret("Connect to the Bluetooth controller").intent)
+        assertEquals("instruction", core.interpret("Can you turn on the LED sign?").intent)
+        assertEquals("statement", core.interpret("The device can send data").intent)
         assertEquals(12, core.interpret("one two three four five six seven eight nine ten eleven twelve thirteen fourteen").keywords.size)
     }
 
