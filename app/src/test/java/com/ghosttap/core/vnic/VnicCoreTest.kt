@@ -305,7 +305,7 @@ class VnicCoreTest {
         // the attached executor, reaching VERIFIED before any knowledge
         // is added. The second cycle then runs answer_from_context.
         val result1 = core.process(
-            VnicObservation("SYNTH-TARGET-01", "Investigate bluetooth device SYNTH-TARGET-01"),
+            VnicObservation("SYNTH-TARGET-01", "Connect to bluetooth device SYNTH-TARGET-01"),
             capabilities = caps, executor = exec
         )
         assertEquals("research_required", result1.action)
