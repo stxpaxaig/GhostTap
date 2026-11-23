@@ -228,7 +228,9 @@ data class Operation(
     val retry: RetryPolicy = RetryPolicy(),
     val riskLevel: String = "READ",
     val verified: Boolean = false,
-    val route: String? = null
+    val route: String? = null,
+    /** Named planner inputs consumed by this operation through its argument map. */
+    val inputs: List<String> = emptyList()
 ) {
     /** True when this operation opens a screen instead of driving a device. */
     val isScreenFirst: Boolean get() = route != null
