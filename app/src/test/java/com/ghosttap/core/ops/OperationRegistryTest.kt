@@ -120,6 +120,22 @@ class OperationRegistryTest {
     }
 
     @Test
+    fun asCapabilityPassesDeclaredInputsToOperationContext() = runBlocking {
+        val context = OperationContext()
+        val op = testOp("test.pkg0.named-input")
+            .copy(inputs = listOf("host", "port"))
+            .copy(execute = { ctx ->
+                OpResult(true, "received", "${ctx.pendingArgs}")
+            })
+        val result = op.asCapability(context).run(
+            mapOf("host" to "192.168.1.42", "port" to "8080", "unrelated" to "ignored")
+        )
+        assertTrue(result.ok)
+        assertEquals("{host=192.168.1.42, port=8080}", result.data)
+        assertTrue(context.pendingArgs.isEmpty())
+    }
+
+    @Test
     fun asCapabilityForScreenOpNamesItsScreen() {
         val op = testOp("test.pkg0.screen", OperationArea.USB, route = "usb_uart")
         val cap = op.asCapability(OperationContext())
