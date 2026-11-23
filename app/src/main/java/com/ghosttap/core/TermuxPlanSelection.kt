@@ -1,5 +1,7 @@
 package com.ghosttap.core
 
+import java.net.URI
+
 /**
  * Piece 3 (v3) — the intelligence picks Termux tools.
  *
@@ -216,6 +218,25 @@ object TermuxPlanSelection {
 
     private val ipv4Regex = Regex("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b")
     private val urlRegex = Regex("(?i)\\bhttps?://[^\\s]+")
+    /** Parse URLs as data and quote them before composing a shell command. */
+    private fun safeHttpUrl(raw: String): String? {
+        val candidate = raw.trim().trimEnd('.', ',', ';', ')', ']', '}')
+        if (candidate.length > 500) return null
+        return try {
+            val uri = URI(candidate)
+            val scheme = uri.scheme?.lowercase()
+            val host = uri.host
+            if (scheme !in setOf("http", "https") || host.isNullOrBlank() ||
+                uri.rawUserInfo != null || (uri.port != -1 && uri.port !in 1..65535) ||
+                !isSafeHost(host)
+            ) null else candidate
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /** POSIX single-quote escaping; the URL remains one literal shell argument. */
+    private fun shellQuote(value: String): String = "'" + value.replace("'", "'\\''") + "'"
     private val hostRegex = Regex("(?i)\\b([a-z0-9-]+\\.)+(com|net|org|io|local|lan)\\b")
     private val pythonWords = Regex("(?i)\\bpython\\b")
     private val termuxWords = Regex("(?i)\\b(termux|linux terminal|shell script)\\b")
@@ -271,7 +292,7 @@ object TermuxPlanSelection {
         val text = (target.text + " " + target.markings.joinToString(" ") +
             " " + target.barcodes.joinToString(" "))
         val ip = ipv4Regex.find(text)?.value?.takeIf { isValidIpv4(it) }
-        val url = urlRegex.find(text)?.value?.take(500)
+        val url = urlRegex.find(text)?.value?.let { safeHttpUrl(it) }
         val host = hostRegex.find(text)?.value
             ?: ip
         val safeHost = host?.takeIf { isSafeHost(it) }
@@ -300,7 +321,7 @@ object TermuxPlanSelection {
 
         // 2. Built-in web fetch failed -> the same fetch from Termux.
         if ("net.http_fetch" in failedIds && url != null && canOffer("http")) {
-            val command = jobFor("http")?.commandTemplate?.replace("{url}", url)
+            val command = jobFor("http")?.commandTemplate?.replace("{url}", shellQuote(url))
             if (command != null) {
                 out.add(
                     PlanStep(
