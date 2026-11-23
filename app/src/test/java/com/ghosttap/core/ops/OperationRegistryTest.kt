@@ -235,4 +235,14 @@ class OperationRegistryTest {
         assertTrue(result.ok)
         assertNull(context.pendingChoice)
     }
+    @Test
+    fun aircrackPreflightIsRegisteredAsReadOnly() {
+        registerAircrackNgOperations()
+        val op = OperationRegistry.get("wifi.aircrack-preflight")
+        assertNotNull(op)
+        assertEquals("READ", op?.riskLevel)
+        assertFalse(op?.verified ?: true)
+        assertTrue(op?.description?.contains("does not install tools") == true)
+    }
+
 }
