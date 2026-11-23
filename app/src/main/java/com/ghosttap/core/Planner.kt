@@ -60,7 +60,7 @@ object Planner {
     ): List<PlanStep> {
         val normal = mutableListOf<PlanStep>()
         val demoted = mutableListOf<PlanStep>()
-        val text = (t.text + " " + t.markings.joinToString(" ") + " " + t.barcodes.joinToString(" "))
+        val text = (t.title + " " + t.text + " " + t.markings.joinToString(" ") + " " + t.barcodes.joinToString(" "))
         // Dedupe by capability AND args: the same tool with different
         // details is a different step (e.g. two Termux commands), while
         // the same tool with the same details still appears once.
