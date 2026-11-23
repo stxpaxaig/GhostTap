@@ -229,6 +229,18 @@ class VnicEngine(
         scope.launch { runCatching { refreshStatus() } }
     }
 
+    /** Persist the actual VirtualESP32 operation outcome in VNIC's existing memory. */
+    private suspend fun recordEsp32Result(operationId: String, result: com.ghosttap.core.OpResult) {
+        memory.remember(
+            VnicMemoryRecord(
+                type = VnicMemoryClass.EPISODIC,
+                content = "VirtualESP32 $operationId ${if (result.ok) "succeeded" else "failed"}: ${result.summary.take(500)}",
+                context = "source=virtualesp32 operation=$operationId",
+                confidence = if (result.ok) 0.9 else 0.65
+            )
+        )
+        refreshStatus()
+    }
     /**
      * Called after each InvestigationLoop round. Records the round into
      * VNIC memory + telemetry, then hands the round to [driveLoop] — the
