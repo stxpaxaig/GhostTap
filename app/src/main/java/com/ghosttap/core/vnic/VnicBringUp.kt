@@ -91,9 +91,14 @@ fun vnicDetectBringUpTargets(
         }
     }
 
-    // VirtualESP32 is the most specific route when the target is explicitly
-    // identified as an ESP32; its BLE/Wi-Fi interfaces are guest capabilities.
-    if ("esp32" in hay || "espressif" in hay) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
+    // VirtualESP32 is a software companion, not a substitute for a physical
+    // ESP32 discovered over BLE, USB, or Wi-Fi. Select it only when the user
+    // explicitly names the virtual board/emulator or practice board.
+    val objectiveHay = (subject + " " + text).lowercase()
+    val virtualEsp32Requested =
+        Regex("""\\bvirtual[\\s_-]*esp32\\b""").containsMatchIn(objectiveHay) ||
+            ("esp32" in objectiveHay && ("practice board" in objectiveHay || "emulator" in objectiveHay))
+    if (virtualEsp32Requested) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
     // A transport keyword is not a device address. Only attempt direct
     // BLE/NETWORK bring-up after discovery or research supplies a real id;
     // otherwise the VNIC planner must run the matching discovery operation.
