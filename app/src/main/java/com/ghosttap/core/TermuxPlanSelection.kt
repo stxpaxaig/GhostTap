@@ -294,16 +294,20 @@ object TermuxPlanSelection {
      */
     fun stepsFor(target: IntelTarget, failedIds: Set<String> = emptySet()): List<PlanStep> {
         val out = mutableListOf<PlanStep>()
-        if (requestsWirelessAudit && canOffer("wireless-audit")) {
-            out += commandStep(
-                "wireless-audit",
-                "aircrack-ng --help"
-            )
-        }
         val text = (target.text + " " + target.markings.joinToString(" ") +
             " " + target.barcodes.joinToString(" "))
         val ip = ipv4Regex.find(text)?.value?.takeIf { isValidIpv4(it) }
         val requestsWirelessAudit = Regex("(?i)\\b(aircrack|wireless audit|wireless adapter diagnostic|wifi adapter diagnostic)\\b").containsMatchIn(text)
+        if (requestsWirelessAudit && canOffer("wireless-audit")) {
+            out.add(
+                PlanStep(
+                    "termux.run-command",
+                    mapOf(ARG_COMMAND to "aircrack-ng --help"),
+                    why = "Aircrack-ng is installed; inspect its local command interface for wireless diagnostics.",
+                    auto = false
+                )
+            )
+        }
         val url = urlRegex.find(text)?.value?.let { safeHttpUrl(it) }
         val host = hostRegex.find(text)?.value
             ?: ip
@@ -435,6 +439,7 @@ object TermuxPlanSelection {
             "curl", "wget" -> "http"
             "nslookup", "dig", "host" -> "dns"
             "nmap", "arp-scan" -> "discovery"
+            "aircrack-ng", "airmon-ng", "airodump-ng", "aireplay-ng" -> "wireless-audit"
             "python3", "python", "pip" -> "python"
             "jq" -> "json"
             "git", "ssh", "scp" -> "dev"
