@@ -72,12 +72,11 @@ object OperationRegistry {
  * a script to run, "choice"/"pendingChoice" for anything else that
  * asks the user to pick) and into [OperationContext.pendingArgs]
  * ([TermuxPlanSelection.ARG_PREFIX] keys become the named script
- * arguments). Without this the args map was dropped here and a step
- * like termux.run-command could never carry the command the plan
- * composed — its preparation step would ask the user to type one
- * instead, and the autonomous loop would log a failure. The seeded
- * values are restored afterwards, so a manual run that already had a
- * pending choice is never clobbered.
+ * arguments). The published [IntelCapability.inputs] now describes
+ * those real argument channels, so the planner can supply them instead
+ * of treating every operation as input-free. The seeded values are
+ * restored afterwards, so a manual run that already had a pending
+ * choice is never clobbered.
  */
 fun Operation.asCapability(context: OperationContext): IntelCapability =
     IntelCapability(
@@ -85,7 +84,7 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
         title = title,
         detail = description,
         category = area.capabilityCategory,
-        inputs = emptyList(),
+        inputs = operationInputs(this),
         outputs = listOf("outcome: what actually happened, in plain words"),
         preconditions = prerequisites,
         readOnly = riskLevel == "READ",
@@ -108,7 +107,7 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
             try {
                 when (val result = OperationRunner(context).run(this)) {
                     is OperationResult.Done ->
-                        OpResult(true, result.reason.removePrefix("${title}: "), result.evidence)
+                        OpResult(true, result.reason.removePrefix("\${title}: "), result.evidence)
                     is OperationResult.Failed ->
                         OpResult(false, result.reason, result.evidence)
                     is OperationResult.NeedsUserAction ->
@@ -117,10 +116,61 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
                         OpResult(false, result.reason, result.evidence)
                 }
             } catch (e: Exception) {
-                OpResult(false, "Operation '$id' failed: ${e.message ?: "unknown problem"}")
+                OpResult(false, "Operation '$id' failed: \${e.message ?: "unknown problem"}")
             } finally {
                 context.pendingChoice = savedChoice
                 context.pendingArgs = savedArgs
             }
         }
     )
+
+/**
+ * Exact caller-facing argument shape for a registered operation.
+ *
+ * This is intentionally explicit: operation inputs are derived from the
+ * concrete operation implementations, not guessed from their descriptions.
+ * Screen-first operations and operations that read live ViewModel state
+ * take no plan arguments. The listed ids are the operations that actually
+ * consume the pending-choice or pending-argument channels.
+ */
+internal fun operationInputs(op: Operation): List<String> {
+    if (op.route != null) return emptyList()
+    return when (op.id) {
+        "termux.run-command" -> listOf("command")
+        "termux.run-approved-script" -> listOf("scriptTitle", "arg.<name>")
+        "net.traceroute", "net.dns_lookup" ->
+            listOf("arg.host", "pendingChoice", "choice")
+        "net.qr_generate" ->
+            listOf("arg.text", "pendingChoice", "choice")
+        "visual.see_and_tap" ->
+            listOf("arg.goal", "pendingChoice", "choice")
+        "net.talk-to-host",
+        "spp.watch-for-reply",
+        "usb.set-speed",
+        "usb.talk-to-board",
+        "usb.load-software",
+        "usb.set-flash-spot",
+        "vesp32.send-message",
+        "net.find-and-talk",
+        "net.open-advertised-service",
+        "net.fetch-page",
+        "net.port-scan",
+        "visual.save-last-photo",
+        "visual.rename-profile",
+        "visual.delete-profile",
+        "visual.copy-from-photo",
+        "intel.look-into-device",
+        "intel.delete-case-file",
+        "intel.delete-saved-plan",
+        "intel.check-what-else",
+        "intel.run-any-control",
+        "nfc.erase-confirmed",
+        "nfc.send-named-command",
+        "nfc.run-named-script",
+        "nfc.arm-named-script",
+        "nfc.read-card-blocks",
+        "nfc.classic-write-guided",
+        "vnic.use-saved-plan" -> listOf("pendingChoice", "choice")
+        else -> emptyList()
+    }
+}
