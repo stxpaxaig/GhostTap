@@ -10,7 +10,7 @@ class VnicTransportRoutingTest {
     fun esp32IsFirstAndSpecificTransportCandidate() {
         val targets = vnicDetectBringUpTargets(
             subject = "LED controller",
-            text = "Find the ESP32 controller using Bluetooth and Wi-Fi"
+            text = "Find the ESP32 controller using Bluetooth at AA:BB:CC:DD:EE:FF and Wi-Fi at 192.168.4.27"
         )
         assertEquals(VnicBringUpKind.ESP32, targets.first().kind)
         assertTrue(targets.any { it.kind == VnicBringUpKind.BLE })
@@ -50,4 +50,13 @@ class VnicTransportRoutingTest {
     fun noTransportIsInventedWithoutEvidence() {
         assertTrue(vnicDetectBringUpTargets("unknown object", "Tell me what this is").isEmpty())
     }
+    @Test
+    fun transportWordsAloneDoNotInventDeviceAddresses() {
+        val targets = vnicDetectBringUpTargets(
+            subject = "LED controller",
+            text = "Find the LED controller using Bluetooth and Wi-Fi"
+        )
+        assertTrue(targets.isEmpty())
+    }
+
 }
