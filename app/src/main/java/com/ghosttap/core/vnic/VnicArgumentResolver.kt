@@ -40,7 +40,7 @@ object VnicArgumentResolver {
             append(observation.text).append(' ')
             findings.forEach { append(it.title).append(' ').append(it.snippet).append(' ').append(it.url).append(' ') }
         }
-        val args = linkedMapOf("subject" to observation.subject, "text" to observation.text)
+        val args = linkedMapOf("subject" to observation.subject)
         val urlValue = url.find(evidence)?.value?.trimEnd('.', ',', ';', ')', ']')
         val hostValue = ipv4.find(evidence)?.value?.takeIf { isValidIpv4(it) }
             ?: urlValue?.let { runCatching { URI(it).host }.getOrNull() }
@@ -76,7 +76,7 @@ object VnicArgumentResolver {
                 "text" -> if (capability?.riskLevel == "WRITE" || capability?.riskLevel == "CONTROL") payload else observation.text
                 "command" -> command
                 "ssid", "password", "passphrase" -> credentials[input.lowercase()]
-                "name", "title" -> observation.subject.takeIf { it.isNotBlank() }
+                "name", "title", "subject" -> observation.subject.takeIf { it.isNotBlank() }
                 "instruction", "query", "goal" -> observation.text.takeIf { it.isNotBlank() }
                 else -> null
             }?.takeIf { it.isNotBlank() }
