@@ -297,16 +297,19 @@ object TermuxPlanSelection {
         val text = (target.text + " " + target.markings.joinToString(" ") +
             " " + target.barcodes.joinToString(" "))
         val ip = ipv4Regex.find(text)?.value?.takeIf { isValidIpv4(it) }
-        val requestsWirelessAudit = Regex("(?i)\\b(aircrack|wireless audit|wireless adapter diagnostic|wifi adapter diagnostic)\\b").containsMatchIn(text)
+        val requestsWirelessAudit = Regex("(?i)\\b(aircrack|wireless|wi-?fi|802\\.11)\\b").containsMatchIn(text)
         if (requestsWirelessAudit && canOffer("wireless-audit")) {
-            out.add(
-                PlanStep(
-                    "termux.run-command",
-                    mapOf(ARG_COMMAND to "aircrack-ng --help"),
-                    why = "Aircrack-ng is installed; inspect its local command interface for wireless diagnostics.",
-                    auto = false
+            val command = jobFor("wireless-audit")?.commandTemplate
+            if (command != null) {
+                out.add(
+                    PlanStep(
+                        "termux.run-command",
+                        mapOf(ARG_COMMAND to command),
+                        why = "Inspect Aircrack-ng and the phone's actual wireless adapter, driver, interface, and radio state.",
+                        auto = true
+                    )
                 )
-            )
+            }
         }
         val url = urlRegex.find(text)?.value?.let { safeHttpUrl(it) }
         val host = hostRegex.find(text)?.value
