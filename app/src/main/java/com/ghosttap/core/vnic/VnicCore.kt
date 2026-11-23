@@ -617,6 +617,96 @@ class VnicCore(
             phases += "ACT: store_context — added to working memory (no execution)"
         } else {
             val candidates = vnicDetectBringUpTargets(observation.subject, observation.text, findings)
+
+            suspend fun executePlanAndDiscover() {
+                if (selected == null || executor == null) return
+                phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
+                var lastOutcome: VnicExecutionOutcome? = null
+                val attemptedTargets = candidates.mapTo(mutableSetOf()) { "${it.kind}:${it.id}" }
+                for (stepId in plan.take(12)) {
+                    val capabilityInfo = capabilities.firstOrNull { it.id == stepId }
+                    val resolvedArgs = VnicArgumentResolver.resolve(capabilityInfo, observation, findings)
+                    if (resolvedArgs.unresolvedInputs.isNotEmpty()) {
+                        phases += "ARGUMENTS: $stepId still needs ${resolvedArgs.unresolvedInputs.joinToString()} — passing known evidence to the operation so its own preparation can request anything genuinely missing"
+                    }
+                    val outcome = try {
+                        executor.execute(stepId, resolvedArgs.args)
+                    } catch (e: Exception) {
+                        VnicExecutionOutcome(VnicExecutionState.FAILED, "Executor threw: ${e.message ?: "unknown"}")
+                    }
+                    lastOutcome = outcome
+                    executedId = stepId
+                    executedOutcome = outcome
+                    telemetry.recordExecution(outcome.state)
+                    phases += "ACT: $stepId -> ${outcome.state} — ${outcome.evidence}"
+
+                    if (outcome.state != VnicExecutionState.FAILED && bringUp != null) {
+                        val discoveryPrefix = when {
+                            stepId.startsWith("scan.") || stepId.startsWith("ble.") -> "Bluetooth scan result "
+                            stepId == "usb.find-board" -> "USB board found "
+                            stepId.startsWith("nfc.") && !outcome.evidence.contains("no tag", ignoreCase = true) ->
+                                "NFC tag present "
+                            else -> ""
+                        }
+                        val discoveryText = discoveryPrefix + observation.text + " " + outcome.evidence + " " + outcome.raw
+                        val discovered = vnicDetectBringUpTargets(observation.subject, discoveryText, findings)
+                        for (target in discovered) {
+                            val key = "${target.kind}:${target.id}"
+                            if (!attemptedTargets.add(key)) continue
+                            phases += "DISCOVERY: $stepId exposed ${target.kind} target '${target.id.take(100)}'; attempting verified bring-up"
+                            val attempt = try {
+                                bringUp.bringUp(target, observation.text)
+                            } catch (e: Exception) {
+                                VnicBringUpResult(
+                                    ready = false, route = "", controlLines = emptyList(),
+                                    log = listOf("discovery bring-up threw: ${e.message ?: "unknown"}"),
+                                    connectionHeld = false,
+                                    failReason = "Discovery bring-up threw: ${e.message ?: "unknown error"}."
+                                )
+                            }
+                            if (attempt.ready && attempt.connectionHeld && attempt.controlLines.isNotEmpty()) {
+                                bringUpResult = attempt
+                                controlsMapped = attempt.controlLines
+                                executionState = VnicExecutionState.CONTROLLABLE
+                                executionEvidence = "Discovery-driven bring-up CONTROLLABLE: selected=${target.kind} route=${attempt.route}; controls=${attempt.controlLines.joinToString()}; connection held"
+                                executionRaw = outcome.raw
+                                reward = 0.9
+                                telemetry.recordExecution(executionState)
+                                phases += "ACT: discovery-driven bring-up -> CONTROLLABLE — $executionEvidence"
+                                executedId = "bring-up"
+                                val held = VnicExecutionOutcome(executionState, executionEvidence, executionRaw)
+                                executedOutcome = held
+                                lastOutcome = held
+                                break
+                            } else {
+                                phases += "DISCOVERY: ${target.kind} did not reach controllable state — ${attempt.failReason ?: "connection/control verification incomplete"}"
+                            }
+                        }
+                        if (bringUpResult?.ready == true) break
+                    }
+
+                    val risk = capabilityInfo?.riskLevel.orEmpty()
+                    val sideEffect = risk.equals("WRITE", ignoreCase = true) ||
+                        risk.equals("CONTROL", ignoreCase = true)
+                    if (outcome.state == VnicExecutionState.FAILED && sideEffect) break
+                    if (outcome.state != VnicExecutionState.FAILED && sideEffect) break
+                }
+                if (bringUpResult?.ready != true) {
+                    lastOutcome?.let { last ->
+                        executionState = last.state
+                        executionEvidence = last.evidence
+                        executionRaw = last.raw
+                        reward = when (last.state) {
+                            VnicExecutionState.VERIFIED, VnicExecutionState.CONTROLLABLE -> 0.9
+                            VnicExecutionState.CONNECTED -> 0.7
+                            VnicExecutionState.ATTEMPTED -> 0.4
+                            VnicExecutionState.FAILED -> 0.2
+                            else -> 0.5
+                        }
+                    }
+                }
+            }
+
             if (candidates.isNotEmpty() && bringUp != null) {
                 phases += "SELECT: ${candidates.size} transport candidate(s) in priority order: ${candidates.joinToString { it.kind.name }}"
                 val attemptLog = mutableListOf<String>()
@@ -667,45 +757,16 @@ class VnicCore(
                 phases += "ACT: multi-transport bring-up -> $executionState — $executionEvidence"
                 executedId = "bring-up"
                 executedOutcome = VnicExecutionOutcome(executionState, executionEvidence, executionRaw)
+                if (result?.ready != true) {
+                    phases += "FALLBACK: direct bring-up did not complete; running the remaining registered discovery and task capabilities"
+                    executePlanAndDiscover()
+                }
             } else {
                 if (candidates.isNotEmpty()) {
                     phases += "ACT: transport candidates found (${candidates.joinToString { it.kind.name }}) but no bring-up port is attached — plan steps only; no connection will be held"
                 }
                 if (selected != null && executor != null) {
-                    phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
-                    var lastOutcome: VnicExecutionOutcome? = null
-                    for (stepId in plan.take(12)) {
-                        val capabilityInfo = capabilities.firstOrNull { it.id == stepId }
-                        val resolvedArgs = VnicArgumentResolver.resolve(capabilityInfo, observation, findings)
-                        if (resolvedArgs.unresolvedInputs.isNotEmpty()) {
-                            phases += "ARGUMENTS: $stepId still needs ${resolvedArgs.unresolvedInputs.joinToString()} — passing known evidence to the operation so its own preparation can request anything genuinely missing"
-                        }
-                        val outcome = try {
-                            executor.execute(stepId, resolvedArgs.args)
-                        } catch (e: Exception) {
-                            VnicExecutionOutcome(VnicExecutionState.FAILED, "Executor threw: ${e.message ?: "unknown"}")
-                        }
-                        lastOutcome = outcome
-                        executedId = stepId
-                        telemetry.recordExecution(outcome.state)
-                        phases += "ACT: $stepId -> ${outcome.state} — ${outcome.evidence}"
-                        if (outcome.state == VnicExecutionState.FAILED) break
-                    }
-                    val last = lastOutcome
-                    if (last != null) {
-                        executionState = last.state
-                        executionEvidence = last.evidence
-                        executionRaw = last.raw
-                        reward = when (last.state) {
-                            VnicExecutionState.VERIFIED -> 0.9
-                            VnicExecutionState.CONTROLLABLE -> 0.9
-                            VnicExecutionState.CONNECTED -> 0.7
-                            VnicExecutionState.ATTEMPTED -> 0.4
-                            VnicExecutionState.FAILED -> 0.2
-                            else -> 0.5
-                        }
-                    }
-                    executedOutcome = lastOutcome
+                    executePlanAndDiscover()
                 } else if (selected != null) {
                     phases += "SELECT: ${selected} (no executor attached — plan only, nothing executed)"
                 }
