@@ -398,6 +398,28 @@ fun GhostTapApp(
             )
         }
     }
+    /** Intelligence-first dispatch: VNIC reasons over the live capability registry before legacy direct matching. */
+    suspend fun runIntelligentCommand(text: String) {
+        val cycle = try {
+            intelVm.vnicObserve(text.take(100), text)
+        } catch (e: Exception) {
+            addDoItLine("Intelligence pass encountered an error: ${e.message ?: "unknown"}. Trying direct capability matching.")
+            null
+        }
+        if (cycle != null) {
+            addDoItLine("INTELLIGENCE: ${cycle.action} · confidence ${(cycle.confidence * 100).toInt()}% · state ${cycle.executionState.name}")
+            cycle.findings.take(3).forEach { addDoItLine("RESEARCH: ${it.title} — ${it.snippet.take(180)}") }
+            if (cycle.plan.isNotEmpty()) addDoItLine("CAPABILITIES SELECTED: ${cycle.plan.joinToString(" → ")}")
+            if (cycle.executionEvidence.isNotBlank()) addDoItLine("EXECUTION: ${cycle.executionEvidence}")
+            cycle.controlsMapped.forEach { addDoItLine("AVAILABLE CONTROL: $it") }
+            cycle.resultEvaluation.take(4).forEach { addDoItLine("NEXT: $it") }
+            // VNIC already acted through the shared registry/execution bridge,
+            // or established a live bring-up. Never run the same objective twice.
+            if (cycle.action != "store_context" && (cycle.plan.isNotEmpty() || cycle.bringUp != null)) return
+        }
+        addDoItLine("No executable capability was selected by the intelligence pass. Checking direct registered capabilities next.")
+        runDoItPlan(text)
+    }
     fun connectTvCandidate(c: TvCandidate) {
         homeTvCandidatesState.value = emptyList()
         homeTryAgainState.value = false
@@ -466,7 +488,7 @@ fun GhostTapApp(
         homeDoItBusyState.value = true
         opScope.launch {
             try {
-                if (isTvCommand(text)) executeTvCommand(text) else runDoItPlan(text)
+                if (isTvCommand(text)) executeTvCommand(text) else runIntelligentCommand(text)
             } finally {
                 homeDoItBusyState.value = false
             }
