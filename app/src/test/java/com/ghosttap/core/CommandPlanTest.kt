@@ -148,7 +148,7 @@ class CommandPlanTest {
         val target = IntelTarget(
             kind = "USB",
             title = "ESP32-SOLO-1C board",
-            text = "ESP32-SOLO-1C development board, UART serial interface"
+            text = "development board, UART serial interface"
         )
         val plan = Planner.planFor(target, CapabilityRegistry)
         val ids = plan.map { it.capabilityId }
