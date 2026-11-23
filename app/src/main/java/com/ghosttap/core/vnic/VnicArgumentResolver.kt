@@ -88,6 +88,6 @@ object VnicArgumentResolver {
 
     private fun isValidIpv4(value: String): Boolean {
         val octets = value.split(".")
-        return octets.size == 4 && octets.all { it.toIntOrNull() in 0..255 }
+        return octets.size == 4 && octets.all { part -> part.toIntOrNull()?.let { it in 0..255 } == true }
     }
 }
