@@ -88,7 +88,7 @@ class IntelEngine(
     fun networkSessionHeld(host: String): Boolean = net.heldTcpSessionPorts(host).isNotEmpty()
 
     fun networkSessionControls(host: String): List<String> = net.heldTcpSessionPorts(host).map { port ->
-        "Persistent TCP channel held at $host:$port; raw protocol controls require service identification."
+        "Persistent TCP channel held at $host:$port; net.held_tcp_send can exchange an operator-supplied protocol message without closing the session."
     }
 
     /**
