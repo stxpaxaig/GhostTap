@@ -9,7 +9,7 @@ import org.junit.Test
 
 /**
  * JVM tests for the Termux capability registry: the allowlist, the
- * argument validation, the probe-answer parsing, and the 14
+ * argument validation, the probe-answer parsing, and the 15
  * categories. Pure Kotlin, JUnit 4 — no Android framework.
  */
 class TermuxCapabilitiesTest {
@@ -66,16 +66,24 @@ class TermuxCapabilitiesTest {
     }
 
     @Test
-    fun `there are exactly 14 capability categories`() {
+    fun `there are exactly 15 capability categories`() {
         val caps = TermuxRegistry.defaultCapabilities()
-        assertEquals(14, caps.size)
-        assertEquals(14, caps.map { it.id }.toSet().size)
+        assertEquals(15, caps.size)
+        assertEquals(15, caps.map { it.id }.toSet().size)
         assertTrue(caps.all { it.probeTools.isNotEmpty() })
         assertTrue(caps.all { it.state == TermuxCapabilityState.UNKNOWN })
         assertTrue(caps.all { it.enabled })
     }
 
     @Test
+    @Test
+    fun `Aircrack tools are detected as a separate wireless diagnostics capability`() {
+        val caps = TermuxRegistry.defaultCapabilities()
+        val wireless = caps.first { it.id == "wireless-audit" }
+        assertTrue(wireless.probeTools.contains("aircrack-ng"))
+        val updated = TermuxRegistry.applyProbeResult(caps, """{"aircrack-ng":true}""")
+        assertEquals(TermuxCapabilityState.YES, updated.first { it.id == "wireless-audit" }.state)
+    }
     fun `probe JSON parsing reads true and false per tool`() {
         val parsed = parseProbeToolsJson("""{"python3":true,"git":false,"curl":true}""")
         assertNotNull(parsed)
