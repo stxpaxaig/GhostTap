@@ -14,7 +14,7 @@ import org.junit.Test
 
 /**
  * Unit tests for the operation registry and its CapabilityRegistry
- * bridge. Pure Kotlin, JUnit 4 — no Android framework, no ViewModels.
+ * bridge and planner argument contracts. Pure Kotlin, JUnit 4 — no Android framework, no ViewModels.
  * Test ids use the "test.pkg0." prefix so they can never collide with
  * real capability ids in the shared CapabilityRegistry singleton.
  */
