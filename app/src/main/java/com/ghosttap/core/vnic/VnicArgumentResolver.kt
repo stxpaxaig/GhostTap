@@ -73,7 +73,7 @@ object VnicArgumentResolver {
                 "pin", "gpio", "gpioid" -> gpioValue
                 "state", "value", "enabled" -> stateValue
                 "message", "payload" -> payload
-                "text" -> if (capability.riskLevel == "WRITE" || capability.riskLevel == "CONTROL") payload else observation.text
+                "text" -> if (capability?.riskLevel == "WRITE" || capability?.riskLevel == "CONTROL") payload else observation.text
                 "command" -> command
                 "ssid", "password", "passphrase" -> credentials[input.lowercase()]
                 "name", "title" -> observation.subject.takeIf { it.isNotBlank() }
