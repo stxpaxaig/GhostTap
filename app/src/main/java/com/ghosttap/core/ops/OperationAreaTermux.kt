@@ -278,22 +278,22 @@ fun registerAreaTermuxOperations() {
                     for tool in aircrack-ng airodump-ng aireplay-ng airmon-ng iw; do
                       printf '%s=' "$tool"
                       command -v "$tool" 2>/dev/null || printf 'MISSING'
-                      printf '\\n'
+                      printf '\n'
                     done
                     printf 'uid='
                     id -u 2>/dev/null || printf 'UNKNOWN'
-                    printf '\\n'
+                    printf '\n'
                     if command -v iw >/dev/null 2>&1; then
                       iw list 2>/dev/null | awk '
                         /Supported interface modes:/ { in_modes=1; next }
-                        in_modes && /^[[:space:]]*\\*/ {
+                        in_modes && /^[[:space:]]*\*/ {
                           if ($0 ~ /monitor/) found=1
                         }
                         in_modes && /Band [0-9]+:/ { in_modes=0 }
                         END { print "monitor_mode=" (found ? "YES" : "NO") }
                       '
                     else
-                      printf 'monitor_mode=UNKNOWN (iw missing)\\n'
+                      printf 'monitor_mode=UNKNOWN (iw missing)\n'
                     fi
                 """.trimIndent()
                 val probe = termux.runFreeCommandAndWait(command, timeoutMs = 20000)
