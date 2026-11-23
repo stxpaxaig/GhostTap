@@ -709,6 +709,29 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /** Send an operator-supplied protocol payload over an already-held TCP session. */
+    suspend fun sendHeldTcpMessage(host: String, port: Int, message: String, timeoutMs: Int = 5000): String = withContext(Dispatchers.IO) {
+        require(message.isNotEmpty()) { "Message is empty." }
+        val key = "\$host:\$port"
+        val socket = heldTcpSessions[key] ?: error("No held TCP session for \$key.")
+        if (!socket.isConnected || socket.isClosed || socket.isOutputShutdown) {
+            heldTcpSessions.remove(key)
+            runCatching { socket.close() }
+            error("The held TCP session is no longer open.")
+        }
+        synchronized(socket) {
+            socket.soTimeout = timeoutMs
+            val bytes = tcpTextLanguage.encode(message)
+            socket.getOutputStream().write(bytes)
+            socket.getOutputStream().flush()
+            val buffer = ByteArray(4096)
+            val count = try { socket.getInputStream().read(buffer) }
+                catch (_: java.net.SocketTimeoutException) { -1 }
+            if (count > 0) "Sent ${bytes.size} bytes; received ${count} bytes: ${String(buffer, 0, count, Charsets.UTF_8)}"
+            else "Sent ${bytes.size} bytes over the held session; no reply arrived within ${timeoutMs}ms."
+        }
+    }
+
     /** True only while this process still owns an open TCP socket for the target. */
     fun isHeldTcpSession(host: String, port: Int? = null): Boolean =
         heldTcpSessions.any { (key, socket) ->
