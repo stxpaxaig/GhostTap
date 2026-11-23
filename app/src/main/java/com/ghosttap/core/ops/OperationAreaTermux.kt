@@ -245,4 +245,6 @@ fun registerAreaTermuxOperations() {
             verified = false
         )
     )
+    // Add the local, read-only Aircrack-ng toolchain check to the shared registry.
+    registerAircrackNgOperations()
 }
