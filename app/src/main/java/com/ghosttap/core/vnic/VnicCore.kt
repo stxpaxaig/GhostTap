@@ -662,8 +662,13 @@ class VnicCore(
                     phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
                     var lastOutcome: VnicExecutionOutcome? = null
                     for (stepId in plan.take(12)) {
+                        val capabilityInfo = capabilities.firstOrNull { it.id == stepId }
+                        val resolvedArgs = VnicArgumentResolver.resolve(capabilityInfo, observation, findings)
+                        if (resolvedArgs.unresolvedInputs.isNotEmpty()) {
+                            phases += "ARGUMENTS: $stepId still needs ${resolvedArgs.unresolvedInputs.joinToString()} — passing known evidence to the operation so its own preparation can request anything genuinely missing"
+                        }
                         val outcome = try {
-                            executor.execute(stepId, mapOf("subject" to observation.subject, "text" to observation.text))
+                            executor.execute(stepId, resolvedArgs.args)
                         } catch (e: Exception) {
                             VnicExecutionOutcome(VnicExecutionState.FAILED, "Executor threw: ${e.message ?: "unknown"}")
                         }
