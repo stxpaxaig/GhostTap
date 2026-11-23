@@ -345,7 +345,10 @@ class RemoteLlmReasoner(private val config: VnicLlmConfig) : VnicReasoningProvid
             append("Available capabilities (id — title: description):\n")
             for (cap in capabilities) {
                 append("- ").append(cap.id).append(" — ").append(cap.title)
+                append(" [").append(cap.riskLevel).append(if (cap.verified) ", verified" else ", not yet hardware-verified").append("]")
                 if (cap.description.isNotBlank()) append(": ").append(cap.description.take(200))
+                if (cap.inputs.isNotEmpty()) append(" | inputs: ").append(cap.inputs.joinToString(", "))
+                if (cap.preconditions.isNotEmpty()) append(" | needs: ").append(cap.preconditions.joinToString("; ").take(160))
                 append("\n")
             }
             if (knownFacts.isNotEmpty()) {
