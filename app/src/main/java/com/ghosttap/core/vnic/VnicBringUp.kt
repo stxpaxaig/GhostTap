@@ -96,7 +96,7 @@ fun vnicDetectBringUpTargets(
     // explicitly names the virtual board/emulator or practice board.
     val objectiveHay = (subject + " " + text).lowercase()
     val virtualEsp32Requested =
-        Regex("""\\bvirtual[\\s_-]*esp32\\b""").containsMatchIn(objectiveHay) ||
+        Regex("""\bvirtual[\s_-]*esp32\b""").containsMatchIn(objectiveHay) ||
             ("esp32" in objectiveHay && ("practice board" in objectiveHay || "emulator" in objectiveHay))
     if (virtualEsp32Requested) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
     // A transport keyword is not a device address. Only attempt direct
