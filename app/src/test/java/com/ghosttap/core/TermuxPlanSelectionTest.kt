@@ -107,11 +107,29 @@ class TermuxPlanSelectionTest {
             target("page at https://example.com/status"), setOf("net.http_fetch")
         )
         val fetch = steps.firstOrNull { it.args["command"]?.startsWith("curl -sS") == true }
-        assertTrue(fetch?.args?.get("command")?.endsWith("https://example.com/status") == true)
+        assertTrue(fetch?.args?.get("command")?.endsWith("'https://example.com/status'") == true)
         // WRITE steps are manual: Justin taps to run them (standing rule).
         assertTrue(fetch?.auto == false)
     }
 
+    @Test
+    fun `Termux URL metacharacters remain inside one quoted argument`() {
+        TermuxPlanSelection.gateProvider = { gate() }
+        val steps = TermuxPlanSelection.stepsFor(
+            target("page at https://example.com/a;id"), setOf("net.http_fetch")
+        )
+        val fetch = steps.firstOrNull { it.args["command"]?.startsWith("curl -sS") == true }
+        assertTrue(fetch?.args?.get("command")?.endsWith("'https://example.com/a;id'") == true)
+    }
+
+    @Test
+    fun `URL credentials are rejected instead of composed into a command`() {
+        TermuxPlanSelection.gateProvider = { gate() }
+        val steps = TermuxPlanSelection.stepsFor(
+            target("page at https://trusted.example@127.0.0.1/private"), setOf("net.http_fetch")
+        )
+        assertFalse(steps.any { it.args["command"]?.startsWith("curl -sS") == true })
+    }
     @Test
     fun `failed built-in port scan becomes a Termux nmap of that host`() {
         TermuxPlanSelection.gateProvider = { gate() }
