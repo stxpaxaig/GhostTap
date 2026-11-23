@@ -260,7 +260,11 @@ data class VnicCapabilityInfo(
     val title: String,
     val description: String,
     val riskLevel: String,
-    val verified: Boolean
+    val verified: Boolean,
+    val category: String = "",
+    val inputs: List<String> = emptyList(),
+    val outputs: List<String> = emptyList(),
+    val preconditions: List<String> = emptyList()
 )
 
 /**
@@ -535,7 +539,7 @@ class VnicCore(
         // the trace. (The develop/execute bridges validate again.)
         val knownIds = capabilities.map { it.id }.toSet()
         val dropped = rawPlan.filter { it !in knownIds }
-        val plan = rawPlan.filter { it in knownIds }.take(5)
+        val plan = rawPlan.filter { it in knownIds }.take(12)
         if (dropped.isNotEmpty()) {
             phases += "PLAN: dropped ${dropped.size} id(s) not in the capability list — ${dropped.joinToString()}"
         }
@@ -657,7 +661,7 @@ class VnicCore(
                 if (selected != null && executor != null) {
                     phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
                     var lastOutcome: VnicExecutionOutcome? = null
-                    for (stepId in plan.take(5)) {
+                    for (stepId in plan.take(12)) {
                         val outcome = try {
                             executor.execute(stepId, mapOf("subject" to observation.subject, "text" to observation.text))
                         } catch (e: Exception) {
