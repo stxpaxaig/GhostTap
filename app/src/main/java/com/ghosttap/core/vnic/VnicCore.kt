@@ -653,6 +653,10 @@ class VnicCore(
                         for (target in discovered) {
                             val key = "${target.kind}:${target.id}"
                             if (!attemptedTargets.add(key)) continue
+                            if (!vnicDiscoveryMatchesTarget(observation.subject, observation.text, outcome.evidence + " " + outcome.raw)) {
+                                phases += "DISCOVERY: $stepId found ${target.kind} address '${target.id.take(100)}', but the result did not identify the requested target; no connection attempted"
+                                continue
+                            }
                             phases += "DISCOVERY: $stepId exposed ${target.kind} target '${target.id.take(100)}'; attempting verified bring-up"
                             val attempt = try {
                                 bringUp.bringUp(target, observation.text)
