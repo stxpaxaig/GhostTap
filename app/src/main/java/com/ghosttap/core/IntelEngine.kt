@@ -72,10 +72,17 @@ class IntelEngine(
 
     /** Open a persistent TCP channel using only a port observed by network discovery. */
     suspend fun holdNetworkSession(host: String): String {
-        val ports = net.openPortsByHost[host].orEmpty()
-        val port = preferredPort(ports)
-            ?: return "No observed open TCP port for $host; no port will be guessed."
-        return net.openHeldTcpSession(host, port)
+        // portScan is asynchronous; wait for its actual observed result rather
+        // than racing the scan or guessing a service port.
+        val deadline = System.currentTimeMillis() + 20_000
+        while (System.currentTimeMillis() < deadline) {
+            val ports = net.openPortsByHost[host].orEmpty()
+            val port = preferredPort(ports)
+            if (port != null) return net.openHeldTcpSession(host, port)
+            if (!net.isBusy) break
+            delay(250)
+        }
+        return "No observed open TCP port for $host; no port will be guessed."
     }
 
     fun networkSessionHeld(host: String): Boolean = net.heldTcpSessionPorts(host).isNotEmpty()
