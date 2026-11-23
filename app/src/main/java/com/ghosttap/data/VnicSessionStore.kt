@@ -30,6 +30,18 @@ import kotlinx.serialization.json.Json
  * never crashes the brain, it just looks like a fresh start.
  */
 @Serializable
+data class VnicTransportSession(
+    val subject: String,
+    val route: String,
+    val state: String,
+    val controls: List<String> = emptyList(),
+    val evidence: String = "",
+    /** True only while the current process has verified the link is held. */
+    val connectionHeld: Boolean = false,
+    val updatedAtMs: Long = System.currentTimeMillis()
+)
+
+@Serializable
 data class VnicDriveOutcome(
     /** What the brain looked at (device name, or the real target id). */
     val subject: String,
@@ -53,6 +65,15 @@ data class VnicDrivePolicyState(
 class VnicSessionStore(context: Context) {
     private val prefs = context.getSharedPreferences("vnic_session", Context.MODE_PRIVATE)
     private val json = Json { ignoreUnknownKeys = true }
+
+    fun saveTransportSessions(sessions: List<VnicTransportSession>) {
+        prefs.edit().putString("transport_sessions", json.encodeToString(sessions)).apply()
+    }
+
+    fun loadTransportSessions(): List<VnicTransportSession> {
+        val raw = prefs.getString("transport_sessions", null) ?: return emptyList()
+        return runCatching { json.decodeFromString<List<VnicTransportSession>>(raw) }.getOrElse { emptyList() }
+    }
 
     fun saveDriveOutcome(outcome: VnicDriveOutcome?) {
         prefs.edit().apply {
