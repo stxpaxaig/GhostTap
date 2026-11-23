@@ -54,11 +54,11 @@ class TermuxPlanSelectionTest {
     }
 
     @Test
-    fun `setting off closes the gate even when Termux is ready`() {
+    fun `master planning toggle does not block autonomous Termux discovery`() {
         TermuxPlanSelection.gateProvider = { gate(useTermuxInPlans = false) }
-        assertFalse(TermuxPlanSelection.canOffer("network"))
+        assertTrue(TermuxPlanSelection.canOffer("network"))
         assertTrue(
-            TermuxPlanSelection.stepsFor(target("host 192.168.1.1"), setOf("net.ping")).isEmpty()
+            TermuxPlanSelection.stepsFor(target("host 192.168.1.1"), setOf("net.ping")).isNotEmpty()
         )
     }
 
