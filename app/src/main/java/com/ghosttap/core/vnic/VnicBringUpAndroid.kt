@@ -14,12 +14,11 @@ import com.ghosttap.core.IntelEngine
  *
  * ESP32 targets go to the [VnicEsp32Bridge] instead (its guest lifecycle
  * is not a BringUpPipeline kind); every other kind maps 1:1 onto the
- * pipeline's own kinds. `connectionHeld = ready`: the pipeline already
- * fails the bring-up when the link drops before setup finishes, so a
- * ready result means the link is still open right now. The pipeline's
- * handshake step (C-11) applies to every kind routed here: BLE reads a
- * characteristic, NFC requires a real summary read, network requires a
- * ping answer, USB listens then runs the board test.
+ * pipeline's own kinds. BLE and USB report held only after their live
+ * connection checks. NFC is held only while the tag remains present after
+ * the read. NETWORK currently performs ping + port discovery, but its
+ * tcpTest helper closes the socket; it is therefore discovery evidence,
+ * NOT a held control session, and cannot be promoted to CONTROLLABLE yet.
  */
 class AndroidVnicBringUp(
     private val engine: IntelEngine,
@@ -53,8 +52,16 @@ class AndroidVnicBringUp(
             route = result.descriptor?.route ?: "",
             controlLines = result.descriptor?.summaryLines ?: emptyList(),
             log = result.log,
-            connectionHeld = result.ready,
-            failReason = result.failReason
+            connectionHeld = when (target.kind) {
+                VnicBringUpKind.BLE, VnicBringUpKind.USB -> result.ready
+                VnicBringUpKind.NFC -> result.ready && engine.nfcTagPresent()
+                // Current network probe closes its test socket; do not
+                // claim a persistent device session from a successful ping.
+                VnicBringUpKind.NETWORK, VnicBringUpKind.ESP32 -> false
+            },
+            failReason = result.failReason ?: if (target.kind == VnicBringUpKind.NETWORK && result.ready) {
+                "Network device answered discovery, but no persistent control socket is held yet."
+            } else null
         )
     }
 }
