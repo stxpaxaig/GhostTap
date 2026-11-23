@@ -464,7 +464,7 @@ class VnicClosedLoopTest {
         assertTrue(result.learned.any { it.contains("reward=0.9") })
         assertNotNull(developed)
         assertEquals(true, developed!!.testPassed)
-        assertTrue(result.phases.any { it.contains("ACT: bring-up ESP32 -> CONTROLLABLE") })
+        assertTrue(result.phases.any { it.contains("ACT: multi-transport bring-up -> CONTROLLABLE") })
     }
 
     @Test
