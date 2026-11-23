@@ -269,6 +269,8 @@ class TermuxPlanSelectionTest {
         assertEquals("dns", TermuxPlanSelection.capabilityForCommand("nslookup example.com"))
         assertEquals("discovery", TermuxPlanSelection.capabilityForCommand("nmap 192.168.1.1"))
         assertEquals("python", TermuxPlanSelection.capabilityForCommand("python3 script.py"))
+        assertEquals("wireless-audit", TermuxPlanSelection.capabilityForCommand("iw dev"))
+        assertEquals("wireless-audit", TermuxPlanSelection.capabilityForCommand("rfkill list"))
         assertEquals(null, TermuxPlanSelection.capabilityForCommand("echo hello"))
     }
 
