@@ -114,7 +114,7 @@ class LocalRuleReasoner : VnicReasoningProvider {
         return capabilityIds.filter { id ->
             val idWords = id.lowercase().split(Regex("[._]")).toSet()
             idWords.any { it in expanded } || expanded.any { w -> id.lowercase().contains(w) }
-        }.take(5)
+        }.take(12)
     }
 
     /**
@@ -129,14 +129,49 @@ class LocalRuleReasoner : VnicReasoningProvider {
         knownFacts: List<String>,
         findings: List<VnicFinding>
     ): List<String> {
-        val words = goal.lowercase().split(Regex("\\W+")).filter { it.length > 2 }.toSet()
-        if (words.isEmpty()) return emptyList()
-        val expanded = words + words.mapNotNull { SYNONYMS[it] }
-        return capabilities.filter { cap ->
-            val hay = (cap.id + " " + cap.title + " " + cap.description).lowercase()
-            val hayWords = hay.split(Regex("[\\W_]+")).filter { it.length > 2 }.toSet()
-            hayWords.any { it in expanded } || expanded.any { w -> hay.contains(w) }
-        }.map { it.id }.take(5)
+        val stopWords = setOf("the", "and", "for", "with", "this", "that", "from", "into", "onto", "then", "please", "want", "need", "help", "about", "device", "thing", "something")
+        fun tokens(value: String): Set<String> {
+            val normalized = value.lowercase()
+                .replace(Regex("\\bwi[- ]?fi\\b"), "wifi")
+                .replace(Regex("\\bbluetooth low energy\\b"), "ble")
+            return Regex("[a-z0-9]+").findAll(normalized).map { it.value }.filter { it.length > 2 && it !in stopWords }.toSet()
+        }
+        val goalTokens = tokens(goal)
+        if (goalTokens.isEmpty()) return emptyList()
+        val expanded = goalTokens.toMutableSet()
+        for (word in goalTokens) {
+            SYNONYMS[word]?.let { expanded += it }
+            when (word) {
+                "wifi", "wireless", "network", "lan", "tcp", "ip" -> expanded.addAll(listOf("wifi", "wireless", "network", "lan", "tcp", "ip"))
+                "bluetooth", "ble", "gatt" -> expanded.addAll(listOf("bluetooth", "ble", "gatt"))
+                "camera", "photo", "image", "visual", "ocr" -> expanded.addAll(listOf("camera", "photo", "image", "visual", "ocr"))
+                "nfc", "tag", "card" -> expanded.addAll(listOf("nfc", "tag", "card"))
+                "usb", "serial", "uart", "board" -> expanded.addAll(listOf("usb", "serial", "uart", "board"))
+                "esp32", "espressif", "gpio", "firmware" -> expanded.addAll(listOf("esp32", "espressif", "gpio", "firmware", "virtualesp32"))
+                "printer", "print", "receipt" -> expanded.addAll(listOf("printer", "print", "receipt"))
+                "aircrack", "aircrack-ng", "wireless-audit" -> expanded.addAll(listOf("aircrack", "aircrack-ng", "wireless", "adapter", "monitor"))
+            }
+        }
+        return capabilities.mapIndexedNotNull { index, cap ->
+            val idTokens = tokens(cap.id)
+            val titleTokens = tokens(cap.title)
+            val categoryTokens = tokens(cap.category)
+            val inputTokens = tokens(cap.inputs.joinToString(" "))
+            val descriptionTokens = tokens(cap.description)
+            val score = expanded.sumOf { word ->
+                when {
+                    word in idTokens -> 6
+                    word in titleTokens -> 5
+                    word in categoryTokens -> 4
+                    word in inputTokens -> 2
+                    word in descriptionTokens -> 1
+                    else -> 0
+                }
+            }
+            if (score == 0) null else Triple(index, score, cap.id)
+        }.sortedWith(compareByDescending<Triple<Int, Int, String>> { it.second }.thenBy { it.first })
+            .take(12)
+            .map { it.third }
     }
 
     /**
@@ -305,7 +340,7 @@ class RemoteLlmReasoner(private val config: VnicLlmConfig) : VnicReasoningProvid
         lastPlanFellBackToLocal = false
         val capabilityIds = capabilities.map { it.id }
         val prompt = buildString {
-            append("You are helping an Android app called Ghost Tap work out what safe read-only checks to run for an observation. ")
+            append("You are the task planner for Ghost Tap, an Android device-interaction platform. Select the real operations that advance the user's stated objective. ")
             append("Goal: ").append(goal).append("\n")
             append("Available capabilities (id — title: description):\n")
             for (cap in capabilities) {
@@ -324,8 +359,12 @@ class RemoteLlmReasoner(private val config: VnicLlmConfig) : VnicReasoningProvid
             } else {
                 append("Fresh research findings: none — research returned nothing usable.\n")
             }
-            append("The current observation above takes precedence over older facts if they disagree. ")
-            append("Reply with only the ids, comma-separated, in the order they should run (max 5). Use only ids from the list. ")
+            append("The current objective takes precedence over older facts if they disagree. ")
+            append("Use READ for investigation, CONFIGURE for establishing required links, and WRITE/CONTROL when the user explicitly asks for that effect. ")
+            append("Do not restrict plans to read-only operations. Do not infer a write or physical control request from a mere device mention. ")
+            append("Prefer a coherent sequence: discover or identify, connect when needed, then perform the requested operation and verify it. ")
+            append("Do not select an operation whose required inputs are neither present in the objective nor available from the findings. ")
+            append("Reply with only the ids, comma-separated, in execution order (max 12). Use only ids from the list. ")
             append("If no capability fits, reply with nothing.")
         }
         val text = complete(prompt)
@@ -334,7 +373,7 @@ class RemoteLlmReasoner(private val config: VnicLlmConfig) : VnicReasoningProvid
             return localFallback.planFor(goal, capabilities, knownFacts, findings)
         }
         val wanted = capabilityIds.toSet()
-        return text.split(Regex("[,\\s]+")).map { it.trim() }.filter { it in wanted }.take(5)
+        return text.split(Regex("[,\\s]+")).map { it.trim() }.filter { it in wanted }.take(12)
     }
 
     /**
