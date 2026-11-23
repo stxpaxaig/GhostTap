@@ -104,6 +104,14 @@ fun vnicDetectBringUpTargets(
         val hostId = ipv4 ?: hostname!!
         add(VnicBringUpKind.NETWORK, hostId, subject.ifBlank { hostId })
     }
+    // USB/NFC are only promoted to direct bring-up after their discovery
+    // operation reports an actual attached board or present tag.
+    if ("usb board found" in hay || "usb device found" in hay) {
+        add(VnicBringUpKind.USB, "usb", subject.ifBlank { "USB board" })
+    }
+    if ("nfc tag present" in hay) {
+        add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
+    }
     return candidates
 }
 
