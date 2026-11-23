@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ghost-tap"
-include(":app", ":virtual-esp32-runtime")
+include(":app")

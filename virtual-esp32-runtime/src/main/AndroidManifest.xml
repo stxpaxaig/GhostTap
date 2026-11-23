@@ -1,9 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application>
-        <!-- Internal command receiver for Ghost Tap's embedded ESP32 runtime. -->
-        <receiver
-            android:name="dev.virtualesp32.BridgeCommandReceiver"
-            android:enabled="true"
-            android:exported="false" />
-    </application>
-</manifest>

@@ -54,9 +54,6 @@ android {
 }
 
 dependencies {
-    // Embedded VirtualESP32 runtime: native QEMU + ROM assets are bundled into Ghost Tap.
-    implementation(project(":virtual-esp32-runtime"))
-
     val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
 
     implementation("androidx.core:core-ktx:1.13.1")

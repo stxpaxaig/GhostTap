@@ -5,9 +5,6 @@ on:
   push:
     paths:
       - "app/**"
-      - "virtual-esp32-runtime/**"
-      - "virtual-esp32/app/src/main/jniLibs/**"
-      - "virtual-esp32/app/src/main/assets/**"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle/**"
