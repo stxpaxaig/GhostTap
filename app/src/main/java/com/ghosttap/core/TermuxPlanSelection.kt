@@ -71,7 +71,7 @@ object TermuxPlanSelection {
      * ids of the probed capabilities that are YES and switched on.
      * Capability ids are the 15 from TermuxRegistry.defaultCapabilities
      * ("python", "network", "dns", "http", "discovery", "files", "json",
-     * "data", "dev", "logs", "build", "bash", "automation", "termux-api").
+     * "data", "dev", "logs", "build", "bash", "automation", "termux-api", "wireless-audit").
      */
     data class TermuxPlanGate(
         val useTermuxInPlans: Boolean,
@@ -173,8 +173,8 @@ object TermuxPlanSelection {
         ),
         TermuxJob(
             "wireless-audit", "termux.run-command",
-            commandTemplate = "aircrack-ng --help",
-            needs = "the operator explicitly requests Aircrack-ng availability or wireless adapter diagnostics; this read-only invocation confirms the local tool interface and does not capture traffic or recover credentials"
+            commandTemplate = """echo '=== Aircrack-ng version ==='; aircrack-ng --version 2>&1 | head -n 3; echo '=== Wireless interfaces (iw) ==='; if command -v iw >/dev/null 2>&1; then iw dev 2>&1; else echo 'iw is not installed'; fi; echo '=== Adapter and driver view (airmon-ng) ==='; airmon-ng 2>&1; echo '=== Network interfaces ==='; if command -v ip >/dev/null 2>&1; then ip -brief link 2>&1; else echo 'ip is not installed'; fi; echo '=== Radio block state ==='; if command -v rfkill >/dev/null 2>&1; then rfkill list 2>&1; else echo 'rfkill is not installed'; fi""",
+            needs = "the operator explicitly requests Aircrack-ng availability or wireless adapter diagnostics; the diagnostic command inspects the installed suite, wireless interfaces, adapter and driver visibility, and radio block state; further audit actions depend on detected hardware support and authorized scope"
         ),
         TermuxJob(
             "files", "termux.run-command",
