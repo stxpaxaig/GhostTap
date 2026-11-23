@@ -4,7 +4,7 @@ import org.json.JSONObject
 
 /**
  * Termux capability registry: the scripts Ghost Tap may run, and the
- * 14 things Termux can do for Ghost Tap.
+ * 15 things Termux can do for Ghost Tap.
  *
  * TWO KINDS OF SCRIPT (v2 — zero limitations, Justin's rule):
  * - BUILT_IN: the helper scripts that come with Ghost Tap, fixed
@@ -266,7 +266,7 @@ object TermuxRegistry {
     }
 
     /**
-     * The 14 things Termux can do for Ghost Tap. Each entry names the
+     * The 15 things Termux can do for Ghost Tap. Each entry names the
      * tools the probe looks for; a capability counts as there when ANY
      * of its tools answers `command -v`. Nothing is marked "there"
      * without a real probe answer.
