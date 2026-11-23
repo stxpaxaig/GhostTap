@@ -221,7 +221,9 @@ class VnicEngine(
      * call replaces the bridge. Never throws.
      */
     fun attachVesp32(client: VirtualEsp32Client) {
-        val b = VnicEsp32Bridge(client) { operationId, result ->\n            recordEsp32Result(operationId, result)\n        }
+        val b = VnicEsp32Bridge(client) { operationId, result ->
+            recordEsp32Result(operationId, result)
+        }
         vesp32Bridge = b
         runCatching { b.register() }
         scope.launch { runCatching { refreshStatus() } }
