@@ -587,6 +587,8 @@ class VnicCore(
             phases += "DEVELOP: procedure ${developed.id} developed — testPassed=${developed.testPassed} (${developed.notes.joinToString("; ").take(200)})"
         } else if (selected != null) {
             phases += "DEVELOP: plan recorded as candidate procedure (${plan.joinToString()})"
+        } else if (unrequestedEffects.isNotEmpty()) {
+            phases += "PLAN: relevant WRITE/CONTROL capability exists, but it was withheld because the objective did not explicitly request a side effect"
         } else {
             phases += "PLAN: no capability matches — missing-capability gap recorded"
             memory.remember(
