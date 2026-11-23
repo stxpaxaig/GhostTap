@@ -540,7 +540,7 @@ class VnicCore(
         val knownIds = capabilities.map { it.id }.toSet()
         val dropped = rawPlan.filter { it !in knownIds }
         val explicitSideEffectIntent = Regex(
-            """(?i)\\b(turn|switch|set|toggle|send|write|display|show|print|restart|reboot|flash|erase|start|stop|activate|deactivate|unlock|lock|open|close)\\b"""
+            """(?i)\b(turn|switch|set|toggle|send|write|display|show|print|restart|reboot|flash|erase|start|stop|activate|deactivate|unlock|lock|open|close)\b"""
         ).containsMatchIn(observation.text)
         val unrequestedEffects = rawPlan.filter { id ->
             val risk = capabilities.firstOrNull { it.id == id }?.riskLevel
