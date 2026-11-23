@@ -101,9 +101,18 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
                 ?: args[TermuxPlanSelection.ARG_SCRIPT_TITLE]
                 ?: args["choice"]
             if (seededChoice != null) context.pendingChoice = seededChoice
+            // Preserve every declared operation input as a named argument,
+            // while retaining the existing arg.* convention used by scripts.
+            // Reserved choice keys remain in pendingChoice, not pendingArgs.
             val seededArgs = args
-                .filterKeys { it.startsWith(TermuxPlanSelection.ARG_PREFIX) }
-                .mapKeys { it.key.removePrefix(TermuxPlanSelection.ARG_PREFIX) }
+                .filterKeys {
+                    it in inputs || it.startsWith(TermuxPlanSelection.ARG_PREFIX)
+                }
+                .mapKeys {
+                    if (it.key.startsWith(TermuxPlanSelection.ARG_PREFIX)) {
+                        it.key.removePrefix(TermuxPlanSelection.ARG_PREFIX)
+                    } else it.key
+                }
             if (seededArgs.isNotEmpty()) context.pendingArgs = seededArgs
             try {
                 when (val result = OperationRunner(context).run(this)) {
