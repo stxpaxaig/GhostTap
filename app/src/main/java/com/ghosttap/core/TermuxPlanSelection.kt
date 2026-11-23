@@ -172,6 +172,11 @@ object TermuxPlanSelection {
             needs = "an IP address, and the built-in port scan already failed on this target"
         ),
         TermuxJob(
+            "wireless-audit", "termux.run-command",
+            commandTemplate = "aircrack-ng --help",
+            needs = "the operator explicitly requests Aircrack-ng availability or wireless adapter diagnostics; this read-only invocation confirms the local tool interface and does not capture traffic or recover credentials"
+        ),
+        TermuxJob(
             "files", "termux.run-command",
             needs = "a file path and words to look for — not in a target on its own"
         ),
@@ -289,9 +294,16 @@ object TermuxPlanSelection {
      */
     fun stepsFor(target: IntelTarget, failedIds: Set<String> = emptySet()): List<PlanStep> {
         val out = mutableListOf<PlanStep>()
+        if (requestsWirelessAudit && canOffer("wireless-audit")) {
+            out += commandStep(
+                "wireless-audit",
+                "aircrack-ng --help"
+            )
+        }
         val text = (target.text + " " + target.markings.joinToString(" ") +
             " " + target.barcodes.joinToString(" "))
         val ip = ipv4Regex.find(text)?.value?.takeIf { isValidIpv4(it) }
+        val requestsWirelessAudit = Regex("(?i)\\b(aircrack|wireless audit|wireless adapter diagnostic|wifi adapter diagnostic)\\b").containsMatchIn(text)
         val url = urlRegex.find(text)?.value?.let { safeHttpUrl(it) }
         val host = hostRegex.find(text)?.value
             ?: ip
