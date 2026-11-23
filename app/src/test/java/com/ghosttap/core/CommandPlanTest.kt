@@ -50,6 +50,12 @@ class CommandPlanTest {
         reg("usb.refresh")
         reg("usb.status")
         reg("usb.connect")
+        reg("vesp32.check-installed")
+        reg("vesp32.connect-practice-board", "CONFIGURE")
+        reg("vesp32.check-practice-status")
+        reg("vesp32.check-light-pin")
+        reg("vesp32.flip-switch-pin", "CONTROL")
+        reg("vesp32.use-practice-board", "CONTROL")
         reg("nfc.open_tools")
         reg("nfc.read_summary")
         reg("nfc.emulation_status")
@@ -135,6 +141,43 @@ class CommandPlanTest {
         assertTrue("expected the unified brain hand-off", brainStep != null)
         assertFalse("device bring-up must remain user-triggered", brainStep!!.auto)
         assertEquals("CONTROL", brainStep.riskLevel)
+    }
+
+    @Test
+    fun `ESP32 investigation offers existing VirtualESP32 diagnostics without auto-starting or changing pins`() {
+        val target = IntelTarget(
+            kind = "USB",
+            title = "ESP32-SOLO-1C board",
+            text = "ESP32-SOLO-1C development board, UART serial interface"
+        )
+        val plan = Planner.planFor(target, CapabilityRegistry)
+        val ids = plan.map { it.capabilityId }
+
+        assertTrue(ids.contains("vesp32.check-installed"))
+        assertTrue(ids.contains("vesp32.connect-practice-board"))
+        assertTrue(ids.contains("vesp32.check-practice-status"))
+        assertTrue(ids.contains("vesp32.check-light-pin"))
+
+        assertTrue(plan.first { it.capabilityId == "vesp32.check-installed" }.auto)
+        assertFalse(plan.first { it.capabilityId == "vesp32.connect-practice-board" }.auto)
+        assertFalse(plan.first { it.capabilityId == "vesp32.check-practice-status" }.auto)
+        assertFalse(plan.first { it.capabilityId == "vesp32.check-light-pin" }.auto)
+
+        assertFalse(ids.contains("vesp32.flip-switch-pin"))
+        assertFalse(ids.contains("vesp32.use-practice-board"))
+        assertTrue(plan.all { CapabilityRegistry.get(it.capabilityId) != null })
+    }
+
+    @Test
+    fun `ESP32 kind is recognized even when the description omits the chip name`() {
+        val target = IntelTarget(
+            kind = "ESP32",
+            title = "Practice board",
+            text = "serial device"
+        )
+        val plan = Planner.planFor(target, CapabilityRegistry)
+        assertTrue(plan.any { it.capabilityId == "vesp32.check-installed" })
+        assertTrue(plan.any { it.capabilityId == "vesp32.connect-practice-board" })
     }
 
     @Test
