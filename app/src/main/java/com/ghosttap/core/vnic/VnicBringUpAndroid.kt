@@ -16,9 +16,8 @@ import com.ghosttap.core.IntelEngine
  * is not a BringUpPipeline kind); every other kind maps 1:1 onto the
  * pipeline's own kinds. BLE and USB report held only after their live
  * connection checks. NFC is held only while the tag remains present after
- * the read. NETWORK currently performs ping + port discovery, but its
- * tcpTest helper closes the socket; it is therefore discovery evidence,
- * NOT a held control session, and cannot be promoted to CONTROLLABLE yet.
+ * the read. NETWORK performs ping + port discovery, then opens and retains a TCP socket
+ * only on a port the scan actually observed open. It sends no unknown-protocol payload.
  */
 class AndroidVnicBringUp(
     private val engine: IntelEngine,
@@ -47,20 +46,27 @@ class AndroidVnicBringUp(
             BringUpTarget(kind, target.id, target.title, target.detail),
             engine
         )
+        val networkHold = if (target.kind == VnicBringUpKind.NETWORK && result.ready) {
+            runCatching { engine.holdNetworkSession(target.id) }
+                .getOrElse { "TCP session could not be held: ${it.message ?: "connection failed"}." }
+        } else ""
+        val networkHeld = target.kind == VnicBringUpKind.NETWORK && engine.networkSessionHeld(target.id)
+        val controls = result.descriptor?.summaryLines.orEmpty() + if (networkHeld) {
+            engine.networkSessionControls(target.id)
+        } else emptyList()
         return VnicBringUpResult(
-            ready = result.ready,
+            ready = result.ready && (target.kind != VnicBringUpKind.NETWORK || networkHeld),
             route = result.descriptor?.route ?: "",
-            controlLines = result.descriptor?.summaryLines ?: emptyList(),
-            log = result.log,
+            controlLines = controls,
+            log = result.log + listOfNotNull(networkHold.takeIf { it.isNotBlank() }),
             connectionHeld = when (target.kind) {
                 VnicBringUpKind.BLE, VnicBringUpKind.USB -> result.ready
                 VnicBringUpKind.NFC -> result.ready && engine.nfcTagPresent()
-                // Current network probe closes its test socket; do not
-                // claim a persistent device session from a successful ping.
-                VnicBringUpKind.NETWORK, VnicBringUpKind.ESP32 -> false
+                VnicBringUpKind.NETWORK -> networkHeld
+                VnicBringUpKind.ESP32 -> false
             },
-            failReason = result.failReason ?: if (target.kind == VnicBringUpKind.NETWORK && result.ready) {
-                "Network device answered discovery, but no persistent control socket is held yet."
+            failReason = result.failReason ?: if (target.kind == VnicBringUpKind.NETWORK && !networkHeld) {
+                networkHold.ifBlank { "No observed open TCP port could be held; no port was guessed." }
             } else null
         )
     }
