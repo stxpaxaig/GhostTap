@@ -327,7 +327,7 @@ class VnicCoreTest {
     fun failedExecutionIsRecordedNotHidden() = runBlocking {
         val mem = InMemoryVnicMemory()
         mem.remember(VnicMemoryRecord(type = VnicMemoryClass.SEMANTIC, content = "Bluetooth devices pair over BLE", confidence = 0.9))
-        val caps = listOf(VnicCapabilityInfo("ble.connect", "BLE connect", "connect bluetooth", "CONTROL", false))
+        val caps = listOf(VnicCapabilityInfo("ble.connect", "BLE connect", "connect bluetooth", "CONFIGURE", false))
         val exec = FakeExecutor(VnicExecutionOutcome(VnicExecutionState.FAILED, "connection refused"))
         val core = VnicCore(memory = mem, researcher = StubResearcher(emptyList()))
         val result = core.process(
