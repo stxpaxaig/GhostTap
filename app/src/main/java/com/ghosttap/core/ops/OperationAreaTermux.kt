@@ -30,14 +30,14 @@ fun registerAreaTermuxOperations() {
         Operation(
             id = "screen.termux",
             title = "Use Termux tools",
-            description = "Termux is part of Ghost Tap now — it runs in the background whenever Ghost Tap needs it. There is no separate Termux screen any more.",
+            description = "Uses the installed Termux companion app as Ghost Tap's command-execution backend when a probed Termux capability is selected. Ghost Tap dispatches commands and receives results through the existing bridge; Termux remains a separate Android app.",
             area = OperationArea.TERMUX,
             execute = { context ->
                 val termux = context.termux
                 if (termux != null) {
                     val check = termux.checkInstalledNow()
                     if (check.ok) termux.discoverTermux()
-                    OpResult(true, "Termux is part of Ghost Tap now — it runs in the background whenever it's needed.", "termux")
+                    OpResult(true, "Termux is a separate companion app. Ghost Tap can invoke it through the existing command bridge when it is installed, permitted, and the requested tool is available.", "termux")
                 } else {
                     OpResult(false, "Termux tools aren't available right now.")
                 }
@@ -52,7 +52,7 @@ fun registerAreaTermuxOperations() {
         Operation(
             id = "termux.check-installed",
             title = "Check Termux is on this phone",
-            description = "Checks whether Termux is installed, whether Ghost Tap is allowed to run things in it, and whether the helper app is there too.",
+            description = "Checks whether the Termux companion is installed, its command bridge is permitted, and its helper app is available.",
             area = OperationArea.TERMUX,
             execute = { context ->
                 val termux = context.termux
