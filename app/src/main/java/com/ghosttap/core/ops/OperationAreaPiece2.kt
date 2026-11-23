@@ -55,6 +55,7 @@ fun registerPiece2Operations() {
             title = "Check the route to a device",
             description = "Shows the hops between this phone and a device or website, in plain words — which stop answers and which doesn't.",
             area = OperationArea.NETWORK,
+            inputs = listOf("host"),
             execute = { context ->
                 val net = context.net
                     ?: return@Operation OpResult(false, "Network tools aren't available right now.")
@@ -97,6 +98,7 @@ fun registerPiece2Operations() {
             title = "Look up a name or address",
             description = "Turns a name into its addresses, or an address back into its name — and says plainly when nothing is on record.",
             area = OperationArea.NETWORK,
+            inputs = listOf("host"),
             execute = { context ->
                 val net = context.net
                     ?: return@Operation OpResult(false, "Network tools aren't available right now.")
@@ -209,6 +211,7 @@ fun registerPiece2Operations() {
             title = "Make a QR code",
             description = "Makes a QR code from what you typed — a link, some words, or Wi-Fi details — and shows it on the screen.",
             area = OperationArea.NETWORK,
+            inputs = listOf("text"),
             execute = { context ->
                 val net = context.net
                     ?: return@Operation OpResult(false, "Network tools aren't available right now.")
@@ -243,6 +246,7 @@ fun registerPiece2Operations() {
             title = "Look at the screen and tap it",
             description = "You name something on the screen; Ghost Tap looks at the screen, the brain says where it is, and Ghost Tap taps it. No brain means no tap, said plainly.",
             area = OperationArea.VISUAL,
+            inputs = listOf("goal"),
             execute = { context ->
                 val visual = context.visual
                     ?: return@Operation OpResult(false, "Visual Intel isn't available right now.")
