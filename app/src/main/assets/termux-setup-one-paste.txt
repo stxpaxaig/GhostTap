@@ -1,4 +1,6 @@
 # Paste this WHOLE thing into Termux once, then press Enter.
+# Optional Aircrack-ng install (run separately if you want the suite):
+# pkg update && pkg install aircrack-ng iw iproute2
 # It creates all 11 Ghost Tap helper files. One paste, done.
 # v3 (2026-11-16): File 1 sends answers back the way Ghost Tap
 # actually listens (one plain line over a direct connection), and
@@ -233,7 +235,7 @@ cat > ~/.termux/tasker/ghosttap-list-tools.sh <<'GHOSTTAP_EOF'
 gt_bridge_args "$@"
 OUT=$(mktemp); ERR=$(mktemp)
 {
-  for t in python3 pip bash git curl wget jq gcc make sqlite3 nmap ssh aircrack-ng airmon-ng airodump-ng aireplay-ng; do
+  for t in python3 pip bash git curl wget jq gcc make sqlite3 nmap ssh aircrack-ng airmon-ng airodump-ng aireplay-ng iw ip rfkill; do
     if command -v "$t" >/dev/null 2>&1; then echo "$t: yes"; else echo "$t: no"; fi
   done
 } >"$OUT" 2>"$ERR"
