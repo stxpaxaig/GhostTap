@@ -11,6 +11,7 @@ import com.ghosttap.core.IntelEngine
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.IntelSettings
+import com.ghosttap.core.TermuxPlanSelection
 import com.ghosttap.core.LoopState
 import com.ghosttap.core.esp32.VirtualEsp32Client
 import com.ghosttap.data.VnicDriveOutcome
@@ -57,7 +58,8 @@ data class VnicStatusSnapshot(
     /** Last bring-up outcome ("" / empty / false when no bring-up has run yet). */
     val lastBringUpRoute: String = "",
     val lastBringUpControls: List<String> = emptyList(),
-    val lastBringUpHeld: Boolean = false
+    val lastBringUpHeld: Boolean = false,
+    val transportLines: List<String> = emptyList()
 )
 
 class VnicEngine(
@@ -79,6 +81,7 @@ class VnicEngine(
     private val telemetry = VnicTelemetry().also { it.restore(sessionStore.loadTelemetry()) }
     /** ESP32 bridge once a VirtualESP32 client is attached (null until then — ESP32 bring-up is unavailable). */
     private var vesp32Bridge: VnicEsp32Bridge? = null
+    private var vesp32Client: VirtualEsp32Client? = null
     /** Autonomous-drive policy: one drive at a time, 60s cooldown, never re-drive CONTROLLABLE. Restored from last run, not fresh. */
     private val drivePolicy = VnicDrivePolicy().also { policy ->
         sessionStore.loadDrivePolicy()?.let { saved ->
@@ -221,6 +224,7 @@ class VnicEngine(
      * call replaces the bridge. Never throws.
      */
     fun attachVesp32(client: VirtualEsp32Client) {
+        vesp32Client = client
         val b = VnicEsp32Bridge(client) { operationId, result ->
             recordEsp32Result(operationId, result)
         }
@@ -229,6 +233,38 @@ class VnicEngine(
         scope.launch { runCatching { refreshStatus() } }
     }
 
+    /** Runtime inventory distinguishes registered tools from actual live connections. */
+    private fun buildTransportLines(): List<String> {
+        val caps = bridge.mapCapabilities()
+        val lines = mutableListOf<String>()
+        val esp = vesp32Client
+        when {
+            esp == null -> lines += "VirtualESP32: client not attached"
+            !esp.isInstalled() -> lines += "VirtualESP32: companion app not installed"
+            esp.connectionState.value == VirtualEsp32Client.ConnectionState.Connected -> {
+                val info = esp.targetInfo.value
+                lines += "VirtualESP32: IPC connected; guest=${info?.status ?: "status pending"}; firmware=${info?.firmware ?: "unknown"}"
+            }
+            else -> lines += "VirtualESP32: companion installed; IPC disconnected"
+        }
+        val termux = TermuxPlanSelection.currentGate()
+        lines += when {
+            termux == null -> "Termux: runtime not yet probed"
+            !termux.termuxInstalled -> "Termux: companion not installed"
+            !termux.hasRunPermission -> "Termux: installed; run permission not granted"
+            !termux.useTermuxInPlans -> "Termux: installed and permitted; automatic plan use is switched off"
+            else -> "Termux: ready; ${termux.availableCapabilities.size} probed capabilities available"
+        }
+        val groups = listOf(
+            "BLE" to caps.count { it.id.contains("ble", true) || it.id.contains("bluetooth", true) },
+            "NFC" to caps.count { it.id.contains("nfc", true) },
+            "NETWORK" to caps.count { it.id.contains("net.", true) || it.id.contains("network", true) || it.id.contains("wifi", true) },
+            "USB/UART" to caps.count { it.id.contains("usb", true) || it.id.contains("uart", true) || it.id.contains("serial", true) }
+        )
+        groups.forEach { (name, count) -> lines += "$name: $count registered operation(s); live connection is target-dependent" }
+        lines += "Capability registry: ${caps.size} live operation(s) across all registered subsystems"
+        return lines
+    }
     /** Persist the actual VirtualESP32 operation outcome in VNIC's existing memory. */
     private suspend fun recordEsp32Result(operationId: String, result: com.ghosttap.core.OpResult) {
         memory.remember(
@@ -571,7 +607,8 @@ class VnicEngine(
             lastFindings = last?.findings?.map { "${it.title} (${it.source}, ${it.confidence})" } ?: cur.lastFindings,
             lastBringUpRoute = last?.bringUp?.route ?: cur.lastBringUpRoute,
             lastBringUpControls = last?.bringUp?.controlLines ?: cur.lastBringUpControls,
-            lastBringUpHeld = last?.bringUp?.connectionHeld ?: cur.lastBringUpHeld
+            lastBringUpHeld = last?.bringUp?.connectionHeld ?: cur.lastBringUpHeld,
+            transportLines = buildTransportLines()
         )
     }
 }
