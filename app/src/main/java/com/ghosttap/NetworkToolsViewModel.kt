@@ -23,6 +23,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.OpResult
@@ -685,6 +686,46 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
     private var udpJob: Job? = null
     private var udpSocket: DatagramSocket? = null
 
+    /** TCP links retained for VNIC device control; keyed by host:port. */
+    private val heldTcpSessions = ConcurrentHashMap<String, Socket>()
+
+    /** Open and retain a real TCP socket. No application payload is sent to an unknown service. */
+    suspend fun openHeldTcpSession(host: String, port: Int, timeoutMs: Int = 4000): String = withContext(Dispatchers.IO) {
+        require(host.isNotBlank() && port in 1..65535) { "A valid host and port are required." }
+        val key = "$host:$port"
+        heldTcpSessions.remove(key)?.let { runCatching { it.close() } }
+        val socket = Socket()
+        try {
+            socket.tcpNoDelay = true
+            socket.keepAlive = true
+            socket.connect(InetSocketAddress(host, port), timeoutMs)
+            socket.soTimeout = 0
+            if (!socket.isConnected || socket.isClosed) error("The TCP socket did not remain open.")
+            heldTcpSessions[key] = socket
+            "Held TCP session open to $key. No payload sent; protocol/control mapping still depends on the service."
+        } catch (e: Exception) {
+            runCatching { socket.close() }
+            throw e
+        }
+    }
+
+    /** True only while this process still owns an open TCP socket for the target. */
+    fun isHeldTcpSession(host: String, port: Int? = null): Boolean =
+        heldTcpSessions.any { (key, socket) ->
+            key.substringBeforeLast(":") == host && (port == null || key == "$host:$port") &&
+                socket.isConnected && !socket.isClosed && !socket.isOutputShutdown && !socket.isInputShutdown
+        }
+
+    fun heldTcpSessionPorts(host: String): List<Int> = heldTcpSessions.keys
+        .filter { it.substringBeforeLast(":") == host }
+        .mapNotNull { it.substringAfterLast(":").toIntOrNull() }
+        .filter { isHeldTcpSession(host, it) }
+
+    fun closeHeldTcpSession(host: String, port: Int? = null) {
+        val keys = heldTcpSessions.keys.filter { it.substringBeforeLast(":") == host && (port == null || it == "$host:$port") }
+        keys.forEach { key -> heldTcpSessions.remove(key)?.let { runCatching { it.close() } } }
+    }
+
     private fun append(line: String) {
         val ts = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
         log = (log + "[$ts] $line").takeLast(200)
@@ -1187,6 +1228,7 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
                         closed.add(port)
                     }
                 }
+                withContext(Dispatchers.Main) { openPortsByHost = openPortsByHost + (host to open.sorted()) }
                 append("Port check — done. Open: ${open.ifEmpty { "none" }}. Closed or blocked: ${closed.joinToString(", ")}")
             } catch (e: Exception) {
                 opFailed = true
@@ -1202,6 +1244,8 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
 
     override fun onCleared() {
         super.onCleared()
+        heldTcpSessions.values.forEach { runCatching { it.close() } }
+        heldTcpSessions.clear()
         runCatching { udpSocket?.close() }
         udpJob?.cancel()
         stopDiscoverServices()
