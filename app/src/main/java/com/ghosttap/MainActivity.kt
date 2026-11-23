@@ -103,6 +103,9 @@ class MainActivity : ComponentActivity() {
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         vm.handleNfcIntent(intent)
         val vesp32Client = VirtualEsp32Client(applicationContext)
+        // Bring the companion IPC online as the app opens; VNIC and the
+        // operation registry receive the same live client immediately.
+        vesp32Client.connect()
         intelVm.attachVesp32(vesp32Client)
 
         setContent {
