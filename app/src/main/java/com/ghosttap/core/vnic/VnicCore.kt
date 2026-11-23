@@ -599,39 +599,60 @@ class VnicCore(
             )
             phases += "ACT: store_context — added to working memory (no execution)"
         } else {
-            val kind = vnicDetectBringUpKind(observation.subject + " " + observation.text, findings)
-            if (kind != null && bringUp != null) {
-                phases += "SELECT: bring-up ${kind.name} for ${observation.subject}"
-                val target = VnicBringUpTarget(kind, observation.subject, observation.subject, observation.text.take(200))
-                val result = try {
-                    bringUp.bringUp(target, observation.text)
-                } catch (e: Exception) {
+            val candidates = vnicDetectBringUpTargets(observation.subject, observation.text, findings)
+            if (candidates.isNotEmpty() && bringUp != null) {
+                phases += "SELECT: ${candidates.size} transport candidate(s) in priority order: ${candidates.joinToString { it.kind.name }}"
+                val attemptLog = mutableListOf<String>()
+                var selectedResult: VnicBringUpResult? = null
+                var selectedTarget: VnicBringUpTarget? = null
+                for (target in candidates) {
+                    phases += "BRING-UP: trying ${target.kind} using target id '${target.id.take(100)}'"
+                    val attempt = try {
+                        bringUp.bringUp(target, observation.text)
+                    } catch (e: Exception) {
+                        VnicBringUpResult(
+                            ready = false, route = "", controlLines = emptyList(),
+                            log = listOf("bring-up threw: ${e.message ?: "unknown"}"),
+                            connectionHeld = false,
+                            failReason = "Bring-up threw: ${e.message ?: "unknown error"}."
+                        )
+                    }
+                    attemptLog += "[${target.kind}] ${attempt.log.joinToString(" | ").take(500)}"
+                    if (attempt.ready && attempt.connectionHeld && attempt.controlLines.isNotEmpty()) {
+                        selectedResult = attempt
+                        selectedTarget = target
+                        break
+                    }
+                    phases += "BRING-UP: ${target.kind} did not reach controllable state — ${attempt.failReason ?: "connection/control verification incomplete"}"
+                }
+                val result = selectedResult ?: candidates.lastOrNull()?.let { last ->
+                    // Preserve the most useful final failure rather than reporting a
+                    // prior route's stale state as successful.
                     VnicBringUpResult(
                         ready = false, route = "", controlLines = emptyList(),
-                        log = listOf("bring-up threw: ${e.message ?: "unknown"}"),
+                        log = attemptLog,
                         connectionHeld = false,
-                        failReason = "Bring-up threw: ${e.message ?: "unknown error"}."
+                        failReason = "No transport candidate reached a verified controllable state. ${attemptLog.takeLast(3).joinToString(" ; ").take(900)}"
                     )
                 }
                 bringUpResult = result
-                controlsMapped = result.controlLines
-                if (result.ready && result.connectionHeld && result.controlLines.isNotEmpty()) {
+                controlsMapped = result?.controlLines ?: emptyList()
+                if (result != null && result.ready && result.connectionHeld && result.controlLines.isNotEmpty()) {
                     executionState = VnicExecutionState.CONTROLLABLE
-                    executionEvidence = "Bring-up CONTROLLABLE: route=${result.route} controls=${result.controlLines.joinToString()} connection held"
+                    executionEvidence = "Bring-up CONTROLLABLE: selected=${selectedTarget?.kind} route=${result.route}; tried=${candidates.joinToString { it.kind.name }}; controls=${result.controlLines.joinToString()}; connection held"
                     reward = 0.9
                 } else {
                     executionState = VnicExecutionState.FAILED
-                    executionEvidence = result.failReason
-                        ?: "Bring-up did not reach a controllable state (ready=${result.ready} held=${result.connectionHeld} controls=${result.controlLines.size})."
+                    executionEvidence = result?.failReason ?: "No candidate transport reached a controllable state."
                     reward = 0.2
                 }
                 telemetry.recordExecution(executionState)
-                phases += "ACT: bring-up ${kind.name} -> $executionState — $executionEvidence"
+                phases += "ACT: multi-transport bring-up -> $executionState — $executionEvidence"
                 executedId = "bring-up"
                 executedOutcome = VnicExecutionOutcome(executionState, executionEvidence, executionRaw)
             } else {
-                if (kind != null) {
-                    phases += "ACT: bring-up path exists (${kind.name}) but no bring-up port is attached — executing plan steps only, no connection will be held"
+                if (candidates.isNotEmpty()) {
+                    phases += "ACT: transport candidates found (${candidates.joinToString { it.kind.name }}) but no bring-up port is attached — plan steps only; no connection will be held"
                 }
                 if (selected != null && executor != null) {
                     phases += "SELECT: ${plan.joinToString()} (${plan.size} step(s) in sequence)"
