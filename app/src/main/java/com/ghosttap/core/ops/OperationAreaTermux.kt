@@ -245,4 +245,71 @@ fun registerAreaTermuxOperations() {
             verified = false
         )
     )
+    
+    // ----- Aircrack-ng local readiness (read-only preflight) -----
+    // This does not install tools, enable monitor mode, capture traffic,
+    // inject frames, or attempt access to any network. It reports only
+    // what is already present in the user's Termux environment and what
+    // the current Wi-Fi driver advertises.
+    OperationRegistry.register(
+        Operation(
+            id = "aircrack.preflight",
+            title = "Check Aircrack-ng readiness",
+            description = "Checks whether Aircrack-ng tools are already installed in Termux and whether the Wi-Fi driver reports monitor-mode support. This is a read-only local check; it does not capture traffic or change network settings.",
+            area = OperationArea.TERMUX,
+            prerequisites = listOf(
+                "Termux is installed and Ghost Tap is allowed to run commands in it"
+            ),
+            preparation = listOf(
+                PreparationStep("Checking the Termux connection") { context ->
+                    val termux = context.termux
+                        ?: return@PreparationStep PreparationOutcome.Failed(
+                            "Termux tools aren't available right now."
+                        )
+                    val check = termux.checkInstalledNow()
+                    if (check.ok) PreparationOutcome.Ready
+                    else PreparationOutcome.Failed(check.summary)
+                }
+            ),
+            execute = { context ->
+                val termux = context.termux
+                    ?: return@Operation OpResult(false, "Termux tools aren't available right now.")
+                val command = """
+                    for tool in aircrack-ng airodump-ng aireplay-ng airmon-ng iw; do
+                      printf '%s=' "$tool"
+                      command -v "$tool" 2>/dev/null || printf 'MISSING'
+                      printf '\\n'
+                    done
+                    printf 'uid='
+                    id -u 2>/dev/null || printf 'UNKNOWN'
+                    printf '\\n'
+                    if command -v iw >/dev/null 2>&1; then
+                      iw list 2>/dev/null | awk '
+                        /Supported interface modes:/ { in_modes=1; next }
+                        in_modes && /^[[:space:]]*\\*/ {
+                          if ($0 ~ /monitor/) found=1
+                        }
+                        in_modes && /Band [0-9]+:/ { in_modes=0 }
+                        END { print "monitor_mode=" (found ? "YES" : "NO") }
+                      '
+                    else
+                      printf 'monitor_mode=UNKNOWN (iw missing)\\n'
+                    fi
+                """.trimIndent()
+                val probe = termux.runFreeCommandAndWait(command, timeoutMs = 20000)
+                if (!probe.ok) {
+                    OpResult(false, "The local readiness check did not complete: ${probe.summary}", probe.data)
+                } else {
+                    OpResult(
+                        true,
+                        "Local Aircrack-ng readiness check completed. No packets were captured or transmitted, and no settings were changed.",
+                        probe.data.ifBlank { probe.summary }
+                    )
+                }
+            },
+            riskLevel = "READ",
+            verified = false
+        )
+    )
+
 }
