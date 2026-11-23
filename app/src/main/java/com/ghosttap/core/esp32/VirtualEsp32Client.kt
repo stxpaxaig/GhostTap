@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
+import dev.virtualesp32.EmbeddedEsp32Runtime
 
 /** Client for the Virtual ESP32 IPC bridge (Intent + broadcast based).
  *
@@ -197,6 +198,14 @@ class VirtualEsp32Client(private val context: Context) {
 
     private var receiverRegistered = false
 
+    /** Prefer the embedded QEMU runtime; retain the standalone companion as fallback. */
+    private fun embeddedRuntimeAvailable(): Boolean = EmbeddedEsp32Runtime.isAvailable()
+
+    private fun commandTargetPackage(): String =
+        if (embeddedRuntimeAvailable()) context.packageName else PKG
+
+    private fun commandReceiverClass(): String = "dev.virtualesp32.BridgeCommandReceiver"
+
     // LOAD_FIRMWARE fix (2026-11-07): Android does NOT honour
     // FLAG_GRANT_READ_URI_PERMISSION on a broadcast Intent — the flag only
     // grants when starting an activity or returning a result to one
@@ -222,6 +231,7 @@ class VirtualEsp32Client(private val context: Context) {
 
     /** True if the Virtual ESP32 app is installed (package visible). */
     fun isInstalled(): Boolean {
+        if (embeddedRuntimeAvailable()) return true
         return try {
             context.packageManager.getPackageInfo(PKG, 0)
             true
@@ -246,8 +256,10 @@ class VirtualEsp32Client(private val context: Context) {
                 addAction(EVENT_FIRMWARE_EJECTED)
             }
             if (Build.VERSION.SDK_INT >= 33) {
-                // Must be EXPORTED to receive broadcasts from VirtualESP32 (different app).
-                context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)
+                // Embedded commands stay inside Ghost Tap; the companion fallback crosses apps.
+                val flags = if (embeddedRuntimeAvailable()) Context.RECEIVER_NOT_EXPORTED
+                    else Context.RECEIVER_EXPORTED
+                context.registerReceiver(receiver, filter, flags)
             } else {
                 context.registerReceiver(receiver, filter)
             }
@@ -273,7 +285,7 @@ class VirtualEsp32Client(private val context: Context) {
         val intent = Intent(action).apply {
             // Explicit broadcast to VirtualESP32's command receiver.
             // (Cross-app startService is blocked on Android 15+; explicit broadcasts work.)
-            setClassName(PKG, "$PKG.BridgeCommandReceiver")
+            setClassName(commandTargetPackage(), commandReceiverClass())
             build(this)
         }
         try {
@@ -288,7 +300,7 @@ class VirtualEsp32Client(private val context: Context) {
             delay(2500)
             // If the service never responded, say so plainly instead of silence.
             if (_targetInfo.value == null && lastError.value == null) {
-                appendUart("RX: ERROR - no response from VirtualESP32 service. Check: (1) VirtualESP32 bridge build installed, (2) firmware imported in VirtualESP32 app.")
+                appendUart("RX: ERROR - no response from the embedded or companion VirtualESP32 runtime. Check firmware availability and QEMU backend status.")
             }
             queryStatus()
             readGpio2()
@@ -322,8 +334,11 @@ class VirtualEsp32Client(private val context: Context) {
         // ContentResolver cannot open our FileProvider URI at all.
         revokeFirmwareGrant()
         try {
-            context.grantUriPermission(PKG, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            pendingFirmwareGrantUri = uri
+            val targetPackage = commandTargetPackage()
+            if (targetPackage != context.packageName) {
+                context.grantUriPermission(targetPackage, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                pendingFirmwareGrantUri = uri
+            }
         } catch (_: Exception) {
             // Grant failed — still send the command; the board will report
             // the real failure instead of silence.
