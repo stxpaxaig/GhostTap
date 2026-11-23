@@ -346,6 +346,21 @@ object Planner {
         // Fallbacks for a failed built-in tool arrive through failedIds.
         TermuxPlanSelection.stepsFor(t, failedIds).forEach { add(it) }
 
+        // 8c. A real investigation target can be handed to the existing
+        // VNIC closed-loop engine. Keep this user-triggered: VNIC can
+        // research, plan and attempt bring-up, so it must never be silently
+        // auto-run as part of the initial passive probes. The home command
+        // box uses kind=MANUAL and deliberately does not receive this step.
+        if (t.kind != "MANUAL") {
+            add(
+                PlanStep(
+                    "vnic.ask-about-device",
+                    why = "Hand this identified target to Ghost Tap's unified brain for observation, research and a reviewed bring-up attempt.",
+                    auto = false
+                )
+            )
+        }
+
         // 9. Always end with a human decision point.
         add(
             PlanStep(
