@@ -11,15 +11,13 @@ import java.net.URI
  * ever offered:
  *
  * 1. "Can this Termux job run right now?" — the gate ([TermuxPlanGate]).
- *    A Termux step is offered ONLY when all three hold:
- *    (a) the user left "Let Ghost Tap offer Termux steps when it makes
- *        a plan" on ([TermuxViewModel.useTermuxInPlans]),
- *    (b) Termux is installed AND Ghost Tap is allowed to run things
- *        in it,
- *    (c) the last real probe said the capability is there (state YES)
- *        and the user did not switch that capability off.
- *    A capability the probe says is NOT there (or never checked) is
- *    never offered as if it works.
+ *    A Termux step is offered when Termux is installed, Ghost Tap has
+ *    the required run permission, and the last real probe confirms
+ *    the specific capability is present and enabled. The legacy
+ *    useTermuxInPlans preference is not a master switch: it cannot
+ *    hide an installed, verified execution subsystem from intelligence.
+ *    A capability the probe says is absent or has not checked is never
+ *    offered as if it works.
  * 2. "Which Termux tool does this job need?" — the capability→op map
  *    ([TermuxJob]) plus [stepsFor], which turns a target into concrete
  *    plan steps only when every input the step needs can be read from
