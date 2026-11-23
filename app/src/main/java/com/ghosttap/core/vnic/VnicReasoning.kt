@@ -170,7 +170,14 @@ class LocalRuleReasoner : VnicReasoningProvider {
                     else -> 0
                 }
             }
-            if (score > 0) ranked += Triple(index, score, cap.id)
+            val sideEffectRequested = Regex(
+                """(?i)\\b(turn|switch|set|toggle|send|write|display|show|print|restart|reboot|flash|erase|start|stop|activate|deactivate|unlock|lock|open|close)\\b"""
+            ).containsMatchIn(goal)
+            val requiresExplicitAction = cap.riskLevel.equals("WRITE", ignoreCase = true) ||
+                cap.riskLevel.equals("CONTROL", ignoreCase = true)
+            if (score > 0 && (!requiresExplicitAction || sideEffectRequested)) {
+                ranked += Triple(index, score, cap.id)
+            }
         }
         return ranked.sortedWith(
             compareByDescending<Triple<Int, Int, String>> { it.second }.thenBy { it.first }
