@@ -63,6 +63,48 @@ data class VnicDevelopedProcedure(
  * Returns null when no bring-up path can be determined — the cycle then
  * falls back to sequential plan execution and says so in its phases.
  */
+/**
+ * Build an ordered set of viable transport candidates from the actual
+ * objective and research evidence. This is deliberately multi-route:
+ * the core can try another evidenced transport when the first one fails.
+ * Identifiers are extracted from evidence where possible; otherwise the
+ * supplied subject is retained for transports whose discovery layer owns
+ * target resolution.
+ */
+fun vnicDetectBringUpTargets(
+    subject: String,
+    text: String,
+    findings: List<VnicFinding> = emptyList()
+): List<VnicBringUpTarget> {
+    val evidence = (text + " " + findings.joinToString(" ") { "${it.title} ${it.snippet} ${it.url}" })
+    val hay = evidence.lowercase()
+    val ipv4 = Regex("""(?<![\\d.])(?:\\d{1,3}\\.){3}\\d{1,3}(?![\\d.])""")
+        .findAll(evidence).map { it.value }
+        .firstOrNull { ip -> ip.split(".").all { it.toIntOrNull() in 0..255 } }
+    val mac = Regex("""(?i)(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}""").find(evidence)?.value
+    val candidates = mutableListOf<VnicBringUpTarget>()
+    fun add(kind: VnicBringUpKind, id: String, title: String) {
+        if (candidates.none { it.kind == kind && it.id == id }) {
+            candidates += VnicBringUpTarget(kind, id, title, evidence.take(300))
+        }
+    }
+
+    // VirtualESP32 is the most specific route when the target is explicitly
+    // identified as an ESP32; its BLE/Wi-Fi interfaces are guest capabilities.
+    if ("esp32" in hay || "espressif" in hay) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
+    if (("bluetooth" in hay || Regex("""\\bble\\b""").containsMatchIn(hay) || "gatt" in hay) && (mac != null || subject.isNotBlank())) {
+        add(VnicBringUpKind.BLE, mac ?: subject, subject)
+    }
+    if ("nfc" in hay) add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
+    if ("usb" in hay || "serial" in hay || "uart" in hay || "ch340" in hay) {
+        add(VnicBringUpKind.USB, "usb", subject.ifBlank { "USB/UART target" })
+    }
+    if (ipv4 != null || "wifi" in hay || "ssid" in hay || "network" in hay || "host" in hay || "ip address" in hay) {
+        add(VnicBringUpKind.NETWORK, ipv4 ?: subject, subject.ifBlank { ipv4 ?: "Network target" })
+    }
+    return candidates
+}
+
 fun vnicDetectBringUpKind(text: String, findings: List<VnicFinding> = emptyList()): VnicBringUpKind? {
     val hay = (text + " " + findings.joinToString(" ") { "${it.title} ${it.snippet}" }).lowercase()
     return when {
