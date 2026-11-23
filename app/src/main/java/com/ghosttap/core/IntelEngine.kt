@@ -152,12 +152,17 @@ class IntelEngine(
     // ---------- helpers ----------
 
     /** Wait for the network-tools log to grow, then return the new lines. */
-    private suspend fun captureNetLines(before: Int, timeoutMs: Long = 15000): List<String> {
+    private suspend fun captureNetLines(before: Int, timeoutMs: Long = 20000): List<String> {
         val deadline = System.currentTimeMillis() + timeoutMs
+        var observedOutput = false
         while (System.currentTimeMillis() < deadline) {
             val cur = net.log
-            if (cur.size > before) return cur.drop(before)
-            delay(500)
+            if (cur.size > before) observedOutput = true
+            // A new log line only means the async operation started. Wait
+            // until its ViewModel releases the busy flag before chaining
+            // the next network step (ping -> scan -> held TCP session).
+            if (observedOutput && !net.isBusy) return cur.drop(before)
+            delay(150)
         }
         return net.log.drop(before)
     }
