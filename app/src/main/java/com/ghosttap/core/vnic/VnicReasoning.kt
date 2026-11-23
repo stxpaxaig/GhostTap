@@ -152,14 +152,16 @@ class LocalRuleReasoner : VnicReasoningProvider {
                 "aircrack", "aircrack-ng", "wireless-audit" -> expanded.addAll(listOf("aircrack", "aircrack-ng", "wireless", "adapter", "monitor"))
             }
         }
-        return capabilities.mapIndexedNotNull { index, cap ->
+        val ranked = mutableListOf<Triple<Int, Int, String>>()
+        capabilities.forEachIndexed { index, cap ->
             val idTokens = tokens(cap.id)
             val titleTokens = tokens(cap.title)
             val categoryTokens = tokens(cap.category)
             val inputTokens = tokens(cap.inputs.joinToString(" "))
             val descriptionTokens = tokens(cap.description)
-            val score = expanded.sumOf { word ->
-                when {
+            var score = 0
+            expanded.forEach { word ->
+                score += when {
                     word in idTokens -> 6
                     word in titleTokens -> 5
                     word in categoryTokens -> 4
@@ -168,10 +170,11 @@ class LocalRuleReasoner : VnicReasoningProvider {
                     else -> 0
                 }
             }
-            if (score == 0) null else Triple(index, score, cap.id)
-        }.sortedWith(compareByDescending<Triple<Int, Int, String>> { it.second }.thenBy { it.first })
-            .take(12)
-            .map { it.third }
+            if (score > 0) ranked += Triple(index, score, cap.id)
+        }
+        return ranked.sortedWith(
+            compareByDescending<Triple<Int, Int, String>> { it.second }.thenBy { it.first }
+        ).take(12).map { it.third }
     }
 
     /**
