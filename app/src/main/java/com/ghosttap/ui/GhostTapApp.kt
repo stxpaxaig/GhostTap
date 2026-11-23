@@ -612,6 +612,8 @@ fun GhostTapApp(
                         highlightTargetId = AreaAState.highlightedTargetId,
                         highlightLabel = AreaAState.highlightedLabel,
                         isEmulating = viewModel.isEmulating,
+                        networkAutoDiscovered = netViewModel.networkAutoDiscovered,
+                        networkLogCount = netViewModel.log.size,
                         onScan = {
                             onNeedPermissions()
                             viewModel.startScan()
@@ -1056,6 +1058,8 @@ private fun HomeScreen(
     highlightTargetId: String? = null,
     highlightLabel: String = "",
     isEmulating: Boolean = false,
+    networkAutoDiscovered: Boolean = false,
+    networkLogCount: Int = 0,
     onScan: () -> Unit,
     // DISCOVER (Home / Bluetooth): starts a fresh scan and checks
     // EVERYTHING it finds, including devices already known.
@@ -1152,7 +1156,7 @@ private fun HomeScreen(
             connectionGuide = "Network tools use the phone's active network interfaces and sockets. Discovery enumerates reachable devices and services; host tools accept an address or hostname and a port where required.",
             controlGuide = "Choose a host, port, protocol, and payload in the matching tool panel. Run PING, TCP, UDP, port scan, DNS, traceroute, or URL inspection independently; results appear in the tool log and can be cleared or reused.",
             intelligenceGuide = "Use discovered addresses, open ports, DNS answers, route hops, and service responses as context. Ghost Tap should correlate those observations, identify unknown services, and propose the next relevant probe without inventing a service identity.",
-            liveState = "Network discovery: ${if (viewModel.networkAutoDiscovered) "requested this session" else "not yet requested"} • Latest log entries: ${viewModel.log.size}"
+            liveState = "Network discovery: ${if (networkAutoDiscovered) "requested this session" else "not yet requested"} • Latest log entries: $networkLogCount"
         )
 
         // PIECE 2 (2026-11-18) — the "what this screen does" card is
