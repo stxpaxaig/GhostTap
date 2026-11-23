@@ -52,8 +52,9 @@ object VnicArgumentResolver {
             ?: labeledPayload.find(observation.text)?.groupValues?.getOrNull(1)?.trim()
         val command = explicitCommand.find(observation.text)?.groupValues?.getOrNull(1)?.trim()
         val gpioValue = gpio.find(evidence)?.groupValues?.getOrNull(1)?.let { "GPIO$it" }
-        val stateValue = Regex("""(?i)\\b(on|off|high|low|true|false|1|0)\\b""")
-            .find(observation.text)?.value?.lowercase()
+        val stateMatch = Regex("""(?i)\\b(?:turn|switch|set|make)\\b.{0,50}\\b(on|off|high|low|true|false|1|0)\\b|\\bstate\\s*[:=]\\s*(on|off|high|low|true|false|1|0)\\b""")
+            .find(observation.text)
+        val stateValue = stateMatch?.groupValues?.drop(1)?.firstOrNull { it.isNotBlank() }?.lowercase()
         val credentials = explicitCredential.findAll(evidence).associate {
             it.groupValues[1].lowercase() to it.groupValues[2]
         }
