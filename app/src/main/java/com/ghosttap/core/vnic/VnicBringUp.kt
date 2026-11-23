@@ -82,7 +82,7 @@ fun vnicDetectBringUpTargets(
         .findAll(evidence).map { it.value }
         .firstOrNull { ip -> ip.split(".").all { it.toIntOrNull() in 0..255 } }
     val mac = Regex("""(?i)(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}""").find(evidence)?.value
-    val hostname = Regex("""(?i)\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:local|lan|com|net|org|io|dev)\\b""")
+    val hostname = Regex("""(?i)\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:local|lan|com|net|org|io|dev)\b""")
         .find(evidence)?.value
     val candidates = mutableListOf<VnicBringUpTarget>()
     fun add(kind: VnicBringUpKind, id: String, title: String) {
@@ -97,7 +97,7 @@ fun vnicDetectBringUpTargets(
     // A transport keyword is not a device address. Only attempt direct
     // BLE/NETWORK bring-up after discovery or research supplies a real id;
     // otherwise the VNIC planner must run the matching discovery operation.
-    if (mac != null && ("bluetooth" in hay || Regex("""\\bble\\b""").containsMatchIn(hay) || "gatt" in hay)) {
+    if (mac != null && ("bluetooth" in hay || Regex("""\bble\b""").containsMatchIn(hay) || "gatt" in hay)) {
         add(VnicBringUpKind.BLE, mac, subject)
     }
     if (ipv4 != null || hostname != null) {
