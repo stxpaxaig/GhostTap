@@ -85,7 +85,7 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
         title = title,
         detail = description,
         category = area.capabilityCategory,
-        inputs = emptyList(),
+        inputs = inputs,
         outputs = listOf("outcome: what actually happened, in plain words"),
         preconditions = prerequisites,
         readOnly = riskLevel == "READ",
