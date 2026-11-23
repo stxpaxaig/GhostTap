@@ -233,7 +233,7 @@ cat > ~/.termux/tasker/ghosttap-list-tools.sh <<'GHOSTTAP_EOF'
 gt_bridge_args "$@"
 OUT=$(mktemp); ERR=$(mktemp)
 {
-  for t in python3 pip bash git curl wget jq gcc make sqlite3 nmap ssh; do
+  for t in python3 pip bash git curl wget jq gcc make sqlite3 nmap ssh aircrack-ng airmon-ng airodump-ng aireplay-ng; do
     if command -v "$t" >/dev/null 2>&1; then echo "$t: yes"; else echo "$t: no"; fi
   done
 } >"$OUT" 2>"$ERR"
@@ -276,7 +276,7 @@ add_tool() {
   if command -v "$1" >/dev/null 2>&1; then v=true; fi
   if [ -z "$TOOLS" ]; then TOOLS="\"$1\":$v"; else TOOLS="$TOOLS,\"$1\":$v"; fi
 }
-for t in python3 python pip bash sh grep sed awk tail sort jq ping curl wget nslookup dig getent host nmap arp-scan git ssh scp sqlite3 termux-job-scheduler at crond gcc clang make cargo go termux-battery-status termux-info termux-clipboard-get less; do
+for t in python3 python pip bash sh grep sed awk tail sort jq ping curl wget nslookup dig getent host nmap arp-scan git ssh scp sqlite3 termux-job-scheduler at crond gcc clang make cargo go termux-battery-status termux-info termux-clipboard-get less aircrack-ng airmon-ng airodump-ng aireplay-ng; do
   add_tool "$t"
 done
 COUNT=$(echo "$TOOLS" | tr ',' '\n' | wc -l)
