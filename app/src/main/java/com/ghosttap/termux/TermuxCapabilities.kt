@@ -88,7 +88,7 @@ enum class TermuxCapabilityState {
 
 data class TermuxCapability(
     val id: String,
-    /** One of the 14 categories, in plain words. */
+    /** One of the registered Termux capability categories, in plain words. */
     val category: String,
     val title: String,
     val detail: String,
@@ -317,7 +317,7 @@ object TermuxRegistry {
         TermuxCapability(
             id = "wireless-audit", category = "Wireless diagnostics",
             title = "Aircrack-ng wireless diagnostics",
-            detail = "Detects Aircrack-ng and exposes its local version/help and wireless adapter diagnostics. Does not capture handshakes, deauthenticate clients, or attempt password recovery.",
+            detail = "Detects Aircrack-ng and related wireless tools; enables adapter discovery, packet analysis, and authorized wireless security assessment where hardware, drivers, and permissions support them.",
             probeTools = listOf("aircrack-ng", "airmon-ng", "airodump-ng", "aireplay-ng")
         ),
         TermuxCapability(
