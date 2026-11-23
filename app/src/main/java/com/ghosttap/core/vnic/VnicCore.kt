@@ -317,8 +317,8 @@ class VnicCore(
         val counts = tokens.groupingBy { it }.eachCount()
         val keywords = counts.entries.sortedByDescending { it.value }.take(12).map { it.key }
         val intent = when {
-            "?" in text -> "question"
             Regex("""(?i)^\s*(?:(?:please|can\s+you|could\s+you|would\s+you)(?:\s+please)?|i\s+(?:want|need)(?:\s+(?:you\s+to|to))?|help\s+me(?:\s+to)?|go\s+ahead\s+and)\s+)?(?:build|create|find|locate|discover|identify|investigate|analyze|explain|compare|run|execute|remember|connect|disconnect|pair|scan|read|write|send|display|show|print|turn|switch|set|control|start|stop|open|close|capture|search|configure|flash|load|ping|test|audit|check|enable|disable|restart|reboot|unlock|lock|activate|deactivate|join|save|delete|copy|fetch|download|upload|emulate|simulate)\b""").containsMatchIn(text) -> "instruction"
+            "?" in text -> "question"
             else -> "statement"
         }
         return VnicInterpretation(tokens, keywords, intent, text.length)
