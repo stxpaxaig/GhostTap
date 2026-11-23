@@ -69,7 +69,7 @@ object TermuxPlanSelection {
      * A snapshot of "can Termux do this job right now". Built by the
      * app from the TermuxViewModel; [availableCapabilities] holds the
      * ids of the probed capabilities that are YES and switched on.
-     * Capability ids are the 14 from TermuxRegistry.defaultCapabilities
+     * Capability ids are the 15 from TermuxRegistry.defaultCapabilities
      * ("python", "network", "dns", "http", "discovery", "files", "json",
      * "data", "dev", "logs", "build", "bash", "automation", "termux-api").
      */
