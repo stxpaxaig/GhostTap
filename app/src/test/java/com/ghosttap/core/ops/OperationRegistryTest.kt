@@ -175,7 +175,7 @@ class OperationRegistryTest {
             description = "Echoes the pending args back.",
             area = OperationArea.SYSTEM,
             execute = { ctx ->
-                OpResult(true, "args were: ${ctx.pendingArgs}")
+                OpResult(true, "args were: \${ctx.pendingArgs}")
             }
         )
         val cap = op.asCapability(context)
@@ -201,13 +201,27 @@ class OperationRegistryTest {
             title = "Test: restore",
             description = "Reads the choice, then succeeds.",
             area = OperationArea.SYSTEM,
-            execute = { ctx -> OpResult(true, "saw: ${ctx.pendingChoice}") }
+            execute = { ctx -> OpResult(true, "saw: \${ctx.pendingChoice}") }
         )
         val cap = op.asCapability(context)
         val result = cap.run(mapOf("command" to "ping -c 3 192.168.1.42"))
         assertTrue(result.ok)
         assertEquals("saw: ping -c 3 192.168.1.42", result.summary)
         assertEquals("picked by hand", context.pendingChoice)
+    }
+
+    @Test
+    fun publishedCapabilitiesExposeOnlyTheirRealInputChannels() {
+        val command = testOp("termux.run-command").asCapability(OperationContext())
+        val script = testOp("termux.run-approved-script").asCapability(OperationContext())
+        val dns = testOp("net.dns_lookup").asCapability(OperationContext())
+        val screen = testOp("test.pkg0.screen-inputs", route = "network_tools")
+            .asCapability(OperationContext())
+
+        assertEquals(listOf("command"), command.inputs)
+        assertEquals(listOf("scriptTitle", "arg.<name>"), script.inputs)
+        assertEquals(listOf("arg.host", "pendingChoice", "choice"), dns.inputs)
+        assertTrue(screen.inputs.isEmpty())
     }
 
     @Test
