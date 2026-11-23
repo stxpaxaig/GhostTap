@@ -99,7 +99,7 @@ fun vnicDetectBringUpTargets(
     if ("usb" in hay || "serial" in hay || "uart" in hay || "ch340" in hay) {
         add(VnicBringUpKind.USB, "usb", subject.ifBlank { "USB/UART target" })
     }
-    if (ipv4 != null || "wifi" in hay || "ssid" in hay || "network" in hay || "host" in hay || "ip address" in hay) {
+    if (ipv4 != null || Regex("""\bwi-?fi\b""").containsMatchIn(hay) || "ssid" in hay || "network" in hay || "host" in hay || "ip address" in hay) {
         add(VnicBringUpKind.NETWORK, ipv4 ?: subject, subject.ifBlank { ipv4 ?: "Network target" })
     }
     return candidates
