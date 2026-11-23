@@ -539,9 +539,20 @@ class VnicCore(
         // the trace. (The develop/execute bridges validate again.)
         val knownIds = capabilities.map { it.id }.toSet()
         val dropped = rawPlan.filter { it !in knownIds }
-        val plan = rawPlan.filter { it in knownIds }.take(12)
+        val explicitSideEffectIntent = Regex(
+            """(?i)\\b(turn|switch|set|toggle|send|write|display|show|print|restart|reboot|flash|erase|start|stop|activate|deactivate|unlock|lock|open|close)\\b"""
+        ).containsMatchIn(observation.text)
+        val unrequestedEffects = rawPlan.filter { id ->
+            val risk = capabilities.firstOrNull { it.id == id }?.riskLevel
+            (risk.equals("WRITE", ignoreCase = true) || risk.equals("CONTROL", ignoreCase = true)) &&
+                !explicitSideEffectIntent
+        }
+        val plan = rawPlan.filter { it in knownIds && it !in unrequestedEffects }.take(12)
         if (dropped.isNotEmpty()) {
             phases += "PLAN: dropped ${dropped.size} id(s) not in the capability list — ${dropped.joinToString()}"
+        }
+        if (unrequestedEffects.isNotEmpty()) {
+            phases += "PLAN: withheld ${unrequestedEffects.size} WRITE/CONTROL operation(s) because the objective did not explicitly request a side effect — ${unrequestedEffects.joinToString()}"
         }
         val selected = plan.firstOrNull()
         var reward = 0.5
