@@ -18,18 +18,18 @@ object VnicArgumentResolver {
         val unresolvedInputs: List<String>
     )
 
-    private val ipv4 = Regex("""(?<![\\d.])(?:\\d{1,3}\\.){3}\\d{1,3}(?![\\d.])""")
+    private val ipv4 = Regex("""(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])""")
     private val mac = Regex("""(?i)(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}""")
-    private val url = Regex("""(?i)https?://[^\\s"'<>]+""")
-    private val host = Regex("""(?i)\\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:local|lan|com|net|org|io|dev)\\b""")
-    private val explicitPort = Regex("""(?i)\\bport\\s*[:=]?\\s*(\\d{1,5})\\b""")
-    private val hostPort = Regex("""(?<![\\d.])(?:\\d{1,3}\\.){3}\\d{1,3}:(\\d{1,5})\\b""")
-    private val gpio = Regex("""(?i)\\bGPIO\\s*([0-9]{1,2})\\b""")
-    private val explicitId = Regex("""(?i)\\b(?:device\\s+)?id\\s*[:=]?\\s*([a-z0-9][a-z0-9._:-]{2,80})""")
-    private val quotedPayload = Regex("""(?is)\\b(?:display|show|print|send|write|say|message|text)\\b[^\\n]{0,50}?["'](.+?)["']""")
-    private val labeledPayload = Regex("""(?is)\\b(?:display|show|print|send|write|say)\\s+(?:the\\s+)?(?:message|text)\\s*[:=]\\s*(.+?)(?:\\s+(?:on|to|through)\\s+(?:the\\s+)?(?:device|sign|board|printer)|$)""")
-    private val explicitCommand = Regex("""(?is)\\b(?:run|execute)\\s+(?:this\\s+)?command\\s*[:=]\\s*["']?(.+?)["']?$""")
-    private val explicitCredential = Regex("""(?i)\\b(password|passphrase|ssid)\\s*[:=]\\s*([^\\s,;]+)""")
+    private val url = Regex("""(?i)https?://[^\s"'<>]+""")
+    private val host = Regex("""(?i)\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:local|lan|com|net|org|io|dev)\b""")
+    private val explicitPort = Regex("""(?i)\bport\s*[:=]?\s*(\d{1,5})\b""")
+    private val hostPort = Regex("""(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}:(\d{1,5})\b""")
+    private val gpio = Regex("""(?i)\bGPIO\s*([0-9]{1,2})\b""")
+    private val explicitId = Regex("""(?i)\b(?:device\s+)?id\s*[:=]?\s*([a-z0-9][a-z0-9._:-]{2,80})""")
+    private val quotedPayload = Regex("""(?is)\b(?:display|show|print|send|write|say|message|text)\b[^\n]{0,50}?["'](.+?)["']""")
+    private val labeledPayload = Regex("""(?is)\b(?:display|show|print|send|write|say)\s+(?:the\s+)?(?:message|text)\s*[:=]\s*(.+?)(?:\s+(?:on|to|through)\s+(?:the\s+)?(?:device|sign|board|printer)|$)""")
+    private val explicitCommand = Regex("""(?is)\b(?:run|execute)\s+(?:this\s+)?command\s*[:=]\s*["']?(.+?)["']?$""")
+    private val explicitCredential = Regex("""(?i)\b(password|passphrase|ssid)\s*[:=]\s*([^\s,;]+)""")
 
     fun resolve(
         capability: VnicCapabilityInfo?,
@@ -52,7 +52,7 @@ object VnicArgumentResolver {
             ?: labeledPayload.find(observation.text)?.groupValues?.getOrNull(1)?.trim()
         val command = explicitCommand.find(observation.text)?.groupValues?.getOrNull(1)?.trim()
         val gpioValue = gpio.find(evidence)?.groupValues?.getOrNull(1)?.let { "GPIO$it" }
-        val stateMatch = Regex("""(?i)\\b(?:turn|switch|set|make)\\b.{0,50}\\b(on|off|high|low|true|false|1|0)\\b|\\bstate\\s*[:=]\\s*(on|off|high|low|true|false|1|0)\\b""")
+        val stateMatch = Regex("""(?i)\b(?:turn|switch|set|make)\b.{0,50}\b(on|off|high|low|true|false|1|0)\b|\bstate\s*[:=]\s*(on|off|high|low|true|false|1|0)\b""")
             .find(observation.text)
         val stateValue = stateMatch?.groupValues?.drop(1)?.firstOrNull { it.isNotBlank() }?.lowercase()
         val credentials = explicitCredential.findAll(evidence).associate {
