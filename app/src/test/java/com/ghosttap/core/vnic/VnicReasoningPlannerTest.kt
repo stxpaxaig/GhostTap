@@ -109,4 +109,45 @@ class VnicReasoningPlannerTest {
         assertFalse(plan.contains("led.gpio4.control"))
     }
 
+    @Test
+    fun coreRejectsRemoteWritePlanWhenObjectiveOnlyRequestsInvestigation() = kotlinx.coroutines.runBlocking {
+        val reasoner = object : VnicReasoningProvider {
+            override val name = "test reasoner"
+            override fun hypotheses(observation: String, knownFacts: List<String>) = emptyList<String>()
+            override fun planFor(goal: String, capabilityIds: List<String>) = listOf("led.gpio4.control")
+        }
+        val researcher = object : VnicResearchPort {
+            override suspend fun research(query: String) =
+                VnicResearchReport(query, emptyList(), emptyList(), 0, 0)
+        }
+        val core = VnicCore(
+            memory = InMemoryVnicMemory(),
+            researcher = researcher,
+            reasoner = reasoner
+        )
+        val executed = mutableListOf<String>()
+        val result = core.process(
+            VnicObservation("LED sign", "Investigate the LED sign and identify its controls"),
+            capabilities = listOf(
+                VnicCapabilityInfo(
+                    id = "led.gpio4.control",
+                    title = "Turn LED GPIO4 on",
+                    description = "Changes the LED output.",
+                    riskLevel = "CONTROL",
+                    verified = false,
+                    category = "ESP32",
+                    inputs = listOf("pin", "state")
+                )
+            ),
+            executor = object : VnicExecutor {
+                override suspend fun execute(capabilityId: String, args: Map<String, String>): VnicExecutionOutcome {
+                    executed += capabilityId
+                    return VnicExecutionOutcome(VnicExecutionState.VERIFIED, "test")
+                }
+            }
+        )
+        assertTrue(result.phases.any { it.contains("withheld because the objective did not explicitly request") })
+        assertTrue(executed.isEmpty())
+    }
+
 }
