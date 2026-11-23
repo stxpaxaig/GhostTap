@@ -54,6 +54,7 @@ class CommandPlanTest {
         reg("nfc.read_summary")
         reg("nfc.emulation_status")
         reg("visual.capture_analyze")
+        reg("vnic.ask-about-device", "CONTROL")
         TermuxPlanSelection.gateProvider = null
     }
 
@@ -120,6 +121,20 @@ class CommandPlanTest {
         val plan = planForCommand("is my esp32 plugged into usb")
         assertTrue(plan.any { it.capabilityId == "usb.refresh" })
         assertTrue(plan.any { it.capabilityId == "usb.status" })
+    }
+
+    @Test
+    fun `identified investigation targets offer the unified brain as a deliberate action`() {
+        val target = IntelTarget(
+            kind = "USB",
+            title = "ESP32 board",
+            text = "ESP32 development board connected over USB"
+        )
+        val plan = Planner.planFor(target, CapabilityRegistry)
+        val brainStep = plan.firstOrNull { it.capabilityId == "vnic.ask-about-device" }
+        assertTrue("expected the unified brain hand-off", brainStep != null)
+        assertFalse("device bring-up must remain user-triggered", brainStep!!.auto)
+        assertEquals("CONTROL", brainStep.riskLevel)
     }
 
     @Test
