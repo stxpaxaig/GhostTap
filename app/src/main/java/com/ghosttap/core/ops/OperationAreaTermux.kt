@@ -276,8 +276,8 @@ fun registerAreaTermuxOperations() {
                     ?: return@Operation OpResult(false, "Termux tools aren't available right now.")
                 val command = """
                     for tool in aircrack-ng airodump-ng aireplay-ng airmon-ng iw; do
-                      printf '%s=' "${'
-                      command -v "$tool" 2>/dev/null || printf 'MISSING'
+                      printf '%s=' "${'$'}tool"
+                      command -v "${'$'}tool" 2>/dev/null || printf 'MISSING'
                       printf '\n'
                     done
                     printf 'uid='
@@ -314,7 +314,7 @@ fun registerAreaTermuxOperations() {
 
 }
 }tool"
-                      command -v "${' 2>/dev/null || printf 'MISSING'
+                      command -v "${'$'}tool" 2>/dev/null || printf 'MISSING'
                       printf '\n'
                     done
                     printf 'uid='
