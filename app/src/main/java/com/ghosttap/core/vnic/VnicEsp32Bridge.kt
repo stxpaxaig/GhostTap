@@ -238,7 +238,7 @@ class VnicEsp32Bridge(\n    private val client: VirtualEsp32Client,\n    private
                 id, title, detail, category, inputs, emptyList(), emptyList(),
                 readOnly = riskLevel == "READ",
                 riskLevel = riskLevel, effects = effects,
-                verified = false, sourceMethod = sourceMethod, run = run
+                verified = false, sourceMethod = sourceMethod, run = { args ->\n                    val result = run(args)\n                    runCatching { recordResult(id, result) }\n                    result\n                }
             )
         )
     }
