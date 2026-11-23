@@ -272,6 +272,46 @@ object Planner {
             )
         }
 
+        // 5b. ESP32 / VirtualESP32: connect the investigation to the
+        // already-registered practice-board operations. The installed-app
+        // check is read-only and safe to run automatically. Opening the
+        // cross-app link and querying the guest require an explicit tap;
+        // starting firmware, loading software, UART writes and GPIO changes
+        // are intentionally left to their existing dedicated controls.
+        val isEsp32Target = Regex(
+            "(?i)\\b(esp[- ]?32|esp32[- ]?(?:solo|dev|wroom|s[0-9])|xtensa)\\b"
+        ).containsMatchIn(text) || t.kind.equals("ESP32", ignoreCase = true)
+        if (isEsp32Target) {
+            add(
+                PlanStep(
+                    "vesp32.check-installed",
+                    why = "This target is identified as ESP32-class hardware — check whether the separate VirtualESP32 companion app is installed.",
+                    auto = true
+                )
+            )
+            add(
+                PlanStep(
+                    "vesp32.connect-practice-board",
+                    why = "Offer the existing Ghost Tap ↔ VirtualESP32 IPC link for this ESP32 investigation. This opens the companion-app connection, so it stays user-approved.",
+                    auto = false
+                )
+            )
+            add(
+                PlanStep(
+                    "vesp32.check-practice-status",
+                    why = "After connecting, query the running guest for its real status, CPU, backend and firmware details.",
+                    auto = false
+                )
+            )
+            add(
+                PlanStep(
+                    "vesp32.check-light-pin",
+                    why = "After the guest is connected, read its existing GPIO2 state as a non-writing diagnostic.",
+                    auto = false
+                )
+            )
+        }
+
         // 6. NFC words (or an NFC-kind target) -> NFC needs a physical tap.
         if (nfcWords.containsMatchIn(text) || t.kind == "NFC") {
             add(
