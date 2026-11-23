@@ -113,6 +113,13 @@ class OperationRegistryTest {
     }
 
     @Test
+    fun asCapabilityPublishesDeclaredInputs() {
+        val op = testOp("test.pkg0.inputs").copy(inputs = listOf("command", "targetId"))
+        val cap = op.asCapability(OperationContext())
+        assertEquals(listOf("command", "targetId"), cap.inputs)
+    }
+
+    @Test
     fun asCapabilityForScreenOpNamesItsScreen() {
         val op = testOp("test.pkg0.screen", OperationArea.USB, route = "usb_uart")
         val cap = op.asCapability(OperationContext())
