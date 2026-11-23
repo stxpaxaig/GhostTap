@@ -78,7 +78,7 @@ fun vnicDetectBringUpTargets(
 ): List<VnicBringUpTarget> {
     val evidence = (text + " " + findings.joinToString(" ") { "${it.title} ${it.snippet} ${it.url}" })
     val hay = evidence.lowercase()
-    val ipv4 = Regex("""(?<![\\d.])(?:\\d{1,3}\\.){3}\\d{1,3}(?![\\d.])""")
+    val ipv4 = Regex("""(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])""")
         .findAll(evidence).map { it.value }
         .firstOrNull { ip -> ip.split(".").all { it.toIntOrNull() in 0..255 } }
     val mac = Regex("""(?i)(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}""").find(evidence)?.value
@@ -92,7 +92,7 @@ fun vnicDetectBringUpTargets(
     // VirtualESP32 is the most specific route when the target is explicitly
     // identified as an ESP32; its BLE/Wi-Fi interfaces are guest capabilities.
     if ("esp32" in hay || "espressif" in hay) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
-    if (("bluetooth" in hay || Regex("""\\bble\\b""").containsMatchIn(hay) || "gatt" in hay) && (mac != null || subject.isNotBlank())) {
+    if (("bluetooth" in hay || Regex("""\bble\b""").containsMatchIn(hay) || "gatt" in hay) && (mac != null || subject.isNotBlank())) {
         add(VnicBringUpKind.BLE, mac ?: subject, subject)
     }
     if ("nfc" in hay) add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
