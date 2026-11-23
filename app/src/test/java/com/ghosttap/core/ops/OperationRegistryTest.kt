@@ -221,4 +221,16 @@ class OperationRegistryTest {
         assertTrue(result.ok)
         assertNull(context.pendingChoice)
     }
+
+    @Test
+    fun aircrackReadinessIsRegisteredAsReadOnlyTermuxOperation() {
+        registerAreaTermuxOperations()
+        val op = OperationRegistry.get("aircrack.preflight")
+        assertNotNull(op)
+        assertEquals(OperationArea.TERMUX, op?.area)
+        assertEquals("READ", op?.riskLevel)
+        assertFalse(op?.verified ?: true)
+        assertTrue(op?.description?.contains("read-only") == true)
+    }
+
 }
