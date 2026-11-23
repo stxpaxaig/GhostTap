@@ -141,6 +141,7 @@ fun registerAreaTermuxOperations() {
             title = "Run a command in Termux",
             description = "Runs a command you typed — or one the plan put together — in Termux, exactly as written, and brings the answer back. Pipes and redirects work.",
             area = OperationArea.TERMUX,
+            inputs = listOf("command"),
             preparation = listOf(
                 PreparationStep("Getting the command") { context ->
                     val termux = context.termux
