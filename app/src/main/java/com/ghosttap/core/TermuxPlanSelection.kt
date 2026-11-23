@@ -81,7 +81,7 @@ object TermuxPlanSelection {
     ) {
         /** Termux itself is usable for a job at all (no capability needed). */
         fun termuxReady(): Boolean =
-            useTermuxInPlans && termuxInstalled && hasRunPermission
+            termuxInstalled && hasRunPermission
 
         /** One probed capability is usable right now. */
         fun canOffer(capabilityId: String): Boolean =
