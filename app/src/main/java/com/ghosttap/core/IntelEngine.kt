@@ -70,6 +70,20 @@ class IntelEngine(
      */
     fun nfcTagPresent(): Boolean = ble.lastNfcTag != null
 
+    /** Open a persistent TCP channel using only a port observed by network discovery. */
+    suspend fun holdNetworkSession(host: String): String {
+        val ports = net.openPortsByHost[host].orEmpty()
+        val port = preferredPort(ports)
+            ?: return "No observed open TCP port for $host; no port will be guessed."
+        return net.openHeldTcpSession(host, port)
+    }
+
+    fun networkSessionHeld(host: String): Boolean = net.heldTcpSessionPorts(host).isNotEmpty()
+
+    fun networkSessionControls(host: String): List<String> = net.heldTcpSessionPorts(host).map { port ->
+        "Persistent TCP channel held at $host:$port; raw protocol controls require service identification."
+    }
+
     /**
      * Bring-up support: counts of controllable characteristics from the REAL
      * GATT discovery — never fabricated.
