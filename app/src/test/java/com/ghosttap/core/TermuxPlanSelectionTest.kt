@@ -24,7 +24,7 @@ class TermuxPlanSelectionTest {
         available: Set<String> = setOf(
             "python", "network", "dns", "http", "discovery", "files",
             "json", "data", "dev", "logs", "build", "bash",
-            "automation", "termux-api"
+            "automation", "termux-api", "wireless-audit"
         )
     ) = TermuxPlanSelection.TermuxPlanGate(
         useTermuxInPlans = useTermuxInPlans,
@@ -229,18 +229,37 @@ class TermuxPlanSelectionTest {
     // ----- The map -----
 
     @Test
-    fun `the map covers all fourteen probed capabilities`() {
+    fun `the map covers all fifteen probed capabilities`() {
         val ids = TermuxPlanSelection.jobs.map { it.capabilityId }.toSet()
         assertEquals(
             setOf(
                 "python", "bash", "files", "json", "network", "dns", "http",
                 "discovery", "dev", "data", "automation", "logs", "build",
-                "termux-api"
+                "termux-api", "wireless-audit"
             ),
             ids
         )
     }
 
+    @Test
+    fun `explicit Aircrack request offers read-only local tool diagnostics`() {
+        TermuxPlanSelection.gateProvider = { gate() }
+        val steps = TermuxPlanSelection.stepsFor(
+            target("Check Aircrack-ng availability for my wireless adapter"), emptySet()
+        )
+        val audit = steps.firstOrNull { it.args["command"] == "aircrack-ng --help" }
+        assertEquals("termux.run-command", audit?.capabilityId)
+        assertTrue(audit?.auto == false)
+    }
+
+    @Test
+    fun `Aircrack diagnostics are not offered when the tool probe is missing`() {
+        TermuxPlanSelection.gateProvider = { gate(available = setOf("network", "discovery")) }
+        val steps = TermuxPlanSelection.stepsFor(
+            target("Check Aircrack-ng availability"), emptySet()
+        )
+        assertFalse(steps.any { it.args["command"] == "aircrack-ng --help" })
+    }
     @Test
     fun `command tools map to their capability`() {
         assertEquals("network", TermuxPlanSelection.capabilityForCommand("ping -c 3 1.2.3.4"))
