@@ -351,18 +351,27 @@ object BringUpPipeline {
         } else {
             "ICMP did not answer, but TCP ports ${openPorts.joinToString()} accepted connections"
         }
+        say("Reachable: $reachability. Opening a persistent session on an observed port…")
+        val holdResult = engine.holdNetworkSession(target.id)
+        if (!engine.networkSessionHeld(target.id)) {
+            val reason = holdResult.ifBlank {
+                "The host answered discovery, but Ghost Tap could not keep a TCP session open."
+            }
+            say("FAILED: $reason")
+            return BringUpResult(false, null, reason, log.toList())
+        }
+        val heldPorts = engine.networkSessionControls(target.id)
         val lines = mutableListOf(
             "Device ${target.title}: $reachability.",
-            "Connection check: ${scan.summary.take(160)}",
-            "A persistent TCP session will be held on a discovered open port; service identity and controls are mapped separately.",
-            "Open NETWORK TOOLS to inspect advertised services and use the protocol-aware controls."
-        )
-        say("Ready: $reachability.")
+            "Persistent session: ${holdResult.take(180)}",
+            "Connection check: ${scan.summary.take(160)}"
+        ) + heldPorts
+        say("Verified: a persistent TCP session is held. Opening NETWORK TOOLS with this session.")
         return BringUpResult(
             ready = true,
             descriptor = ControlDescriptor(
                 route = "network_tools",
-                autoNavigate = false,
+                autoNavigate = true,
                 summaryLines = lines
             ),
             failReason = null,
