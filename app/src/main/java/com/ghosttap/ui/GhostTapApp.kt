@@ -1572,6 +1572,16 @@ private fun NetworkToolsScreen(
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
         )
+        // The network workspace is a continuation of the active objective,
+        // not a disconnected tool page. Follow-up instructions reuse the
+        // existing task context and shared command dispatcher.
+        val workspaceSession = intelVm?.activeTaskSession?.takeIf {
+            it.route == "network_tools" || it.targetKind == "NETWORK"
+        }
+        TaskWorkspacePanel(
+            session = workspaceSession,
+            onContinue = { instruction -> onDoIt?.invoke(instruction) }
+        )
         // A VNIC-discovered session arrives here already connected. This
         // page adopts and displays that same socket; it never reconnects
         // just because navigation occurred.
