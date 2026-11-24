@@ -89,6 +89,8 @@ class IntelEngine(
 
     fun networkSessionHeld(host: String): Boolean = net.heldTcpSessionPorts(host).isNotEmpty()
 
+    fun networkOpenPorts(host: String): List<Int> = net.openPortsByHost[host].orEmpty()
+
     fun networkSessionControls(host: String): List<String> {
         val heldPorts = net.heldTcpSessionPorts(host)
         val openPorts = (net.openPortsByHost[host].orEmpty() + heldPorts).distinct()
