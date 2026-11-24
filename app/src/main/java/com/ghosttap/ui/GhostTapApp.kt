@@ -1215,7 +1215,8 @@ private fun HomeScreen(
             onNetwork = onOpenNetworkTools,
             onNfc = onOpenNfcTools,
             onVisual = onOpenVisualIntel,
-            onInvestigations = onOpenInvestigations
+            onInvestigations = onOpenInvestigations,
+            onLogs = onOpenLogs
         )
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
