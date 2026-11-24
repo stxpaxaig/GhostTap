@@ -22,6 +22,7 @@ import com.ghosttap.core.Finding
 import com.ghosttap.core.GhostIdentity
 import com.ghosttap.core.Hypothesis
 import com.ghosttap.core.IntelEngine
+import com.ghosttap.core.TaskWorkspaceSession
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.IntelTarget
@@ -406,6 +407,31 @@ class IntelViewModel(
      */
     var bringUpState by mutableStateOf(BringUpState.IDLE)
         private set
+    /** Current task context shared by every function workspace. */
+    var activeTaskSession by mutableStateOf<TaskWorkspaceSession?>(null)
+        private set
+
+    fun recordTaskWorkspaceEvent(event: String, result: String = "") {
+        val current = activeTaskSession ?: return
+        activeTaskSession = current.copy(
+            events = (current.events + event).takeLast(40),
+            lastResult = result.ifBlank { current.lastResult },
+            updatedAtMs = System.currentTimeMillis()
+        )
+    }
+
+    fun refreshTaskWorkspaceHealth() {
+        val current = activeTaskSession ?: return
+        val live = bringUpStillReady()
+        val nextState = if (live) "CONNECTED" else "CONNECTION_LOST"
+        if (current.connectionState != nextState) {
+            activeTaskSession = current.copy(
+                connectionState = nextState,
+                events = (current.events + if (live) "Connection verified again" else "Connection health check detected a dropped session").takeLast(40),
+                updatedAtMs = System.currentTimeMillis()
+            )
+        }
+    }
     /** Plain-English bring-up progress ("Connecting…", "Ready — you're in control."). */
     var bringUpStatus by mutableStateOf("")
         private set
@@ -451,7 +477,7 @@ class IntelViewModel(
     /** VNIC sessions carry their discovered target into the function page without reconnecting. */
     private var activeVnicBringUpKind: VnicBringUpKind? = null
 
-    fun adoptVnicBringUp(result: VnicBringUpResult) {
+    fun adoptVnicBringUp(result: VnicBringUpResult, objective: String = "") {
         if (!result.ready || !result.connectionHeld || result.route.isBlank() ||
             result.targetKind == null || result.targetId.isBlank()
         ) return
@@ -469,6 +495,19 @@ class IntelViewModel(
         bringUpState = BringUpState.READY
         bringUpStatus = "Connected to ${result.targetTitle.ifBlank { result.targetId }} — session carried into ${result.route}."
         bringUpDestination = result.route
+        activeTaskSession = TaskWorkspaceSession(
+            taskId = UUID.randomUUID().toString(),
+            objective = objective.ifBlank { "Continue working with ${result.targetTitle.ifBlank { result.targetId }}" },
+            targetKind = result.targetKind.name,
+            targetId = result.targetId,
+            targetTitle = result.targetTitle.ifBlank { result.targetId },
+            route = result.route,
+            connectionState = "CONNECTED",
+            controls = result.controlLines,
+            evidence = result.log.takeLast(20),
+            events = listOf("Investigation completed", "Live session adopted without reconnecting"),
+            updatedAtMs = System.currentTimeMillis()
+        )
     }
 
     /**
