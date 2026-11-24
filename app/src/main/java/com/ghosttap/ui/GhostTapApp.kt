@@ -415,7 +415,7 @@ fun GhostTapApp(
             cycle.resultEvaluation.take(4).forEach { addDoItLine("NEXT: $it") }
             // Carry the exact verified VNIC session into the destination page.
             // This adopts the existing connection; it does not reconnect.
-            cycle.bringUp?.let { intelVm.adoptVnicBringUp(it) }
+            cycle.bringUp?.let { intelVm.adoptVnicBringUp(it, text) }
             // VNIC already acted through the shared registry/execution bridge,
             // or established a live bring-up. Never run the same objective twice.
             if (cycle.action != "store_context" && (cycle.plan.isNotEmpty() || cycle.bringUp != null)) return
