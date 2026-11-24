@@ -1560,6 +1560,42 @@ private fun NetworkToolsScreen(
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
         )
+        // A VNIC-discovered session arrives here already connected. This
+        // page adopts and displays that same socket; it never reconnects
+        // just because navigation occurred.
+        if (intelVm?.bringUpTargetKind == BringUpKind.NETWORK && intelVm.bringUpTargetId.isNotBlank()) {
+            val sessionLive = intelVm.bringUpStillReady()
+            PanelBox("LIVE DEVICE SESSION") {
+                Text(
+                    intelVm.bringUpTargetTitle.ifBlank { intelVm.bringUpTargetId },
+                    color = Accent,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    if (sessionLive) "CONNECTED · VERIFIED — persistent TCP session is held"
+                    else "CONNECTION LOST — the previous session is no longer open",
+                    color = if (sessionLive) Accent else Color(0xFFFF8A80),
+                    fontFamily = FontFamily.Monospace
+                )
+                Text("Host: ${intelVm.bringUpTargetId}", color = Dim, style = MaterialTheme.typography.bodySmall)
+                if (sessionLive) {
+                    intelVm.engine.networkSessionControls(intelVm.bringUpTargetId).forEach { control ->
+                        Text("• $control", color = Dim, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text(
+                        "Choose an available protocol-aware action below. Ghost Tap keeps this session while you work.",
+                        color = Dim,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                } else {
+                    TerminalButton("Re-establish connection") {
+                        intelVm.bringUpTarget(
+                            BringUpTarget(BringUpKind.NETWORK, intelVm.bringUpTargetId, intelVm.bringUpTargetTitle)
+                        )
+                    }
+                }
+            }
+        }
         onOpenWhatToDo?.let { TerminalButton("What do you want to do?", it) }
         // DISCOVER (Network): one tap finds networks and devices — the
         // Wi-Fi networks the phone can see, every live device on your
