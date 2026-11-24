@@ -91,31 +91,23 @@ fun vnicDetectBringUpTargets(
         }
     }
 
-    // VirtualESP32 is a software companion, not a substitute for a physical
-    // ESP32 discovered over BLE, USB, or Wi-Fi. Select it only when the user
-    // explicitly names the virtual board/emulator or practice board.
+    // Prefer a user-requested VirtualESP32 explicitly. For a physical ESP32,
+    // prefer discovered BLE/NETWORK/USB identifiers; retain the virtual
+    // companion as a fallback only when the task identifies an ESP32 target.
     val objectiveHay = (subject + " " + text).lowercase()
+    val esp32Mentioned = "esp32" in objectiveHay || "espressif" in objectiveHay
     val virtualEsp32Requested =
-        Regex("""\bvirtual[\s_-]*esp32\b""").containsMatchIn(objectiveHay) ||
+        Regex("""(?i)\bvirtual[\s_-]*esp32\b""").containsMatchIn(objectiveHay) ||
             ("esp32" in objectiveHay && ("practice board" in objectiveHay || "emulator" in objectiveHay))
     if (virtualEsp32Requested) add(VnicBringUpKind.ESP32, "virtualesp32", subject)
     // A transport keyword is not a device address. Only attempt direct
     // BLE/NETWORK bring-up after discovery or research supplies a real id;
     // otherwise the VNIC planner must run the matching discovery operation.
-    if (mac != null && ("bluetooth" in hay || Regex("""\bble\b""").containsMatchIn(hay) || "gatt" in hay)) {
-        add(VnicBringUpKind.BLE, mac, subject)
-    }
-    if (ipv4 != null || hostname != null) {
-        val hostId = ipv4 ?: hostname!!
-        add(VnicBringUpKind.NETWORK, hostId, subject.ifBlank { hostId })
-    }
-    // USB/NFC are only promoted to direct bring-up after their discovery
-    // operation reports an actual attached board or present tag.
-    if ("usb board found" in hay || "usb device found" in hay) {
-        add(VnicBringUpKind.USB, "usb", subject.ifBlank { "USB board" })
-    }
     if ("nfc tag present" in hay) {
         add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
+    }
+    if (esp32Mentioned && !virtualEsp32Requested) {
+        add(VnicBringUpKind.ESP32, "virtualesp32", subject)
     }
     return candidates
 }
