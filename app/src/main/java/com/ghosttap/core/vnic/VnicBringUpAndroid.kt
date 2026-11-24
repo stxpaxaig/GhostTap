@@ -33,7 +33,11 @@ class AndroidVnicBringUp(
                     connectionHeld = false,
                     failReason = "No VirtualESP32 bridge attached — ESP32 bring-up needs the VirtualESP32 app connected."
                 )
-            return bridge.bringUpEsp32()
+            return bridge.bringUpEsp32().copy(
+                targetKind = target.kind,
+                targetId = target.id,
+                targetTitle = target.title
+            )
         }
         val kind = when (target.kind) {
             VnicBringUpKind.BLE -> BringUpKind.BLE
@@ -67,7 +71,10 @@ class AndroidVnicBringUp(
             },
             failReason = result.failReason ?: if (target.kind == VnicBringUpKind.NETWORK && !networkHeld) {
                 networkHold.ifBlank { "No observed open TCP port could be held; no port was guessed." }
-            } else null
+            } else null,
+            targetKind = target.kind,
+            targetId = target.id,
+            targetTitle = target.title
         )
     }
 }
