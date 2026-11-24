@@ -166,6 +166,9 @@ class IntelEngine(
      */
     fun usbRxLength(): Int = usb.rxText.length
 
+    /** True only while the Android USB serial transport is actually open. */
+    fun usbSessionHeld(): Boolean = usb.isConnected
+
     /**
      * Bring-up support: handshake (C-11) — the board-test status line
      * ("The board answered — ready to load code" on success). The test
