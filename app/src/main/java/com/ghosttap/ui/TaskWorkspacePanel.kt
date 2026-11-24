@@ -66,6 +66,12 @@ fun TaskWorkspacePanel(
                     Text(it, color = Color(0xFFB6C8BF), style = MaterialTheme.typography.bodySmall)
                 }
             }
+            if (session.events.isNotEmpty()) {
+                Text("SESSION HISTORY", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
+                session.events.takeLast(3).forEach {
+                    Text("• $it", color = Color(0xFFB6C8BF), style = MaterialTheme.typography.bodySmall)
+                }
+            }
             OutlinedTextField(
                 value = nextInstruction,
                 onValueChange = { nextInstruction = it },
