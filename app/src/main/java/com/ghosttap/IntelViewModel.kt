@@ -501,6 +501,7 @@ class IntelViewModel(
             return
         }
         bringUpJob = viewModelScope.launch {
+            activeVnicBringUpKind = null
             bringUpTargetId = target.id
             bringUpTargetKind = target.kind
             bringUpState = BringUpState.CONNECTING
