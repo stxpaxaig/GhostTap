@@ -103,7 +103,7 @@ fun vnicDetectBringUpTargets(
     // A transport keyword is not a device address. Only attempt direct
     // BLE/NETWORK bring-up after discovery or research supplies a real id;
     // otherwise the VNIC planner must run the matching discovery operation.
-    if (mac != null && ("bluetooth" in hay || Regex("""\\bble\\b""").containsMatchIn(hay) || "gatt" in hay)) {
+    if (mac != null && ("bluetooth" in hay || Regex("""\bble\b""").containsMatchIn(hay) || "gatt" in hay)) {
         add(VnicBringUpKind.BLE, mac, subject)
     }
     if (ipv4 != null || hostname != null) {
