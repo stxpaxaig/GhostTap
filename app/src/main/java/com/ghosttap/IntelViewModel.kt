@@ -429,11 +429,26 @@ class IntelViewModel(
             bringUpState == BringUpState.FAILED
         ) return
         val live = bringUpStillReady()
-        val nextState = if (live) "CONNECTED" else "CONNECTION_LOST"
+        // NFC is a tap interaction, not a continuously-held radio link.
+        // When the tag leaves the field, preserve the discovered tag/task
+        // context instead of falsely declaring the whole task disconnected.
+        // A new physical tag operation still requires the tag to be present.
+        val isNfcTask = activeVnicBringUpKind == VnicBringUpKind.NFC ||
+            bringUpTargetKind == BringUpKind.NFC
+        val nextState = when {
+            live -> "CONNECTED"
+            isNfcTask -> "CONTEXT_READY"
+            else -> "CONNECTION_LOST"
+        }
         if (current.connectionState != nextState) {
+            val event = when (nextState) {
+                "CONNECTED" -> "Live connection verified again"
+                "CONTEXT_READY" -> "NFC tag left the field; task context retained"
+                else -> "Connection health check detected a dropped session"
+            }
             activeTaskSession = current.copy(
                 connectionState = nextState,
-                events = (current.events + if (live) "Connection verified again" else "Connection health check detected a dropped session").takeLast(40),
+                events = (current.events + event).takeLast(40),
                 updatedAtMs = System.currentTimeMillis()
             )
         }
