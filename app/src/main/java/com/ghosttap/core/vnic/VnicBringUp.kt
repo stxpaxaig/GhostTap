@@ -39,7 +39,11 @@ data class VnicBringUpResult(
     /** True only when the link is still open RIGHT NOW, not just during setup. */
     val connectionHeld: Boolean,
     /** Plain-English blocking reason when not ready. */
-    val failReason: String?
+    val failReason: String?,
+    /** Exact discovered target carried into the destination workspace. */
+    val targetKind: VnicBringUpKind? = null,
+    val targetId: String = "",
+    val targetTitle: String = ""
 )
 
 /** The port the core drives a bring-up through. Implemented per transport. */
