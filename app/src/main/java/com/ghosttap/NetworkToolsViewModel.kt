@@ -624,7 +624,7 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
                 for (port in ports) {
                     try {
                         val socket = Socket()
-                        socket.connect(InetSocketAddress(host, port), 1500)
+                        socket.connect(InetSocketAddress(host, port), 900)
                         runCatching { socket.close() }
                         open.add(port)
                         append("Port check — $port is open")
@@ -1230,9 +1230,15 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
     }
 
     /** Port scan: check a list of common ports on a host. */
-    fun portScan(host: String, ports: List<Int> = listOf(21, 22, 23, 80, 443, 8080, 1883, 9000)) {
+    fun portScan(
+        host: String,
+        ports: List<Int> = listOf(21, 22, 23, 53, 80, 443, 445, 502, 554, 631, 1883, 3389, 8080, 8443, 8883, 9000, 9100)
+    ) {
         if (isBusy) return
         isBusy = true
+        // Remove stale results before this scan so a previous device response
+        // can never be reused as evidence for the current connection attempt.
+        openPortsByHost = openPortsByHost - host
         append("Port check — $host (ports: ${ports.joinToString(", ")})…")
         val logBefore = log.size
         var opFailed = false
