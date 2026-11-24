@@ -712,8 +712,8 @@ class NetworkToolsViewModel(application: Application) : AndroidViewModel(applica
     /** Send an operator-supplied protocol payload over an already-held TCP session. */
     suspend fun sendHeldTcpMessage(host: String, port: Int, message: String, timeoutMs: Int = 5000): String = withContext(Dispatchers.IO) {
         require(message.isNotEmpty()) { "Message is empty." }
-        val key = "\$host:\$port"
-        val socket = heldTcpSessions[key] ?: error("No held TCP session for \$key.")
+        val key = "$host:$port"
+        val socket = heldTcpSessions[key] ?: error("No held TCP session for $key.")
         if (!socket.isConnected || socket.isClosed || socket.isOutputShutdown) {
             heldTcpSessions.remove(key)
             runCatching { socket.close() }
