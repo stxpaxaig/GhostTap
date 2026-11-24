@@ -412,6 +412,10 @@ class IntelViewModel(
     /** Target the current bring-up ran for (used for live honesty checks). */
     var bringUpTargetId by mutableStateOf("")
         private set
+    var bringUpTargetTitle by mutableStateOf("")
+        private set
+    var bringUpTargetRoute by mutableStateOf("")
+        private set
     /** Kind of the current bring-up target. */
     var bringUpTargetKind by mutableStateOf<BringUpKind?>(null)
         private set
@@ -435,6 +439,8 @@ class IntelViewModel(
             bringUpJob?.cancel()
             bringUpJob = null
             bringUpTargetId = ""
+            bringUpTargetTitle = ""
+            bringUpTargetRoute = ""
             bringUpTargetKind = null
             activeVnicBringUpKind = null
         }
@@ -451,6 +457,8 @@ class IntelViewModel(
         ) return
         activeVnicBringUpKind = result.targetKind
         bringUpTargetId = result.targetId
+        bringUpTargetTitle = result.targetTitle.ifBlank { result.targetId }
+        bringUpTargetRoute = result.route
         bringUpTargetKind = when (result.targetKind) {
             VnicBringUpKind.BLE -> BringUpKind.BLE
             VnicBringUpKind.NFC -> BringUpKind.NFC
@@ -503,6 +511,8 @@ class IntelViewModel(
         bringUpJob = viewModelScope.launch {
             activeVnicBringUpKind = null
             bringUpTargetId = target.id
+            bringUpTargetTitle = target.title
+            bringUpTargetRoute = ""
             bringUpTargetKind = target.kind
             bringUpState = BringUpState.CONNECTING
             bringUpStatus = "Connecting…"
@@ -544,6 +554,7 @@ class IntelViewModel(
                         "Ready: \"${target.title}\" → ${result.descriptor?.route}."
                     )
                     val dest = result.descriptor
+                    bringUpTargetRoute = dest?.route.orEmpty()
                     if (autoNavigate && dest?.autoNavigate == true) {
                         bringUpDestination = dest.route
                     }
