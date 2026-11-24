@@ -435,7 +435,7 @@ class IntelViewModel(
     fun dismissBringUp() {
         // Dismissing the transient banner must not discard a live session.
         // A FAILED/connecting attempt has no active session to preserve.
-        if (bringUpState != BringUpState.READY || !bringUpStillReady()) {
+        if (bringUpState != BringUpState.READY) {
             bringUpJob?.cancel()
             bringUpJob = null
             bringUpTargetId = ""
