@@ -6,6 +6,8 @@ import com.ghosttap.UsbUartViewModel
 import com.ghosttap.VisualIntelViewModel
 import com.ghosttap.data.IntelDatabase
 import com.ghosttap.data.Observation
+import com.ghosttap.core.vnic.VnicAdvertisedService
+import com.ghosttap.core.vnic.VnicNetworkProtocol
 import kotlinx.coroutines.delay
 import java.util.UUID
 
@@ -87,8 +89,28 @@ class IntelEngine(
 
     fun networkSessionHeld(host: String): Boolean = net.heldTcpSessionPorts(host).isNotEmpty()
 
-    fun networkSessionControls(host: String): List<String> = net.heldTcpSessionPorts(host).map { port ->
-        "Persistent TCP channel held at $host:$port; net.held_tcp_send can exchange an operator-supplied protocol message without closing the session."
+    fun networkSessionControls(host: String): List<String> {
+        val heldPorts = net.heldTcpSessionPorts(host)
+        val openPorts = (net.openPortsByHost[host].orEmpty() + heldPorts).distinct()
+        val advertised = net.nsdServices.map { service ->
+            VnicAdvertisedService(
+                name = service.name,
+                host = service.host,
+                port = service.port,
+                type = service.type
+            )
+        }
+        val profiles = VnicNetworkProtocol.classify(host, openPorts, advertised)
+        val profileLines = profiles.flatMap { profile ->
+            listOf(
+                "${profile.protocol} on TCP ${profile.port} — ${profile.confidence}",
+                "IDENTIFICATION: ${profile.evidence}"
+            ) + profile.controls
+        }
+        val heldLines = heldPorts.map { port ->
+            "LIVE SESSION: TCP held on $host:$port; explicit-message exchange is available without closing the session"
+        }
+        return (profileLines + heldLines).distinct()
     }
 
     /**
