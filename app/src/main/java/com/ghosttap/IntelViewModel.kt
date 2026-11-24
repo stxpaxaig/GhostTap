@@ -59,6 +59,8 @@ import com.ghosttap.core.vnic.VnicDiagReport
 import com.ghosttap.core.vnic.VnicDiagStage
 import com.ghosttap.core.vnic.VnicDiagStageResult
 import com.ghosttap.core.vnic.VnicEngine
+import com.ghosttap.core.vnic.VnicBringUpKind
+import com.ghosttap.core.vnic.VnicBringUpResult
 import com.ghosttap.core.vnic.VnicProcedure
 import com.ghosttap.data.IntelDb
 import com.ghosttap.data.Investigation
@@ -427,12 +429,38 @@ class IntelViewModel(
 
     /** Dismiss the bring-up banner (after READY or FAILED). */
     fun dismissBringUp() {
-        bringUpJob?.cancel()
-        bringUpJob = null
+        // Dismissing the transient banner must not discard a live session.
+        // A FAILED/connecting attempt has no active session to preserve.
+        if (bringUpState != BringUpState.READY || !bringUpStillReady()) {
+            bringUpJob?.cancel()
+            bringUpJob = null
+            bringUpTargetId = ""
+            bringUpTargetKind = null
+            activeVnicBringUpKind = null
+        }
         bringUpState = BringUpState.IDLE
         bringUpStatus = ""
-        bringUpTargetId = ""
-        bringUpTargetKind = null
+    }
+
+    /** VNIC sessions carry their discovered target into the function page without reconnecting. */
+    private var activeVnicBringUpKind: VnicBringUpKind? = null
+
+    fun adoptVnicBringUp(result: VnicBringUpResult) {
+        if (!result.ready || !result.connectionHeld || result.route.isBlank() ||
+            result.targetKind == null || result.targetId.isBlank()
+        ) return
+        activeVnicBringUpKind = result.targetKind
+        bringUpTargetId = result.targetId
+        bringUpTargetKind = when (result.targetKind) {
+            VnicBringUpKind.BLE -> BringUpKind.BLE
+            VnicBringUpKind.NFC -> BringUpKind.NFC
+            VnicBringUpKind.NETWORK -> BringUpKind.NETWORK
+            VnicBringUpKind.USB -> BringUpKind.USB
+            VnicBringUpKind.ESP32 -> null
+        }
+        bringUpState = BringUpState.READY
+        bringUpStatus = "Connected to ${result.targetTitle.ifBlank { result.targetId }} — session carried into ${result.route}."
+        bringUpDestination = result.route
     }
 
     /**
@@ -442,11 +470,20 @@ class IntelViewModel(
      * keep saying "you're in control".
      */
     fun bringUpStillReady(): Boolean {
-        if (bringUpState != BringUpState.READY) return false
-        return when (bringUpTargetKind) {
-            BringUpKind.BLE ->
-                engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
-            else -> true
+        if (bringUpTargetId.isBlank()) return false
+        return when (activeVnicBringUpKind) {
+            VnicBringUpKind.BLE -> engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
+            VnicBringUpKind.NFC -> engine.nfcTagPresent()
+            VnicBringUpKind.NETWORK -> engine.networkSessionHeld(bringUpTargetId)
+            VnicBringUpKind.USB -> true // USB transport remains owned by the app's USB view model.
+            VnicBringUpKind.ESP32 -> vesp32Client?.targetInfo?.value?.status?.contains("run", ignoreCase = true) == true
+            null -> when (bringUpTargetKind) {
+                BringUpKind.BLE -> engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
+                BringUpKind.NFC -> engine.nfcTagPresent()
+                BringUpKind.NETWORK -> engine.networkSessionHeld(bringUpTargetId)
+                BringUpKind.USB -> true
+                null -> false
+            }
         }
     }
 
