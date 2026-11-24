@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,7 @@ fun TaskWorkspacePanel(
 ) {
     if (session == null) return
     var nextInstruction by remember(session.taskId) { mutableStateOf("") }
+    var expanded by remember(session.taskId) { mutableStateOf(false) }
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color(0xFF101A17),
@@ -43,37 +45,49 @@ fun TaskWorkspacePanel(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text("ACTIVE TASK", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelMedium)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("ACTIVE TASK", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelMedium)
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Collapse" else "Open task")
+                }
+            }
             Text(session.objective, color = Color.White, style = MaterialTheme.typography.titleMedium)
             Text(
                 "${session.targetTitle} · ${session.targetKind} · ${session.connectionState}",
                 color = if (session.connectionState == "CONNECTED") Color(0xFF44FF99) else Color(0xFFFFC078),
                 style = MaterialTheme.typography.bodySmall
             )
-            if (session.controls.isNotEmpty()) {
+            if (!expanded && session.lastResult.isNotBlank()) {
+                Text(session.lastResult.take(120), color = Color(0xFFB6C8BF), style = MaterialTheme.typography.bodySmall)
+            }
+            if (expanded && session.controls.isNotEmpty()) {
                 Text("AVAILABLE", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
                 session.controls.take(5).forEach {
                     Text("• $it", color = Color(0xFFD6E5DE), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            if (session.lastResult.isNotBlank()) {
+            if (expanded && session.lastResult.isNotBlank()) {
                 Text("LAST RESULT", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
                 Text(session.lastResult, color = Color.White, style = MaterialTheme.typography.bodySmall)
             }
-            if (session.evidence.isNotEmpty()) {
+            if (expanded && session.evidence.isNotEmpty()) {
                 Text("LATEST EVIDENCE", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
                 session.evidence.takeLast(3).forEach {
                     Text(it, color = Color(0xFFB6C8BF), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            if (session.events.isNotEmpty()) {
+            if (expanded && session.events.isNotEmpty()) {
                 Text("SESSION HISTORY", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
                 session.events.takeLast(3).forEach {
                     Text("• $it", color = Color(0xFFB6C8BF), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            OutlinedTextField(
-                value = nextInstruction,
+            if (expanded) {
+                OutlinedTextField(
+                    value = nextInstruction,
                 onValueChange = { nextInstruction = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("What should Ghost Tap do next?") },
@@ -88,6 +102,7 @@ fun TaskWorkspacePanel(
                         onContinue(instruction)
                     }
                 ) { Text("CONTINUE TASK") }
+                }
             }
         }
     }
