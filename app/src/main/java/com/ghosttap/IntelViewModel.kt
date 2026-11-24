@@ -479,6 +479,7 @@ class IntelViewModel(
      */
     fun bringUpStillReady(): Boolean {
         if (bringUpTargetId.isBlank()) return false
+        if (bringUpState != BringUpState.READY && bringUpState != BringUpState.IDLE) return false
         return when (activeVnicBringUpKind) {
             VnicBringUpKind.BLE -> engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
             VnicBringUpKind.NFC -> engine.nfcTagPresent()
