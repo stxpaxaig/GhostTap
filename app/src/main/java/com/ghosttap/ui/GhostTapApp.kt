@@ -1502,6 +1502,18 @@ private fun NetworkToolsScreen(
             viewModel.discoverNetwork()
         }
     }
+    var heldSessionLive by remember { mutableStateOf(false) }
+    LaunchedEffect(intelVm?.bringUpTargetId, intelVm?.bringUpTargetKind) {
+        while (
+            intelVm != null &&
+            intelVm.bringUpTargetKind == BringUpKind.NETWORK &&
+            intelVm.bringUpTargetId.isNotBlank()
+        ) {
+            heldSessionLive = intelVm.bringUpStillReady()
+            delay(1_000)
+        }
+        heldSessionLive = false
+    }
     // Each tool has its own inputs right above its own button.
     // No shared TARGET panel — what you type is what that button uses.
     var pingHost by remember { mutableStateOf("") }
@@ -1564,7 +1576,7 @@ private fun NetworkToolsScreen(
         // page adopts and displays that same socket; it never reconnects
         // just because navigation occurred.
         if (intelVm?.bringUpTargetKind == BringUpKind.NETWORK && intelVm.bringUpTargetId.isNotBlank()) {
-            val sessionLive = intelVm.bringUpStillReady()
+            val sessionLive = heldSessionLive
             PanelBox("LIVE DEVICE SESSION") {
                 Text(
                     intelVm.bringUpTargetTitle.ifBlank { intelVm.bringUpTargetId },
