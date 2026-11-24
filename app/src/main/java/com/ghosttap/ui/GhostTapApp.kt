@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.ghosttap.GhostTapViewModel
@@ -1000,6 +1001,46 @@ fun GhostTapApp(
                         )
                     }
                 }
+            }
+            // Shared task continuity: keep the active objective visible in the
+            // destination workspace, and refresh transport health while a task
+            // is active. Network has its own in-page placement to avoid overlap.
+            val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+            val workspaceSession = intelVm.activeTaskSession
+            LaunchedEffect(workspaceSession?.taskId) {
+                if (workspaceSession != null) {
+                    while (true) {
+                        delay(4_000)
+                        intelVm.refreshTaskWorkspaceHealth()
+                    }
+                }
+            }
+            val sessionRoute = workspaceSession?.route.orEmpty()
+            val routeMatchesSession = sessionRoute.isNotBlank() &&
+                (currentRoute == sessionRoute || currentRoute?.startsWith("$sessionRoute/") == true)
+            if (workspaceSession != null &&
+                currentRoute != "home" &&
+                currentRoute != "network_tools" &&
+                routeMatchesSession
+            ) {
+                TaskWorkspacePanel(
+                    session = workspaceSession,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(
+                            start = 12.dp,
+                            end = 12.dp,
+                            bottom = if (intelVm.bringUpState != BringUpState.IDLE) 112.dp else 12.dp
+                        ),
+                    onContinue = { instruction ->
+                        executeHomeCommand(
+                            "Continue the current task for ${workspaceSession.targetTitle}. " +
+                                "Original objective: ${workspaceSession.objective}. " +
+                                "Next instruction: $instruction"
+                        )
+                    }
+                )
             }
             // Zero-tap bring-up status banner — plain words, dismissible.
             // The intelligence works the bring-up; the user lands on control.
