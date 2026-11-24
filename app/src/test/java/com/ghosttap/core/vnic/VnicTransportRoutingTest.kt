@@ -198,8 +198,9 @@ class VnicTransportRoutingTest {
             subject = "ESP32 LED controller",
             text = "Find the physical ESP32 controller over Bluetooth at AA:BB:CC:DD:EE:FF"
         )
-        assertFalse(targets.any { it.kind == VnicBringUpKind.ESP32 })
+        assertEquals(VnicBringUpKind.BLE, targets.first().kind)
         assertTrue(targets.any { it.kind == VnicBringUpKind.BLE && it.id == "AA:BB:CC:DD:EE:FF" })
+        assertTrue(targets.any { it.kind == VnicBringUpKind.ESP32 })
     }
 
 }
