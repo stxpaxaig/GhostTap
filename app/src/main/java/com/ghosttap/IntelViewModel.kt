@@ -484,13 +484,13 @@ class IntelViewModel(
             VnicBringUpKind.BLE -> engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
             VnicBringUpKind.NFC -> engine.nfcTagPresent()
             VnicBringUpKind.NETWORK -> engine.networkSessionHeld(bringUpTargetId)
-            VnicBringUpKind.USB -> true // USB transport remains owned by the app's USB view model.
+            VnicBringUpKind.USB -> engine.usbSessionHeld()
             VnicBringUpKind.ESP32 -> vesp32Client?.targetInfo?.value?.status?.contains("run", ignoreCase = true) == true
             null -> when (bringUpTargetKind) {
                 BringUpKind.BLE -> engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
                 BringUpKind.NFC -> engine.nfcTagPresent()
                 BringUpKind.NETWORK -> engine.networkSessionHeld(bringUpTargetId)
-                BringUpKind.USB -> true
+                BringUpKind.USB -> engine.usbSessionHeld()
                 null -> false
             }
         }
