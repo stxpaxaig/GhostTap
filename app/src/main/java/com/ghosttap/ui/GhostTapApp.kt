@@ -1149,9 +1149,15 @@ private fun HomeScreen(
             .background(Bg),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("GHOST TAP", color = Accent, style = MaterialTheme.typography.headlineMedium, fontFamily = FontFamily.Monospace)
+        GhostCommandCenterHeader(
+            status = status,
+            bluetoothEnabled = btEnabled,
+            scanning = isScanning,
+            targetCount = targets.size
+        )
 
-        // v3.2 — the home command box sits at the top, above the
+        // The home command box is the primary entry point. The engine
+        // routes successful bring-up into the matching function workspace.
         // buttons. Type what you want, Ghost Tap does it and shows
         // what happened, right there.
         CommandBox(
@@ -1168,11 +1174,6 @@ private fun HomeScreen(
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
         )
-
-        // PIECE 2 (2026-11-18) — the "what this screen does" card is
-        // gone: the home screen's job is obvious from its tiles and
-        // the command box, and the card only re-listed built-ins.
-        Text("STATUS: $status", color = if (btEnabled) Dim else Color.Red, fontFamily = FontFamily.Monospace)
 
         // Package 2 (A-30) — a denied permission used to surface only as a
         // status line, with no reason why and no way back. Say why each
@@ -1205,20 +1206,14 @@ private fun HomeScreen(
             TerminalButton("Activity log", onOpenLogs)
         }
 
-        // UI REDESIGN (2026-11-17) — the six functions as tiles:
-        // title (kept exactly) + one plain-words line each, all the
-        // same shape. The descriptions are the same words the old
-        // paragraph below used — the paragraph is gone because the
-        // tiles say it now. One tap opens the function; nothing here
-        // is gated or hidden behind another step.
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            GhostTile("USB UART / ESP32", "Talks to a wired board.", onOpenUsbUart, icon = Icons.Filled.Usb)
-            GhostTile("VIRTUAL ESP32", "Runs a real board on your phone — no physical board needed.", onOpenVesp32, icon = Icons.Filled.Memory)
-            GhostTile("NETWORK TOOLS", "Tests Wi-Fi connections.", onOpenNetworkTools, icon = Icons.Filled.Wifi)
-            GhostTile("NFC TOOLS", "Reads, writes, copies, and pretends to be tap cards.", onOpenNfcTools, icon = Icons.Filled.Nfc)
-            GhostTile("VISUAL INTEL", "Points the camera at boards, chips, labels, and devices to read text and scan barcodes.", onOpenVisualIntel, icon = Icons.Filled.PhotoCamera)
-            GhostTile("INVESTIGATIONS", "Turns what the camera saw into a planned, step-by-step check using Ghost Tap's real tools.", onOpenInvestigations, icon = Icons.Filled.Search)
-        }
+        GhostFunctionSection(
+            onUsb = onOpenUsbUart,
+            onVirtualEsp32 = onOpenVesp32,
+            onNetwork = onOpenNetworkTools,
+            onNfc = onOpenNfcTools,
+            onVisual = onOpenVisualIntel,
+            onInvestigations = onOpenInvestigations
+        )
 
         // UI REDESIGN (2026-11-17) — the old generic intent box
         // ("WHAT ARE YOU TRYING TO DO?") is gone from home: two
