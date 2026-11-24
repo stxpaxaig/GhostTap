@@ -543,7 +543,7 @@ class IntelViewModel(
      * repeated failures are recognized; the outcome is recorded back to
      * memory so future bring-ups (and the planner) learn from it.
      */
-    fun bringUpTarget(target: BringUpTarget, autoNavigate: Boolean = true) {
+    fun bringUpTarget(target: BringUpTarget, autoNavigate: Boolean = true, objective: String = "") {
         if (bringUpJob?.isActive == true) {
             bringUpStatus = "Still getting the last device ready — one at a time."
             return
@@ -556,6 +556,16 @@ class IntelViewModel(
             bringUpTargetKind = target.kind
             bringUpState = BringUpState.CONNECTING
             bringUpStatus = "Connecting…"
+            activeTaskSession = TaskWorkspaceSession(
+                taskId = UUID.randomUUID().toString(),
+                objective = objective.ifBlank { "Connect to ${target.title}" },
+                targetKind = target.kind.name,
+                targetId = target.id,
+                targetTitle = target.title,
+                route = "",
+                connectionState = "CONNECTING",
+                events = listOf("Connection investigation started")
+            )
             try {
                 val past = pastBringUp(target.id)
                 val pastFail: String? = past?.detail
@@ -595,12 +605,27 @@ class IntelViewModel(
                     )
                     val dest = result.descriptor
                     bringUpTargetRoute = dest?.route.orEmpty()
+                    activeTaskSession = activeTaskSession?.copy(
+                        route = dest?.route.orEmpty(),
+                        connectionState = if (bringUpStillReady()) "CONNECTED" else "CONNECTION_UNVERIFIED",
+                        controls = dest?.summaryLines.orEmpty(),
+                        evidence = result.log.takeLast(20),
+                        events = listOf("Target connected", "Capabilities mapped"),
+                        updatedAtMs = System.currentTimeMillis()
+                    )
                     if (autoNavigate && dest?.autoNavigate == true) {
                         bringUpDestination = dest.route
                     }
                 } else {
                     bringUpState = BringUpState.FAILED
                     bringUpStatus = result.failReason ?: "Couldn't get it ready."
+                    activeTaskSession = activeTaskSession?.copy(
+                        connectionState = "FAILED",
+                        lastResult = bringUpStatus,
+                        evidence = result.log.takeLast(20),
+                        events = listOf("Connection attempt failed: ${bringUpStatus}"),
+                        updatedAtMs = System.currentTimeMillis()
+                    )
                     // Let the user retry immediately.
                     lastAutoTriggerMs.remove(bringUpKey(target))
                     loopLog.add("Couldn't get it ready: \"${target.title}\" — ${result.failReason}")
