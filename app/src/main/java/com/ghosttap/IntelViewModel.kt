@@ -524,7 +524,7 @@ class IntelViewModel(
             VnicBringUpKind.NFC -> engine.nfcTagPresent()
             VnicBringUpKind.NETWORK -> engine.networkSessionHeld(bringUpTargetId)
             VnicBringUpKind.USB -> engine.usbSessionHeld()
-            VnicBringUpKind.ESP32 -> vesp32Client?.targetInfo?.value?.status?.contains("run", ignoreCase = true) == true
+            VnicBringUpKind.ESP32 -> vesp32Client?.guestResponsive() == true
             null -> when (bringUpTargetKind) {
                 BringUpKind.BLE -> engine.bleGattStatus(bringUpTargetId).startsWith("CONNECTED")
                 BringUpKind.NFC -> engine.nfcTagPresent()
