@@ -422,6 +422,12 @@ class IntelViewModel(
 
     fun refreshTaskWorkspaceHealth() {
         val current = activeTaskSession ?: return
+        // A transport cannot be called lost while bring-up is still running,
+        // and a failed attempt must retain its actual failure result.
+        if (bringUpState == BringUpState.CONNECTING ||
+            bringUpState == BringUpState.ENUMERATING ||
+            bringUpState == BringUpState.FAILED
+        ) return
         val live = bringUpStillReady()
         val nextState = if (live) "CONNECTED" else "CONNECTION_LOST"
         if (current.connectionState != nextState) {
