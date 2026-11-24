@@ -639,6 +639,12 @@ class IntelViewModel(
             } catch (e: Exception) {
                 bringUpState = BringUpState.FAILED
                 bringUpStatus = "Setting it up hit a problem: ${e.message ?: "unknown"}."
+                activeTaskSession = activeTaskSession?.copy(
+                    connectionState = "FAILED",
+                    lastResult = bringUpStatus,
+                    events = (activeTaskSession?.events.orEmpty() + "Connection attempt failed: $bringUpStatus").takeLast(40),
+                    updatedAtMs = System.currentTimeMillis()
+                )
                 lastAutoTriggerMs.remove(bringUpKey(target))
             }
         }
