@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import org.json.JSONObject
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
@@ -53,7 +54,9 @@ class VirtualEsp32Client(private val context: Context) {
         val status: String,
         val cpu: String,
         val backend: String,
-        val firmware: String
+        val firmware: String,
+        /** Time of the latest real STATUS reply. */
+        val receivedAtMs: Long = System.currentTimeMillis()
     )
 
     data class FirmwareInfo(
@@ -158,7 +161,8 @@ class VirtualEsp32Client(private val context: Context) {
                             status = j.optString("status", "?"),
                             cpu = j.optString("cpu", "?"),
                             backend = j.optString("backend", "?"),
-                            firmware = j.optString("firmware", "?")
+                            firmware = j.optString("firmware", "?"),
+                            receivedAtMs = System.currentTimeMillis()
                         )
                         pubVesp(
                             "vesp32.status", true,
@@ -196,6 +200,21 @@ class VirtualEsp32Client(private val context: Context) {
     }
 
     private var receiverRegistered = false
+    private var heartbeatJob: Job? = null
+
+    /**
+     * Receiver registration proves only that IPC listening is available.
+     * A live guest requires a recent STATUS reply explicitly indicating
+     * running; stale replies and "not running" never count.
+     */
+    fun guestResponsive(maxAgeMs: Long = 15_000L): Boolean {
+        val info = _targetInfo.value ?: return false
+        val state = info.status.trim().lowercase()
+        val running = state in setOf("running", "run", "started", "active", "guest running") ||
+            state.startsWith("running ")
+        val age = System.currentTimeMillis() - info.receivedAtMs
+        return running && age in 0..maxAgeMs && receiverRegistered
+    }
 
     // LOAD_FIRMWARE fix (2026-11-07): Android does NOT honour
     // FLAG_GRANT_READ_URI_PERMISSION on a broadcast Intent — the flag only
@@ -256,10 +275,20 @@ class VirtualEsp32Client(private val context: Context) {
         _connectionState.value = ConnectionState.Connected
         queryStatus()
         readGpio2()
+        if (heartbeatJob?.isActive != true) {
+            heartbeatJob = scope.launch {
+                while (receiverRegistered) {
+                    delay(5_000)
+                    if (receiverRegistered) queryStatus()
+                }
+            }
+        }
     }
 
     fun disconnect() {
         revokeFirmwareGrant()
+        heartbeatJob?.cancel()
+        heartbeatJob = null
         if (receiverRegistered) {
             try { context.unregisterReceiver(receiver) } catch (_: Exception) {}
             receiverRegistered = false
