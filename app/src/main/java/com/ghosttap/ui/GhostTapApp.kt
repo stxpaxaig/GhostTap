@@ -1034,6 +1034,7 @@ fun GhostTapApp(
                             bottom = if (intelVm.bringUpState != BringUpState.IDLE) 112.dp else 12.dp
                         ),
                     onContinue = { instruction ->
+                        intelVm.recordTaskWorkspaceEvent("Follow-up requested: $instruction")
                         executeHomeCommand(
                             "Continue the current task for ${workspaceSession.targetTitle}. " +
                                 "Original objective: ${workspaceSession.objective}. " +
@@ -1621,7 +1622,17 @@ private fun NetworkToolsScreen(
         }
         TaskWorkspacePanel(
             session = workspaceSession,
-            onContinue = { instruction -> onDoIt?.invoke(instruction) }
+            onContinue = { instruction ->
+                workspaceSession?.let {
+                    intelVm?.recordTaskWorkspaceEvent("Follow-up requested: $instruction")
+                }
+                val session = workspaceSession
+                onDoIt?.invoke(
+                    if (session == null) instruction
+                    else "Continue the current task for ${session.targetTitle}. " +
+                        "Original objective: ${session.objective}. Next instruction: $instruction"
+                )
+            }
         )
         // A VNIC-discovered session arrives here already connected. This
         // page adopts and displays that same socket; it never reconnects
