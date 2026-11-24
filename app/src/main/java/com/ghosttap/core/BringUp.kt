@@ -54,6 +54,28 @@ data class ControlDescriptor(
     val summaryLines: List<String>
 )
 
+data class NetworkReachabilityDecision(
+    val reachable: Boolean,
+    val explanation: String
+)
+
+fun networkReachabilityDecision(
+    pingAnswered: Boolean,
+    openTcpPorts: List<Int>
+): NetworkReachabilityDecision {
+    val ports = openTcpPorts.distinct().filter { it in 1..65535 }.sorted()
+    return when {
+        ports.isNotEmpty() && pingAnswered ->
+            NetworkReachabilityDecision(true, "ICMP answered and TCP ports ${ports.joinToString()} accepted connections.")
+        ports.isNotEmpty() ->
+            NetworkReachabilityDecision(true, "ICMP did not answer, but TCP ports ${ports.joinToString()} accepted connections.")
+        pingAnswered ->
+            NetworkReachabilityDecision(false, "The host answered ICMP, but no scanned TCP service accepted a connection; a persistent TCP session cannot be held.")
+        else ->
+            NetworkReachabilityDecision(false, "The host did not answer ICMP and no scanned TCP service accepted a connection.")
+    }
+}
+
 data class BringUpResult(
     val ready: Boolean,
     val descriptor: ControlDescriptor?,
@@ -301,36 +323,43 @@ object BringUpPipeline {
         say: (String) -> Unit,
         log: MutableList<String>
     ): BringUpResult {
-        // Handshake (C-11): the ping IS the probe — a real command (echo
-        // request) the host must answer. A host that doesn't answer can't
-        // be called ready. No payload is sent to an unknown service: the
-        // "hello" send is deliberately not used as a probe, and the port
-        // scan below only ever opens connections to see which answer.
+        // ICMP is useful evidence, but many devices and firewalls block ping.
+        // A successful TCP connect scan is an equally real reachability proof.
         phase(BringUpPhase.HANDSHAKE)
         say("Checking ${target.id} answers…")
         val ping = engine.run("net.ping", mapOf("host" to target.id))
-        // A ping that got no answer blocks READY. "answered in" is the
-        // only success evidence in a ping reply — "didn't answer" and
-        // "couldn't find" never contain it — so this checks for the
-        // presence of a real answer, never for the absence of an error.
-        if (!pingAnswered(ping.summary)) {
-            val reason = "The device didn't answer the check — it may be off, or it may block this kind of check."
+        val pingOk = pingAnswered(ping.summary)
+        if (pingOk) {
+            say("It answered ICMP: ${ping.summary.take(120)}")
+        } else {
+            say("No ICMP reply; checking TCP ports because this device may block ping.")
+        }
+
+        phase(BringUpPhase.ENUMERATING)
+        say("Checking its TCP connection points…")
+        val scan = engine.run("net.port_scan", mapOf("host" to target.id))
+        val openPorts = engine.networkOpenPorts(target.id)
+        val decision = networkReachabilityDecision(pingOk, openPorts)
+        if (!decision.reachable) {
+            val reason = decision.explanation
             say("FAILED: $reason")
             return BringUpResult(false, null, reason, log.toList())
         }
-        say("It answered the check: ${ping.summary.take(120)}")
-        phase(BringUpPhase.ENUMERATING)
-        say("Checking its connection points…")
-        val scan = engine.run("net.port_scan", mapOf("host" to target.id))
+
+        val reachability = if (pingOk) {
+            "ICMP answered and TCP ports ${openPorts.joinToString()} are open"
+        } else {
+            "ICMP did not answer, but TCP ports ${openPorts.joinToString()} accepted connections"
+        }
         val lines = mutableListOf(
-            "Device ${target.title}: ${ping.summary.take(120)}",
+            "Device ${target.title}: $reachability.",
             "Connection check: ${scan.summary.take(160)}",
-            "Open NETWORK TOOLS to work on this device — check if it answers, connect and send, fetch pages, and check connection points are all there."
+            "A persistent TCP session will be held on a discovered open port; service identity and controls are mapped separately.",
+            "Open NETWORK TOOLS to inspect advertised services and use the protocol-aware controls."
         )
-        say("Ready: device checked.")
+        say("Ready: $reachability.")
         return BringUpResult(
             ready = true,
-            // Scan-discovered hosts weren't tapped by the user — report, don't yank screens.
             descriptor = ControlDescriptor(
                 route = "network_tools",
                 autoNavigate = false,
