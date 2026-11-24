@@ -51,8 +51,12 @@ class AndroidVnicBringUp(
             engine
         )
         val networkHold = if (target.kind == VnicBringUpKind.NETWORK && result.ready) {
-            runCatching { engine.holdNetworkSession(target.id) }
-                .getOrElse { "TCP session could not be held: ${it.message ?: "connection failed"}." }
+            if (engine.networkSessionHeld(target.id)) {
+                "Persistent TCP session is already held by the shared bring-up pipeline."
+            } else {
+                runCatching { engine.holdNetworkSession(target.id) }
+                    .getOrElse { "TCP session could not be held: ${it.message ?: "connection failed"}." }
+            }
         } else ""
         val networkHeld = target.kind == VnicBringUpKind.NETWORK && engine.networkSessionHeld(target.id)
         val controls = result.descriptor?.summaryLines.orEmpty() + if (networkHeld) {
