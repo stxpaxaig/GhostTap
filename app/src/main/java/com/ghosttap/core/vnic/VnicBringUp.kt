@@ -103,6 +103,18 @@ fun vnicDetectBringUpTargets(
     // A transport keyword is not a device address. Only attempt direct
     // BLE/NETWORK bring-up after discovery or research supplies a real id;
     // otherwise the VNIC planner must run the matching discovery operation.
+    if (mac != null && ("bluetooth" in hay || Regex("""\\bble\\b""").containsMatchIn(hay) || "gatt" in hay)) {
+        add(VnicBringUpKind.BLE, mac, subject)
+    }
+    if (ipv4 != null || hostname != null) {
+        val hostId = ipv4 ?: hostname!!
+        add(VnicBringUpKind.NETWORK, hostId, subject.ifBlank { hostId })
+    }
+    // USB/NFC are promoted only after a live discovery operation reports
+    // an attached board or a tag that is actually present.
+    if ("usb board found" in hay || "usb device found" in hay) {
+        add(VnicBringUpKind.USB, "usb", subject.ifBlank { "USB board" })
+    }
     if ("nfc tag present" in hay) {
         add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
     }
