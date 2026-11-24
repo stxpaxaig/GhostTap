@@ -661,6 +661,7 @@ fun GhostTapApp(
                         onOpenVisualIntel = { runScreenOp("screen.visual_intel", "visual_intel") },
                         onOpenInvestigations = { runScreenOp("screen.investigations", "investigations") },
                         intelVm = intelVm,
+                        activeTaskSession = intelVm.activeTaskSession,
                         onRunLiveCommand = { id, choice -> runLiveCommand(id, choice) },
                         onOpenRoute = { route -> nav.navigate(route) },
                         onIntent = { text -> runIntent(text) },
@@ -1143,6 +1144,7 @@ private fun HomeScreen(
     // a target's own page. Null = standalone use: the card still
     // renders, with the app's own rules instead of the AI.
     intelVm: com.ghosttap.IntelViewModel? = null,
+    activeTaskSession: com.ghosttap.core.TaskWorkspaceSession? = null,
     onRunLiveCommand: ((String, String?) -> Unit)? = null,
     onOpenRoute: ((String) -> Unit)? = null,
     // ZERO-CONFIG — the intent box ("what I'm tryna do"), on the home
@@ -1218,6 +1220,23 @@ private fun HomeScreen(
             onClear = onClearCommand ?: {},
             showTermuxSetup = showTermuxSetup,
             onTermuxSetup = onTermuxSetup
+        )
+
+        // Keep the current task visible when the user returns to Home.
+        // The same session is rendered inside its destination workspace;
+        // this is a continuity shortcut, not a second task or transport.
+        TaskWorkspacePanel(
+            session = activeTaskSession,
+            onContinue = { instruction ->
+                val session = activeTaskSession
+                if (session != null) {
+                    onDoIt?.invoke(
+                        "Continue the current task for ${session.targetTitle}. " +
+                            "Original objective: ${session.objective}. " +
+                            "Next instruction: $instruction"
+                    )
+                }
+            }
         )
 
         // Package 2 (A-30) — a denied permission used to surface only as a
