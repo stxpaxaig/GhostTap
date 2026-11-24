@@ -316,8 +316,15 @@ class VnicCore(
         val tokens = Regex("[A-Za-z0-9_'-]+").findAll(text.lowercase()).map { it.value }.toList()
         val counts = tokens.groupingBy { it }.eachCount()
         val keywords = counts.entries.sortedByDescending { it.value }.take(12).map { it.key }
+        val actionVerbs = """(?:build|create|find|locate|discover|identify|investigate|analyze|explain|compare|run|execute|remember|connect|disconnect|pair|scan|read|write|send|display|show|print|turn|switch|set|control|start|stop|open|close|capture|search|configure|flash|load|ping|test|audit|check|enable|disable|restart|reboot|unlock|lock|activate|deactivate|join|save|delete|copy|fetch|download|upload|emulate|simulate)\b"""
+        val actionIntent =
+            Regex("""(?i)^\s*(?:please\s+)?$actionVerbs""").containsMatchIn(text) ||
+                Regex("""(?i)^\s*(?:can|could|would)\s+you\s+(?:please\s+)?$actionVerbs""").containsMatchIn(text) ||
+                Regex("""(?i)^\s*i\s+(?:want|need)(?:\s+(?:you\s+to|to))?\s+$actionVerbs""").containsMatchIn(text) ||
+                Regex("""(?i)^\s*help\s+me(?:\s+to)?\s+$actionVerbs""").containsMatchIn(text) ||
+                Regex("""(?i)^\s*go\s+ahead\s+and\s+$actionVerbs""").containsMatchIn(text)
         val intent = when {
-            Regex("""(?i)^\s*(?:(?:please|can\s+you|could\s+you|would\s+you)(?:\s+please)?|i\s+(?:want|need)(?:\s+(?:you\s+to|to))?|help\s+me(?:\s+to)?|go\s+ahead\s+and)\s+)?(?:build|create|find|locate|discover|identify|investigate|analyze|explain|compare|run|execute|remember|connect|disconnect|pair|scan|read|write|send|display|show|print|turn|switch|set|control|start|stop|open|close|capture|search|configure|flash|load|ping|test|audit|check|enable|disable|restart|reboot|unlock|lock|activate|deactivate|join|save|delete|copy|fetch|download|upload|emulate|simulate)\b""").containsMatchIn(text) -> "instruction"
+            actionIntent -> "instruction"
             "?" in text -> "question"
             else -> "statement"
         }
