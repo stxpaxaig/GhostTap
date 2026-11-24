@@ -683,6 +683,7 @@ class VnicCore(
                                 lastOutcome = held
                                 break
                             } else {
+                                bringUpResult = attempt
                                 phases += "DISCOVERY: ${target.kind} did not reach controllable state — ${attempt.failReason ?: "connection/control verification incomplete"}"
                             }
                         }
