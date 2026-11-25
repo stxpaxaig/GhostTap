@@ -679,7 +679,9 @@ fun GhostTapApp(
                         intelVm = intelVm,
                         activeTaskSession = intelVm.activeTaskSession,
                         onRunLiveCommand = { id, choice -> runLiveCommand(id, choice) },
-                        onOpenRoute = { route -> nav.navigate(route) },
+                        onOpenRoute = { route ->
+                            nav.navigate(route) { launchSingleTop = true }
+                        },
                         onIntent = { text -> runIntent(text) },
                         intentAnswer = intelVm.lastCommandAnswer,
                         // v3.2 — home command box (top of the screen):
