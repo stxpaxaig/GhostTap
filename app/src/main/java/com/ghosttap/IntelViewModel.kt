@@ -24,6 +24,7 @@ import com.ghosttap.core.Hypothesis
 import com.ghosttap.core.IntelEngine
 import com.ghosttap.core.TaskWorkspaceSession
 import com.ghosttap.core.createContextTaskSession
+import com.ghosttap.core.matchesTaskObjectiveContext
 import com.ghosttap.core.workspaceRouteForCategories
 import com.ghosttap.core.workspaceResumeDestination
 import com.ghosttap.core.IntelEvent
