@@ -468,7 +468,6 @@ class IntelViewModel(
             }
         }
     }
-        private set
 
     fun recordTaskWorkspaceEvent(event: String, result: String = "") {
         val current = activeTaskSession ?: return
