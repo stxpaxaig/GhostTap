@@ -39,12 +39,20 @@ fun registerAreaTermuxOperations() {
                     if (!check.ok) {
                         check
                     } else {
-                        termux.discoverTermux()
-                        OpResult(
-                            true,
-                            "Termux is installed and its current readiness check passed. Ghost Tap can invoke it through the existing command bridge when the requested tool is available.",
-                            "termux"
-                        )
+                        val link = termux.bridgeHealthCheck()
+                        if (!link.ok) {
+                            link
+                        } else {
+                            // The bridge has now answered a real ping. Start
+                            // the capability probe so the planner can use only
+                            // tools Termux actually reports as installed.
+                            termux.discoverTermux()
+                            OpResult(
+                                true,
+                                "Termux is installed and Ghost Tap's command bridge answered. Capability discovery has started; only tools confirmed by Termux will be offered.",
+                                "termux"
+                            )
+                        }
                     }
                 } else {
                     OpResult(false, "Termux tools aren't available right now.")
