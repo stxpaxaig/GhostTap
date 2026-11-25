@@ -66,6 +66,7 @@ import com.ghosttap.data.LogEntry
 import com.ghosttap.data.ScanTarget
 import com.ghosttap.data.TargetType
 import com.ghosttap.core.matchesDestination
+import com.ghosttap.core.continuationPrompt
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.TermuxPlanSelection
@@ -1039,9 +1040,7 @@ fun GhostTapApp(
                     onContinue = { instruction ->
                         intelVm.recordTaskWorkspaceEvent("Follow-up requested: $instruction")
                         executeHomeCommand(
-                            "Continue the current task for ${workspaceSession.targetTitle}. " +
-                                "Original objective: ${workspaceSession.objective}. " +
-                                "Next instruction: $instruction"
+                            workspaceSession.continuationPrompt(instruction)
                         )
                     }
                 )
@@ -1233,9 +1232,7 @@ private fun HomeScreen(
                 val session = activeTaskSession
                 if (session != null) {
                     onDoIt?.invoke(
-                        "Continue the current task for ${session.targetTitle}. " +
-                            "Original objective: ${session.objective}. " +
-                            "Next instruction: $instruction"
+                        session.continuationPrompt(instruction)
                     )
                 }
             }
@@ -1650,8 +1647,7 @@ private fun NetworkToolsScreen(
                 val session = workspaceSession
                 onDoIt?.invoke(
                     if (session == null) instruction
-                    else "Continue the current task for ${session.targetTitle}. " +
-                        "Original objective: ${session.objective}. Next instruction: $instruction"
+                    else session.continuationPrompt(instruction)
                 )
             }
         )
