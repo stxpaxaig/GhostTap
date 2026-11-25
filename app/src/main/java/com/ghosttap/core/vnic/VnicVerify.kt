@@ -41,7 +41,10 @@ object VnicVerify {
     /** Phrases that mean "nothing actually happened" even when ok=true. */
     val NOOP_MARKERS = listOf(
         "manual step", "open the", "not implemented", "no-op", "placeholder",
-        "not yet", "skipped", "nothing to do"
+        "not yet", "skipped", "nothing to do",
+        // A successful send is not proof the target processed it. Treat
+        // explicit no-reply responses as ATTEMPTED, not CONNECTED/VERIFIED.
+        "no uart reply", "no reply arrived", "no response arrived"
     )
 
     /** Verify one already-run capability result. Never throws. */
