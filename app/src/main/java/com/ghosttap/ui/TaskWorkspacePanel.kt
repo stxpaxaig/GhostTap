@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ghosttap.core.TaskWorkspaceSession
+import com.ghosttap.core.workspaceConnectionLabel
 
 /**
  * Shared continuation surface for function workspaces. It renders only
@@ -36,16 +37,7 @@ fun TaskWorkspacePanel(
     if (session == null) return
     var nextInstruction by remember(session.taskId) { mutableStateOf("") }
     var expanded by remember(session.taskId) { mutableStateOf(false) }
-    val connectionLabel = when (session.connectionState) {
-        "CONNECTED" -> "Live connection"
-        "CONTEXT_READY" -> "Context retained · NFC tag not present"
-        "CONNECTION_LOST" -> "Connection lost"
-        "CONNECTION_UNVERIFIED" -> "Connection not yet verified"
-        "CONNECTING" -> "Connecting"
-        "FAILED" -> "Setup failed"
-        else -> session.connectionState.replace('_', ' ').lowercase()
-            .replaceFirstChar { it.uppercase() }
-    }
+    val connectionLabel = workspaceConnectionLabel(session)
     val connectionColor = when (session.connectionState) {
         "CONNECTED" -> Color(0xFF44FF99)
         "CONTEXT_READY" -> Color(0xFF7CCFC0)
