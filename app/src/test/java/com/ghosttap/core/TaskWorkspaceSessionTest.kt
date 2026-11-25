@@ -45,4 +45,20 @@ class TaskWorkspaceSessionTest {
     fun `blank route never matches`() {
         assertFalse(session(route = "").matchesDestination("home"))
     }
+
+    @Test
+    fun `continuation prompt carries live session identity controls and evidence`() {
+        val active = session().copy(
+            controls = listOf("read characteristic", "write characteristic"),
+            evidence = listOf("GATT service discovered", "characteristic responded"),
+            events = listOf("Connected", "Capabilities mapped"),
+            lastResult = "Device acknowledged the last request"
+        )
+        val prompt = active.continuationPrompt("Read the current status")
+        assertTrue(prompt.contains("Do not restart discovery or reconnect"))
+        assertTrue(prompt.contains("Test device (BLE, id=ble-42)"))
+        assertTrue(prompt.contains("read characteristic | write characteristic"))
+        assertTrue(prompt.contains("characteristic responded"))
+        assertTrue(prompt.contains("Read the current status"))
+    }
 }
