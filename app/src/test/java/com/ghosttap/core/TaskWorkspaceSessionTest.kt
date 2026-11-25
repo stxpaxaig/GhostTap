@@ -83,4 +83,11 @@ class TaskWorkspaceSessionTest {
         assertEquals("Ghost Tap task", task.objective)
         assertEquals("Current objective", task.targetTitle)
     }
+
+    @Test
+    fun `continuation prompt carries grounded next actions`() {
+        val active = session().copy(nextActions = listOf("Read device status", "Inspect available services"))
+        val prompt = active.continuationPrompt("Proceed")
+        assertTrue(prompt.contains("Suggested next actions: Read device status | Inspect available services"))
+    }
 }
