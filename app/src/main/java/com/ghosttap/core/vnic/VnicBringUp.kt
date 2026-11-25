@@ -80,7 +80,11 @@ fun vnicDetectBringUpTargets(
     text: String,
     findings: List<VnicFinding> = emptyList()
 ): List<VnicBringUpTarget> {
-    val evidence = (text + " " + findings.joinToString(" ") { "${it.title} ${it.snippet} ${it.url}" })
+    // Search results are research leads, not proof that a device exists at
+    // the address in a page or URL. Only objective-supplied identifiers or
+    // independently verified findings may trigger a direct connection.
+    val actionableFindings = findings.filter { it.verified }
+    val evidence = (text + " " + actionableFindings.joinToString(" ") { "${it.title} ${it.snippet} ${it.url}" })
     val hay = evidence.lowercase()
     val ipv4 = Regex("""(?<![\d.])(?:\d{1,3}\.){3}\d{1,3}(?![\d.])""")
         .findAll(evidence).map { it.value }
