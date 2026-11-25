@@ -90,4 +90,24 @@ class TaskWorkspaceSessionTest {
         val prompt = active.continuationPrompt("Proceed")
         assertTrue(prompt.contains("Suggested next actions: Read device status | Inspect available services"))
     }
+
+    @Test
+    fun `routes selected capability families to their existing workspaces`() {
+        assertEquals("network_tools", workspaceRouteForCategories(listOf("SYSTEM", "NETWORK")))
+        assertEquals("nfc_tools", workspaceRouteForCategories(listOf("NFC")))
+        assertEquals("usb_uart", workspaceRouteForCategories(listOf("USB")))
+        assertEquals("vesp32", workspaceRouteForCategories(listOf("ESP32")))
+        assertEquals("visual_intel", workspaceRouteForCategories(listOf("VISUAL")))
+        assertEquals("investigations", workspaceRouteForCategories(listOf("BLE")))
+    }
+
+    @Test
+    fun `generic or unknown capability categories do not force navigation`() {
+        assertEquals(null, workspaceRouteForCategories(listOf("SYSTEM", "UNKNOWN")))
+    }
+
+    @Test
+    fun `first concrete category in the plan determines the workspace`() {
+        assertEquals("nfc_tools", workspaceRouteForCategories(listOf("SYSTEM", "NFC", "NETWORK")))
+    }
 }
