@@ -424,6 +424,7 @@ fun GhostTapApp(
                 result = cycle.executionEvidence.ifBlank { cycle.resultEvaluation.joinToString(" · ") },
                 controls = cycle.controlsMapped,
                 evidence = cycle.findings.map { "${it.title}: ${it.snippet}" },
+                nextActions = cycle.resultEvaluation,
                 objective = text,
                 subject = cycle.subject
             )
