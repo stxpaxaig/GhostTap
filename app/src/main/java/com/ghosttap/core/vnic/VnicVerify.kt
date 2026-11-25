@@ -161,7 +161,7 @@ object VnicVerify {
         // the terminal actually had traffic / the board actually answered.
         // "No USB device found", "Connection failed" and "The board
         // didn't answer" never contain these phrases.
-        "usb.refresh" -> ExpectedEvidence(listOf("tap connect", "tap one to pick"))
+        "usb.refresh" -> ExpectedEvidence(listOf("usb cable found", "tap one to pick"))
         "usb.status" -> ExpectedEvidence(listOf("connected=true"))
         "usb.read_log" -> ExpectedEvidence(listOf("last terminal traffic captured"))
         "usb.connect" -> ExpectedEvidence(listOf("connected — ready to use"))
