@@ -20,6 +20,26 @@ class TaskWorkspaceSessionTest {
             connectionState = "CONNECTED"
         )
 
+
+    @Test
+    fun `explicit continuation context preserves exact original task identity`() {
+        val active = session().copy(objective = "Connect to the controller")
+        val continuation = active.continuationPrompt("Read its current status")
+        assertTrue(matchesTaskObjectiveContext(active.objective, continuation))
+        assertTrue(matchesTaskObjectiveContext(active.objective, active.objective))
+    }
+
+    @Test
+    fun `unrelated objective containing old words does not inherit task identity`() {
+        assertFalse(
+            matchesTaskObjectiveContext(
+                "Connect to device",
+                "Do not connect to device; investigate a different network host"
+            )
+        )
+        assertFalse(matchesTaskObjectiveContext("Connect to device", "Connect to device firmware update"))
+    }
+
     @Test
     fun `matches concrete destination route`() {
         assertTrue(session("network_tools").matchesDestination("network_tools"))
