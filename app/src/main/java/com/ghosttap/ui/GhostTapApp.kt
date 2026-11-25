@@ -1006,7 +1006,9 @@ fun GhostTapApp(
             // Shared task continuity: keep the active objective visible in the
             // destination workspace, and refresh transport health while a task
             // is active. Network has its own in-page placement to avoid overlap.
-            val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+            val currentEntry = nav.currentBackStackEntryAsState().value
+            val currentRoute = currentEntry?.destination?.route
+            val currentTargetId = currentEntry?.arguments?.getString("id")
             val workspaceSession = intelVm.activeTaskSession
             LaunchedEffect(workspaceSession?.taskId) {
                 if (workspaceSession != null) {
@@ -1017,8 +1019,18 @@ fun GhostTapApp(
                 }
             }
             val sessionRoute = workspaceSession?.route.orEmpty()
+            // Navigation destinations expose their route pattern ("target/{id}"),
+            // while task sessions retain the concrete route ("target/<device-id>").
+            // Resolve that argument before deciding whether this workspace owns
+            // the current task panel; otherwise BLE/USB target sessions disappear
+            // even though the user is on the correct device page.
+            val targetRouteMatches = currentRoute == "target/{id}" &&
+                currentTargetId != null &&
+                sessionRoute == "target/$currentTargetId" &&
+                workspaceSession?.targetId == currentTargetId
             val routeMatchesSession = sessionRoute.isNotBlank() &&
-                (currentRoute == sessionRoute || currentRoute?.startsWith("$sessionRoute/") == true)
+                (targetRouteMatches || currentRoute == sessionRoute ||
+                    currentRoute?.startsWith("$sessionRoute/") == true)
             if (workspaceSession != null &&
                 currentRoute != "home" &&
                 currentRoute != "network_tools" &&
