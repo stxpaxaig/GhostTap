@@ -1209,6 +1209,7 @@ private fun HomeScreen(
     LaunchedEffect(Unit) { intelVm?.clearCommandAnswer() }
     // Package 2 (A-01) — find one device by name instead of scrolling the list.
     var targetFilter by remember { mutableStateOf("") }
+    var utilitiesExpanded by remember { mutableStateOf(false) }
     val shownTargets = if (targetFilter.isBlank()) targets else targets.filter {
         it.name.contains(targetFilter, ignoreCase = true) ||
             (it.likely?.contains(targetFilter, ignoreCase = true) == true)
@@ -1302,53 +1303,63 @@ private fun HomeScreen(
             TerminalButton("Activity log", onOpenLogs)
         }
 
-        GhostFunctionSection(
-            onUsb = onOpenUsbUart,
-            onVirtualEsp32 = onOpenVesp32,
-            onNetwork = onOpenNetworkTools,
-            onNfc = onOpenNfcTools,
-            onVisual = onOpenVisualIntel,
-            onInvestigations = onOpenInvestigations,
-            onLogs = onOpenLogs
-        )
+        // Keep the primary path focused on the objective, active task,
+        // discovery controls and live targets. Secondary workspaces and
+        // inventory utilities remain one tap away without dominating Home.
+        TerminalButton(
+            if (utilitiesExpanded) "Hide tools & history" else "More tools & history"
+        ) { utilitiesExpanded = !utilitiesExpanded }
 
-        // UI REDESIGN (2026-11-17) — the old generic intent box
-        // ("WHAT ARE YOU TRYING TO DO?") is gone from home: two
-        // command boxes confused the #176 field test (he typed into
-        // the old one). The command box at the top is the one way to
-        // type; each function page lists its own actions instead.
-        // onIntent / intentAnswer stay in the signature (unused here)
-        // so the call site does not change.
+        if (utilitiesExpanded) {
+                GhostFunctionSection(
+                    onUsb = onOpenUsbUart,
+                    onVirtualEsp32 = onOpenVesp32,
+                    onNetwork = onOpenNetworkTools,
+                    onNfc = onOpenNfcTools,
+                    onVisual = onOpenVisualIntel,
+                    onInvestigations = onOpenInvestigations,
+                    onLogs = onOpenLogs
+            )
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            TerminalButton("Save this list", onSaveBaseline)
-            TerminalButton("Compare with saved list", onCompareBaseline)
-        }
+            // UI REDESIGN (2026-11-17) — the old generic intent box
+            // ("WHAT ARE YOU TRYING TO DO?") is gone from home: two
+            // command boxes confused the #176 field test (he typed into
+            // the old one). The command box at the top is the one way to
+            // type; each function page lists its own actions instead.
+            // onIntent / intentAnswer stay in the signature (unused here)
+            // so the call site does not change.
 
-        // (UI REDESIGN: the old plain-English paragraph that explained
-        // every button lived here. Its words now live on the tiles
-        // above, so the paragraph is gone — same words, no duplication.)
-
-        PanelBox(title = "BASELINE") {
-            Text(baselineText, color = Dim, fontFamily = FontFamily.Monospace)
-        }
-
-        // Package 5 (A-30) — cross-session shortcut: the last software
-        // file picked, one tap to load it onto the board again. Only
-        // shown when a file really was picked before.
-        recentFirmware?.let { recent ->
-            PanelBox(title = "LAST SOFTWARE FILE") {
-                Text(
-                    "Last file: ${recent.name} — picked " +
-                        SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-                            .format(java.util.Date(recent.pickedMs)) +
-                        ". Tap to load it onto the board again.",
-                    color = Dim, fontFamily = FontFamily.Monospace,
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                TerminalButton("LOAD THIS FILE AGAIN", onOpenRecentFirmware)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TerminalButton("Save this list", onSaveBaseline)
+                TerminalButton("Compare with saved list", onCompareBaseline)
             }
+
+            // (UI REDESIGN: the old plain-English paragraph that explained
+            // every button lived here. Its words now live on the tiles
+            // above, so the paragraph is gone — same words, no duplication.)
+
+                PanelBox(title = "BASELINE") {
+                Text(baselineText, color = Dim, fontFamily = FontFamily.Monospace)
+            }
+
+            // Package 5 (A-30) — cross-session shortcut: the last software
+            // file picked, one tap to load it onto the board again. Only
+            // shown when a file really was picked before.
+                recentFirmware?.let { recent ->
+                PanelBox(title = "LAST SOFTWARE FILE") {
+                    Text(
+                        "Last file: ${recent.name} — picked " +
+                            SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
+                                .format(java.util.Date(recent.pickedMs)) +
+                            ". Tap to load it onto the board again.",
+                        color = Dim, fontFamily = FontFamily.Monospace,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TerminalButton("LOAD THIS FILE AGAIN", onOpenRecentFirmware)
+                }
+            }
+
         }
 
         OutlinedTextField(
