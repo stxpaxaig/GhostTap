@@ -67,6 +67,7 @@ import com.ghosttap.data.ScanTarget
 import com.ghosttap.data.TargetType
 import com.ghosttap.core.matchesDestination
 import com.ghosttap.core.continuationPrompt
+import com.ghosttap.core.workspaceConnectionLabel
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.TermuxPlanSelection
@@ -1216,7 +1217,7 @@ private fun HomeScreen(
             scanning = isScanning,
             targetCount = targets.size,
             activeTaskTitle = activeTaskSession?.targetTitle,
-            activeTaskState = activeTaskSession?.connectionState,
+            activeTaskState = activeTaskSession?.let { workspaceConnectionLabel(it) },
             activeTaskRoute = activeTaskSession?.route
         )
 
