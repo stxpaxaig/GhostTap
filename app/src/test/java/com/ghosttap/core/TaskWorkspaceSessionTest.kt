@@ -1,5 +1,6 @@
 package com.ghosttap.core
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -60,5 +61,26 @@ class TaskWorkspaceSessionTest {
         assertTrue(prompt.contains("read characteristic | write characteristic"))
         assertTrue(prompt.contains("characteristic responded"))
         assertTrue(prompt.contains("Read the current status"))
+    }
+
+    @Test
+    fun `context-only task exists before a transport is available`() {
+        val task = createContextTaskSession(
+            taskId = "task-context-1",
+            objective = "Investigate the unknown controller",
+            subject = "Unknown controller"
+        )
+        assertEquals("TASK", task.targetKind)
+        assertEquals("CONTEXT_READY", task.connectionState)
+        assertEquals("home", task.route)
+        assertEquals("Investigate the unknown controller", task.objective)
+        assertEquals("Unknown controller", task.targetTitle)
+    }
+
+    @Test
+    fun `context-only task uses useful fallback labels`() {
+        val task = createContextTaskSession("task-context-2", "", "")
+        assertEquals("Ghost Tap task", task.objective)
+        assertEquals("Current objective", task.targetTitle)
     }
 }
