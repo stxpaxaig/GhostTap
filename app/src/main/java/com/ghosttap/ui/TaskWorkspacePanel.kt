@@ -85,9 +85,13 @@ fun TaskWorkspacePanel(
                     Text("• $it", color = Color(0xFFD6E5DE), style = MaterialTheme.typography.bodySmall)
                 }
             }
-            if (expanded && session.nextActions.isNotEmpty()) {
-                Text("SUGGESTED NEXT ACTIONS", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
-                session.nextActions.take(4).forEach { action ->
+            if (session.nextActions.isNotEmpty()) {
+                Text(
+                    if (expanded) "AVAILABLE NEXT ACTIONS" else "NEXT ACTIONS",
+                    color = Color(0xFF7AFFC4),
+                    style = MaterialTheme.typography.labelSmall
+                )
+                session.nextActions.take(if (expanded) 4 else 2).forEach { action ->
                     TextButton(
                         onClick = { onContinue(action) },
                         modifier = Modifier.fillMaxWidth()
