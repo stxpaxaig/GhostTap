@@ -558,7 +558,7 @@ class IntelEngine(
             id = "net.udp_send", title = "Send a message and listen for a reply",
             riskLevel = "WRITE", verified = true,
             sourceMethod = "NetworkToolsViewModel.udpTest",
-            effects = "Sends one short message ('hello') and listens briefly for a reply. The device sees the message.",
+            effects = "Sends one short UDP datagram ('hello') and listens briefly for a reply. UDP does not confirm delivery; only a received reply proves the target responded.",
             detail = "Sends a short message and listens briefly for a reply.",
             category = "NETWORK",
             inputs = listOf("host", "port"),
