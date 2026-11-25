@@ -37,3 +37,19 @@ fun TaskWorkspaceSession.matchesDestination(
         destinationTargetId == targetId &&
         route == "target/$targetId"
 }
+
+/**
+ * Builds a grounded follow-up instruction that carries the live task identity
+ * and only the controls/evidence actually recorded by the current session.
+ */
+fun TaskWorkspaceSession.continuationPrompt(instruction: String): String = buildString {
+    appendLine("Continue the existing Ghost Tap task. Do not restart discovery or reconnect if the current session is still usable.")
+    appendLine("Target: $targetTitle ($targetKind, id=$targetId).")
+    appendLine("Original objective: $objective")
+    appendLine("Current connection state: $connectionState")
+    if (controls.isNotEmpty()) appendLine("Observed available controls: ${controls.take(12).joinToString(" | ").take(1600)}")
+    if (lastResult.isNotBlank()) appendLine("Last task result: ${lastResult.take(700)}")
+    if (evidence.isNotEmpty()) appendLine("Recorded evidence: ${evidence.takeLast(8).joinToString(" | ").take(1400)}")
+    if (events.isNotEmpty()) appendLine("Recent session history: ${events.takeLast(5).joinToString(" | ").take(700)}")
+    append("Next instruction: ${instruction.trim()}")
+}
