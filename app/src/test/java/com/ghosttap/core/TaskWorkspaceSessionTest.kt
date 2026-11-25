@@ -115,6 +115,23 @@ class TaskWorkspaceSessionTest {
     }
 
     @Test
+    fun `context ready label distinguishes NFC from restored physical sessions`() {
+        assertEquals(
+            "Task context retained · connection needs verification",
+            workspaceConnectionLabel(session("network_tools").copy(connectionState = "CONTEXT_READY"))
+        )
+        assertEquals(
+            "NFC tag not present · context retained",
+            workspaceConnectionLabel(session("nfc_tools").copy(targetKind = "NFC", connectionState = "CONTEXT_READY"))
+        )
+    }
+
+    @Test
+    fun `connected label reports a verified live connection`() {
+        assertEquals("Live connection", workspaceConnectionLabel(session().copy(connectionState = "CONNECTED")))
+    }
+
+    @Test
     fun `restored physical task resumes its last function workspace`() {
         assertEquals("network_tools", workspaceResumeDestination(session("network_tools")))
         assertEquals("target/ble-42", workspaceResumeDestination(session()))
