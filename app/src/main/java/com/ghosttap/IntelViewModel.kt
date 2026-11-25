@@ -23,6 +23,7 @@ import com.ghosttap.core.GhostIdentity
 import com.ghosttap.core.Hypothesis
 import com.ghosttap.core.IntelEngine
 import com.ghosttap.core.TaskWorkspaceSession
+import com.ghosttap.core.createContextTaskSession
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.IntelTarget
@@ -428,16 +429,10 @@ class IntelViewModel(
         objective: String,
         subject: String
     ) {
-        val current = activeTaskSession ?: TaskWorkspaceSession(
+        val current = activeTaskSession ?: createContextTaskSession(
             taskId = UUID.randomUUID().toString(),
-            objective = objective.ifBlank { subject.ifBlank { "Ghost Tap task" } },
-            targetKind = "TASK",
-            targetId = "task-context",
-            targetTitle = subject.ifBlank { "Current objective" },
-            route = "home",
-            connectionState = "CONTEXT_READY",
-            events = listOf("Task context created from intelligence cycle"),
-            updatedAtMs = System.currentTimeMillis()
+            objective = objective,
+            subject = subject
         )
         activeTaskSession = current.copy(
             controls = (current.controls + controls).distinct().takeLast(40),
