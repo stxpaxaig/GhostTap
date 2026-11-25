@@ -471,11 +471,15 @@ class IntelViewModel(
             }.getOrNull() ?: return@launch
             withContext(Dispatchers.Main) {
                 if (activeTaskSession == null) {
-                    activeTaskSession = restored.copy(
+                    val resumed = restored.copy(
                         connectionState = "CONTEXT_READY",
                         events = (restored.events + "Task context restored after app restart; live transport must be revalidated").takeLast(40),
                         updatedAtMs = System.currentTimeMillis()
                     )
+                    activeTaskSession = resumed
+                    workspaceResumeDestination(resumed)?.let { destination ->
+                        bringUpDestination = destination
+                    }
                 }
             }
         }
