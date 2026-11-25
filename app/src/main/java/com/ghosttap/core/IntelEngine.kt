@@ -767,9 +767,10 @@ class IntelEngine(
             preconditions = listOf("NFC tag must be physically tapped to the phone", "open NFC TOOLS screen"),
             run = { _ ->
                 OpResult(
-                    true,
-                    "Do it yourself: open the tap-card tools and tap a card — this needs a real tap.",
-                    "manual"
+                    false,
+                    "Manual action required — the NFC tools were not opened and no card was read. " +
+                        "Open NFC TOOLS and physically tap the card; Ghost Tap can continue once the tag is detected.",
+                    "manual_required"
                 )
             }
         )
