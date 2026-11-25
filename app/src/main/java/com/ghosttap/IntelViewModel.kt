@@ -505,7 +505,7 @@ class IntelViewModel(
         subject: String
     ) {
         val current = activeTaskSession?.takeIf {
-            objective.isBlank() || objective.contains(it.objective, ignoreCase = true)
+            objective.isBlank() || matchesTaskObjectiveContext(it.objective, objective)
         } ?: createContextTaskSession(
             taskId = UUID.randomUUID().toString(),
             objective = objective,
