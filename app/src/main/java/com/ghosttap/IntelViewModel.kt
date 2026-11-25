@@ -424,9 +424,21 @@ class IntelViewModel(
         action: String,
         result: String,
         controls: List<String>,
-        evidence: List<String>
+        evidence: List<String>,
+        objective: String,
+        subject: String
     ) {
-        val current = activeTaskSession ?: return
+        val current = activeTaskSession ?: TaskWorkspaceSession(
+            taskId = UUID.randomUUID().toString(),
+            objective = objective.ifBlank { subject.ifBlank { "Ghost Tap task" } },
+            targetKind = "TASK",
+            targetId = "task-context",
+            targetTitle = subject.ifBlank { "Current objective" },
+            route = "home",
+            connectionState = "CONTEXT_READY",
+            events = listOf("Task context created from intelligence cycle"),
+            updatedAtMs = System.currentTimeMillis()
+        )
         activeTaskSession = current.copy(
             controls = (current.controls + controls).distinct().takeLast(40),
             evidence = (current.evidence + evidence).distinct().takeLast(40),
@@ -438,6 +450,8 @@ class IntelViewModel(
 
     fun refreshTaskWorkspaceHealth() {
         val current = activeTaskSession ?: return
+        // A context-only task has no physical transport to health-check.
+        if (current.targetKind == "TASK") return
         // A transport cannot be called lost while bring-up is still running,
         // and a failed attempt must retain its actual failure result.
         if (bringUpState == BringUpState.CONNECTING ||
@@ -533,7 +547,8 @@ class IntelViewModel(
         bringUpStatus = "Connected to ${result.targetTitle.ifBlank { result.targetId }} — session carried into ${result.route}."
         bringUpDestination = result.route
         val priorSession = activeTaskSession?.takeIf {
-            it.targetId == result.targetId && it.targetKind == result.targetKind.name
+            (it.targetId == result.targetId && it.targetKind == result.targetKind.name) ||
+                it.targetKind == "TASK"
         }
         activeTaskSession = TaskWorkspaceSession(
             taskId = priorSession?.taskId ?: UUID.randomUUID().toString(),
