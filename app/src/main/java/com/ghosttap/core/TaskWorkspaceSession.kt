@@ -61,6 +61,14 @@ fun TaskWorkspaceSession.continuationPrompt(instruction: String): String = build
 }
 
 /** A task can exist before it has a physical target or transport connection. */
+/**
+ * A restored task should reopen its last function workspace when possible.
+ * Home is already the safe landing page for context-only work; a physical
+ * target route is reopened with CONTEXT_READY until its transport is verified.
+ */
+fun workspaceResumeDestination(session: TaskWorkspaceSession): String? =
+    session.route.takeIf { it.isNotBlank() && it != "home" }
+
 fun createContextTaskSession(
     taskId: String,
     objective: String,
