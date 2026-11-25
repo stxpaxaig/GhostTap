@@ -75,6 +75,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
@@ -410,7 +412,62 @@ class IntelViewModel(
     var bringUpState by mutableStateOf(BringUpState.IDLE)
         private set
     /** Current task context shared by every function workspace. */
-    var activeTaskSession by mutableStateOf<TaskWorkspaceSession?>(null)
+    private val taskWorkspaceState = mutableStateOf<TaskWorkspaceSession?>(null)
+    var activeTaskSession: TaskWorkspaceSession?
+        get() = taskWorkspaceState.value
+        set(value) {
+            taskWorkspaceState.value = value
+            persistTaskWorkspace(value)
+        }
+
+    /**
+     * Persist the active task as a single Room observation. This keeps task
+     * identity, controls, evidence, history and suggested actions across app
+     * process death without persisting a false claim that a socket/GATT/USB
+     * transport is still alive.
+     */
+    private fun persistTaskWorkspace(session: TaskWorkspaceSession?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                if (session == null) {
+                    db.observationDao().deleteFor("task-workspace")
+                } else {
+                    db.observationDao().insert(
+                        Observation(
+                            id = "active-task-workspace",
+                            investigationId = "task-workspace",
+                            ts = System.currentTimeMillis(),
+                            kind = "task_workspace",
+                            title = "Active Ghost Tap task workspace",
+                            detail = json.encodeToString(session),
+                            provenance = "OBSERVED",
+                            confidence = 1.0
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private fun restoreTaskWorkspace() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val restored = runCatching {
+                db.observationDao().byKind("task_workspace")
+                    .firstOrNull { it.id == "active-task-workspace" }
+                    ?.detail
+                    ?.let { json.decodeFromString<TaskWorkspaceSession>(it) }
+            }.getOrNull() ?: return@launch
+            withContext(Dispatchers.Main) {
+                if (activeTaskSession == null) {
+                    activeTaskSession = restored.copy(
+                        connectionState = "CONTEXT_READY",
+                        events = (restored.events + "Task context restored after app restart; live transport must be revalidated").takeLast(40),
+                        updatedAtMs = System.currentTimeMillis()
+                    )
+                }
+            }
+        }
+    }
         private set
 
     fun recordTaskWorkspaceEvent(event: String, result: String = "") {
@@ -1401,6 +1458,7 @@ class IntelViewModel(
 
     init {
         refreshLists()
+        restoreTaskWorkspace()
         updateReasoningMode(ReasonerPicker.pick(appRef, localReasoner))
         restoreExtensions()
         // Event bus: real things the app observed become investigations.
