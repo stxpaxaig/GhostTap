@@ -130,6 +130,17 @@ class TaskWorkspaceSessionTest {
     }
 
     @Test
+    fun `unknown restored route does not trigger invalid navigation`() {
+        assertEquals(null, workspaceResumeDestination(session("removed_screen")))
+        assertEquals(null, workspaceResumeDestination(session("target/")))
+    }
+
+    @Test
+    fun `restored target route is trimmed and preserved`() {
+        assertEquals("target/ble-42", workspaceResumeDestination(session(" target/ble-42 ")))
+    }
+
+    @Test
     fun `task workspace survives serialization with controls evidence and next actions`() {
         val original = session("network_tools").copy(
             controls = listOf("scan", "inspect host"),
