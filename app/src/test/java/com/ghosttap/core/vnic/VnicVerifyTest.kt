@@ -6,6 +6,33 @@ import org.junit.Test
 
 class VnicVerifyTest {
     @Test
+    fun usbRefreshWithoutADeviceDoesNotClaimDiscovery() {
+        val result = VnicVerify.verify(
+            "usb.refresh",
+            OpResult(true, "No USB device found", "")
+        )
+        assertEquals(VnicExecutionState.CONNECTED, result.state)
+    }
+
+    @Test
+    fun usbRefreshWithOneDeviceVerifiesDiscovery() {
+        val result = VnicVerify.verify(
+            "usb.refresh",
+            OpResult(true, "USB cable found — ready to connect", "")
+        )
+        assertEquals(VnicExecutionState.VERIFIED, result.state)
+    }
+
+    @Test
+    fun usbRefreshWithMultipleDevicesVerifiesDiscovery() {
+        val result = VnicVerify.verify(
+            "usb.refresh",
+            OpResult(true, "2 USB devices found — tap one to pick it", "")
+        )
+        assertEquals(VnicExecutionState.VERIFIED, result.state)
+    }
+
+    @Test
     fun uartSendWithoutReplyIsOnlyAttempted() {
         val result = VnicVerify.verify(
             "vesp32.send_uart",
