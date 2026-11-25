@@ -25,6 +25,7 @@ import com.ghosttap.core.IntelEngine
 import com.ghosttap.core.TaskWorkspaceSession
 import com.ghosttap.core.createContextTaskSession
 import com.ghosttap.core.workspaceRouteForCategories
+import com.ghosttap.core.workspaceResumeDestination
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.IntelTarget
