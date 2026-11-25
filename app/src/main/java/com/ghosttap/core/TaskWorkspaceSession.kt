@@ -1,11 +1,14 @@
 package com.ghosttap.core
 
+import kotlinx.serialization.Serializable
+
 /**
  * Shared, navigation-independent record for the task currently being worked.
  * Transport owners keep their real sockets/GATT/USB handles; this record
  * carries identity, verified health, discovered controls and task history
  * between function workspaces without pretending to own those transports.
  */
+@Serializable
 data class TaskWorkspaceSession(
     val taskId: String,
     val objective: String,
