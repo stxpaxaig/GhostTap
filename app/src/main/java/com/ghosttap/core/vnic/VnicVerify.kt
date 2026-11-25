@@ -45,7 +45,7 @@ object VnicVerify {
         // A successful send is not proof the target processed it. Treat
         // explicit no-reply responses as ATTEMPTED, not CONNECTED/VERIFIED.
         "no uart reply", "no reply arrived", "no response arrived",
-        "no reply within"
+        "no reply within", "no usb device found"
     )
 
     /** Verify one already-run capability result. Never throws. */
