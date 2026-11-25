@@ -544,11 +544,19 @@ fun GhostTapApp(
     val bringUpDest = intelVm.bringUpDestination
     LaunchedEffect(bringUpDest) {
         if (bringUpDest != null) {
-            try {
+            val navigated = runCatching {
                 nav.navigate(bringUpDest) { launchSingleTop = true }
-            } catch (_: Exception) {
+            }.isSuccess
+            if (navigated) {
+                intelVm.consumeBringUpDestination()
+            } else {
+                // Keep the pending destination and task context intact. A
+                // transient graph/navigation failure must not silently eat
+                // the handoff that the intelligence engine just selected.
+                intelVm.recordTaskWorkspaceEvent(
+                    "Workspace navigation to $bringUpDest failed; task context retained"
+                )
             }
-            intelVm.consumeBringUpDestination()
         }
     }
     // #181 stall fix — the ViewModel ticks on EVERY scan/sensor event
