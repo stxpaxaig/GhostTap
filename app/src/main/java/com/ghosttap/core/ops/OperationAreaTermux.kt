@@ -36,8 +36,16 @@ fun registerAreaTermuxOperations() {
                 val termux = context.termux
                 if (termux != null) {
                     val check = termux.checkInstalledNow()
-                    if (check.ok) termux.discoverTermux()
-                    OpResult(true, "Termux is a separate companion app. Ghost Tap can invoke it through the existing command bridge when it is installed, permitted, and the requested tool is available.", "termux")
+                    if (!check.ok) {
+                        check
+                    } else {
+                        termux.discoverTermux()
+                        OpResult(
+                            true,
+                            "Termux is installed and its current readiness check passed. Ghost Tap can invoke it through the existing command bridge when the requested tool is available.",
+                            "termux"
+                        )
+                    }
                 } else {
                     OpResult(false, "Termux tools aren't available right now.")
                 }
