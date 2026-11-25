@@ -95,11 +95,11 @@ fun vnicDetectBringUpTargets(
         }
     }
 
-    // Prefer a user-requested VirtualESP32 explicitly. For a physical ESP32,
-    // prefer discovered BLE/NETWORK/USB identifiers; retain the virtual
-    // companion as a fallback only when the task identifies an ESP32 target.
+    // VirtualESP32 is a separate companion runtime, not a substitute for
+    // a physical ESP32 board. Route to it only when the user explicitly
+    // requests the virtual/emulated target; physical boards must be found
+    // through their evidenced BLE, network, or USB transport.
     val objectiveHay = (subject + " " + text).lowercase()
-    val esp32Mentioned = "esp32" in objectiveHay || "espressif" in objectiveHay
     val virtualEsp32Requested =
         Regex("""(?i)\bvirtual[\s_-]*esp32\b""").containsMatchIn(objectiveHay) ||
             ("esp32" in objectiveHay && ("practice board" in objectiveHay || "emulator" in objectiveHay))
@@ -121,9 +121,6 @@ fun vnicDetectBringUpTargets(
     }
     if ("nfc tag present" in hay) {
         add(VnicBringUpKind.NFC, subject.ifBlank { "nfc-target" }, subject.ifBlank { "NFC target" })
-    }
-    if (esp32Mentioned && !virtualEsp32Requested) {
-        add(VnicBringUpKind.ESP32, "virtualesp32", subject)
     }
     return candidates
 }
