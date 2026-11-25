@@ -1247,6 +1247,7 @@ private fun HomeScreen(
             onContinue = { instruction ->
                 val session = activeTaskSession
                 if (session != null) {
+                    intelVm?.recordTaskWorkspaceEvent("Follow-up requested: $instruction")
                     onDoIt?.invoke(
                         session.continuationPrompt(instruction)
                     )
