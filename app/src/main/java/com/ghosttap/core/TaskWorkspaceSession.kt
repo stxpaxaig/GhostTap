@@ -72,3 +72,27 @@ fun createContextTaskSession(
     connectionState = "CONTEXT_READY",
     events = listOf("Task context created from intelligence cycle")
 )
+
+
+/**
+ * Resolves an intelligence plan to the existing Ghost Tap workspace that
+ * owns the selected capability family. The first concrete family in the
+ * selected plan wins; generic SYSTEM capabilities do not steal navigation.
+ * BLE discovery without a concrete target belongs in Investigations, while
+ * an already-connected BLE target keeps its target/{id} route.
+ */
+fun workspaceRouteForCategories(categories: List<String>): String? {
+    val routes = mapOf(
+        "ESP32" to "vesp32",
+        "VIRTUAL ESP32" to "vesp32",
+        "USB" to "usb_uart",
+        "NETWORK" to "network_tools",
+        "NFC" to "nfc_tools",
+        "VISUAL" to "visual_intel",
+        "BLE" to "investigations"
+    )
+    return categories.asSequence()
+        .map { it.trim().uppercase() }
+        .mapNotNull { routes[it] }
+        .firstOrNull()
+}
