@@ -1,0 +1,48 @@
+package com.ghosttap.core
+
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class TaskWorkspaceSessionTest {
+    private fun session(route: String = "target/ble-42", targetId: String = "ble-42") =
+        TaskWorkspaceSession(
+            taskId = "task-1",
+            objective = "Connect to device",
+            targetKind = "BLE",
+            targetId = targetId,
+            targetTitle = "Test device",
+            route = route,
+            connectionState = "CONNECTED"
+        )
+
+    @Test
+    fun `matches concrete destination route`() {
+        assertTrue(session("network_tools").matchesDestination("network_tools"))
+    }
+
+    @Test
+    fun `matches child destination under function route`() {
+        assertTrue(session("target/ble-42").matchesDestination("target/ble-42/details"))
+    }
+
+    @Test
+    fun `matches parameterized device destination by target id`() {
+        assertTrue(session().matchesDestination("target/{id}", "ble-42"))
+    }
+
+    @Test
+    fun `does not match another device on same parameterized route`() {
+        assertFalse(session().matchesDestination("target/{id}", "ble-99"))
+    }
+
+    @Test
+    fun `does not match unrelated destination`() {
+        assertFalse(session().matchesDestination("visual_intel"))
+    }
+
+    @Test
+    fun `blank route never matches`() {
+        assertFalse(session(route = "").matchesDestination("home"))
+    }
+}
