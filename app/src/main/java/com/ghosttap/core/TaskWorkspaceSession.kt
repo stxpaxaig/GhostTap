@@ -54,3 +54,19 @@ fun TaskWorkspaceSession.continuationPrompt(instruction: String): String = build
     if (events.isNotEmpty()) appendLine("Recent session history: ${events.takeLast(5).joinToString(" | ").take(700)}")
     append("Next instruction: ${instruction.trim()}")
 }
+
+/** A task can exist before it has a physical target or transport connection. */
+fun createContextTaskSession(
+    taskId: String,
+    objective: String,
+    subject: String
+): TaskWorkspaceSession = TaskWorkspaceSession(
+    taskId = taskId,
+    objective = objective.ifBlank { subject.ifBlank { "Ghost Tap task" } },
+    targetKind = "TASK",
+    targetId = "task-context",
+    targetTitle = subject.ifBlank { "Current objective" },
+    route = "home",
+    connectionState = "CONTEXT_READY",
+    events = listOf("Task context created from intelligence cycle")
+)
