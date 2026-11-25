@@ -426,6 +426,7 @@ class IntelViewModel(
         result: String,
         controls: List<String>,
         evidence: List<String>,
+        nextActions: List<String>,
         objective: String,
         subject: String
     ) {
@@ -439,6 +440,7 @@ class IntelViewModel(
         activeTaskSession = current.copy(
             controls = (current.controls + controls).distinct().takeLast(40),
             evidence = (current.evidence + evidence).distinct().takeLast(40),
+            nextActions = nextActions.distinct().take(8),
             events = (current.events + "Intelligence cycle: $action").takeLast(40),
             lastResult = result.ifBlank { current.lastResult },
             updatedAtMs = System.currentTimeMillis()
