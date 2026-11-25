@@ -147,6 +147,24 @@ class TaskWorkspaceSessionTest {
     }
 
     @Test
+    fun `capability plan routes to the first concrete function workspace`() {
+        assertEquals(
+            "network_tools",
+            workspaceRouteForCategories(listOf("SYSTEM", " network ", "BLE"))
+        )
+        assertEquals("visual_intel", workspaceRouteForCategories(listOf("visual")))
+        assertEquals("usb_uart", workspaceRouteForCategories(listOf("USB")))
+        assertEquals("nfc_tools", workspaceRouteForCategories(listOf("NFC")))
+        assertEquals("vesp32", workspaceRouteForCategories(listOf("VIRTUAL ESP32")))
+    }
+
+    @Test
+    fun `generic and unknown capability categories do not hijack workspace routing`() {
+        assertEquals(null, workspaceRouteForCategories(listOf("SYSTEM", "UNKNOWN")))
+        assertEquals("investigations", workspaceRouteForCategories(listOf("BLE")))
+    }
+
+    @Test
     fun `unknown restored route does not trigger invalid navigation`() {
         assertEquals(null, workspaceResumeDestination(session("removed_screen")))
         assertEquals(null, workspaceResumeDestination(session("target/")))
