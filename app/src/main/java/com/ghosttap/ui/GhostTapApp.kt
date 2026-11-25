@@ -65,6 +65,7 @@ import com.ghosttap.data.BaselineStore
 import com.ghosttap.data.LogEntry
 import com.ghosttap.data.ScanTarget
 import com.ghosttap.data.TargetType
+import com.ghosttap.core.matchesDestination
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.TermuxPlanSelection
@@ -1018,19 +1019,8 @@ fun GhostTapApp(
                     }
                 }
             }
-            val sessionRoute = workspaceSession?.route.orEmpty()
-            // Navigation destinations expose their route pattern ("target/{id}"),
-            // while task sessions retain the concrete route ("target/<device-id>").
-            // Resolve that argument before deciding whether this workspace owns
-            // the current task panel; otherwise BLE/USB target sessions disappear
-            // even though the user is on the correct device page.
-            val targetRouteMatches = currentRoute == "target/{id}" &&
-                currentTargetId != null &&
-                sessionRoute == "target/$currentTargetId" &&
-                workspaceSession?.targetId == currentTargetId
-            val routeMatchesSession = sessionRoute.isNotBlank() &&
-                (targetRouteMatches || currentRoute == sessionRoute ||
-                    currentRoute?.startsWith("$sessionRoute/") == true)
+            val routeMatchesSession =
+                workspaceSession?.matchesDestination(currentRoute, currentTargetId) == true
             if (workspaceSession != null &&
                 currentRoute != "home" &&
                 currentRoute != "network_tools" &&
