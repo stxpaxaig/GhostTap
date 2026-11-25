@@ -1251,6 +1251,11 @@ private fun HomeScreen(
                         session.continuationPrompt(instruction)
                     )
                 }
+            },
+            onOpenWorkspace = {
+                activeTaskSession?.route
+                    ?.takeIf { it.isNotBlank() && it != "home" }
+                    ?.let { onOpenRoute?.invoke(it) }
             }
         )
 
