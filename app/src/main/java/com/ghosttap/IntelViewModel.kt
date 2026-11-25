@@ -24,6 +24,7 @@ import com.ghosttap.core.Hypothesis
 import com.ghosttap.core.IntelEngine
 import com.ghosttap.core.TaskWorkspaceSession
 import com.ghosttap.core.createContextTaskSession
+import com.ghosttap.core.workspaceRouteForCategories
 import com.ghosttap.core.IntelEvent
 import com.ghosttap.core.IntelEventBus
 import com.ghosttap.core.IntelTarget
@@ -445,6 +446,26 @@ class IntelViewModel(
             lastResult = result.ifBlank { current.lastResult },
             updatedAtMs = System.currentTimeMillis()
         )
+    }
+
+    /**
+     * Move a context-only task into the existing function workspace selected
+     * by the intelligence plan. A real transport bring-up always wins and
+     * keeps its concrete target route; this only routes tasks that do not yet
+     * own a physical target/session.
+     */
+    fun routeTaskWorkspaceForPlan(planIds: List<String>) {
+        val current = activeTaskSession ?: return
+        if (current.targetKind != "TASK" || planIds.isEmpty()) return
+        val categories = planIds.mapNotNull { CapabilityRegistry.get(it)?.category }
+        val route = workspaceRouteForCategories(categories) ?: return
+        if (current.route == route) return
+        activeTaskSession = current.copy(
+            route = route,
+            events = (current.events + "Intelligence selected the $route workspace from the live capability plan").takeLast(40),
+            updatedAtMs = System.currentTimeMillis()
+        )
+        bringUpDestination = route
     }
 
     fun refreshTaskWorkspaceHealth() {
