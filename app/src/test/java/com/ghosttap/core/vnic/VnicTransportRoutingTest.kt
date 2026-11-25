@@ -200,7 +200,16 @@ class VnicTransportRoutingTest {
         )
         assertEquals(VnicBringUpKind.BLE, targets.first().kind)
         assertTrue(targets.any { it.kind == VnicBringUpKind.BLE && it.id == "AA:BB:CC:DD:EE:FF" })
-        assertTrue(targets.any { it.kind == VnicBringUpKind.ESP32 })
+        assertFalse(targets.any { it.kind == VnicBringUpKind.ESP32 })
+    }
+
+    @Test
+    fun physicalEsp32WithoutTransportEvidenceDoesNotLaunchVirtualCompanion() {
+        val targets = vnicDetectBringUpTargets(
+            subject = "Physical ESP32 board",
+            text = "Find and connect to the ESP32 microcontroller"
+        )
+        assertTrue(targets.isEmpty())
     }
 
 }
