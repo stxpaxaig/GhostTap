@@ -30,7 +30,8 @@ import com.ghosttap.core.TaskWorkspaceSession
 fun TaskWorkspacePanel(
     session: TaskWorkspaceSession?,
     onContinue: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenWorkspace: (() -> Unit)? = null
 ) {
     if (session == null) return
     var nextInstruction by remember(session.taskId) { mutableStateOf("") }
@@ -66,8 +67,15 @@ fun TaskWorkspacePanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("ACTIVE TASK", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelMedium)
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Collapse" else "Open task")
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    if (onOpenWorkspace != null && session.route.isNotBlank() && session.route != "home") {
+                        TextButton(onClick = onOpenWorkspace) {
+                            Text("Open workspace")
+                        }
+                    }
+                    TextButton(onClick = { expanded = !expanded }) {
+                        Text(if (expanded) "Collapse" else "Details")
+                    }
                 }
             }
             Text(session.objective, color = Color.White, style = MaterialTheme.typography.titleMedium)
