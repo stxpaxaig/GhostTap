@@ -546,10 +546,10 @@ class IntelViewModel(
             connectionState = "CONNECTED",
             controls = (priorSession?.controls.orEmpty() + result.controlLines).distinct().takeLast(40),
             evidence = (priorSession?.evidence.orEmpty() + result.log).takeLast(40),
-            events = (priorSession?.events.orEmpty() +
+            events = (priorSession?.events.orEmpty() + (
                 if (priorSession == null) listOf("Investigation completed", "Live session adopted without reconnecting")
                 else listOf("Existing task session refreshed; live connection adopted without reconnecting")
-            ).takeLast(40),
+            )).takeLast(40),
             lastResult = priorSession?.lastResult.orEmpty(),
             updatedAtMs = System.currentTimeMillis()
         )
