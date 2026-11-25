@@ -85,6 +85,17 @@ fun TaskWorkspacePanel(
                     Text("• $it", color = Color(0xFFD6E5DE), style = MaterialTheme.typography.bodySmall)
                 }
             }
+            if (expanded && session.nextActions.isNotEmpty()) {
+                Text("SUGGESTED NEXT ACTIONS", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
+                session.nextActions.take(4).forEach { action ->
+                    TextButton(
+                        onClick = { onContinue(action) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(action, color = Color(0xFFD6E5DE))
+                    }
+                }
+            }
             if (expanded && session.lastResult.isNotBlank()) {
                 Text("LAST RESULT", color = Color(0xFF7AFFC4), style = MaterialTheme.typography.labelSmall)
                 Text(session.lastResult, color = Color.White, style = MaterialTheme.typography.bodySmall)
