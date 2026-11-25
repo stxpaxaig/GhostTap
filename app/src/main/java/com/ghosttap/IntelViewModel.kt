@@ -73,6 +73,8 @@ import com.ghosttap.data.Procedure
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -426,24 +428,34 @@ class IntelViewModel(
      * process death without persisting a false claim that a socket/GATT/USB
      * transport is still alive.
      */
+    private val taskWorkspaceWriteMutex = Mutex()
+    private var taskWorkspaceRevision = 0L
+
     private fun persistTaskWorkspace(session: TaskWorkspaceSession?) {
+        // State can change several times during one intelligence cycle. Give
+        // each snapshot a revision and serialize writes so a slower older
+        // coroutine can never overwrite a newer workspace state.
+        val revision = ++taskWorkspaceRevision
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching {
-                if (session == null) {
-                    db.observationDao().deleteFor("task-workspace")
-                } else {
-                    db.observationDao().insert(
-                        Observation(
-                            id = "active-task-workspace",
-                            investigationId = "task-workspace",
-                            ts = System.currentTimeMillis(),
-                            kind = "task_workspace",
-                            title = "Active Ghost Tap task workspace",
-                            detail = json.encodeToString(session),
-                            provenance = "OBSERVED",
-                            confidence = 1.0
+            taskWorkspaceWriteMutex.withLock {
+                if (revision != taskWorkspaceRevision) return@withLock
+                runCatching {
+                    if (session == null) {
+                        db.observationDao().deleteFor("task-workspace")
+                    } else {
+                        db.observationDao().insert(
+                            Observation(
+                                id = "active-task-workspace",
+                                investigationId = "task-workspace",
+                                ts = System.currentTimeMillis(),
+                                kind = "task_workspace",
+                                title = "Active Ghost Tap task workspace",
+                                detail = json.encodeToString(session),
+                                provenance = "OBSERVED",
+                                confidence = 1.0
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
