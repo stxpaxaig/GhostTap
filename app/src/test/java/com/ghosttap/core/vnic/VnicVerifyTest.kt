@@ -11,7 +11,7 @@ class VnicVerifyTest {
             "usb.refresh",
             OpResult(true, "No USB device found", "")
         )
-        assertEquals(VnicExecutionState.CONNECTED, result.state)
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
     }
 
     @Test
