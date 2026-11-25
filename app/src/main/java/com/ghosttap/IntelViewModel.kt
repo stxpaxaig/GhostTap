@@ -420,6 +420,22 @@ class IntelViewModel(
         )
     }
 
+    fun recordTaskWorkspaceCycle(
+        action: String,
+        result: String,
+        controls: List<String>,
+        evidence: List<String>
+    ) {
+        val current = activeTaskSession ?: return
+        activeTaskSession = current.copy(
+            controls = (current.controls + controls).distinct().takeLast(40),
+            evidence = (current.evidence + evidence).distinct().takeLast(40),
+            events = (current.events + "Intelligence cycle: $action").takeLast(40),
+            lastResult = result.ifBlank { current.lastResult },
+            updatedAtMs = System.currentTimeMillis()
+        )
+    }
+
     fun refreshTaskWorkspaceHealth() {
         val current = activeTaskSession ?: return
         // A transport cannot be called lost while bring-up is still running,
@@ -516,17 +532,25 @@ class IntelViewModel(
         bringUpState = BringUpState.READY
         bringUpStatus = "Connected to ${result.targetTitle.ifBlank { result.targetId }} — session carried into ${result.route}."
         bringUpDestination = result.route
+        val priorSession = activeTaskSession?.takeIf {
+            it.targetId == result.targetId && it.targetKind == result.targetKind.name
+        }
         activeTaskSession = TaskWorkspaceSession(
-            taskId = UUID.randomUUID().toString(),
-            objective = objective.ifBlank { "Continue working with ${result.targetTitle.ifBlank { result.targetId }}" },
+            taskId = priorSession?.taskId ?: UUID.randomUUID().toString(),
+            objective = priorSession?.objective?.takeIf { it.isNotBlank() }
+                ?: objective.ifBlank { "Continue working with ${result.targetTitle.ifBlank { result.targetId }}" },
             targetKind = result.targetKind.name,
             targetId = result.targetId,
             targetTitle = result.targetTitle.ifBlank { result.targetId },
             route = result.route,
             connectionState = "CONNECTED",
-            controls = result.controlLines,
-            evidence = result.log.takeLast(20),
-            events = listOf("Investigation completed", "Live session adopted without reconnecting"),
+            controls = (priorSession?.controls.orEmpty() + result.controlLines).distinct().takeLast(40),
+            evidence = (priorSession?.evidence.orEmpty() + result.log).takeLast(40),
+            events = (priorSession?.events.orEmpty() +
+                if (priorSession == null) listOf("Investigation completed", "Live session adopted without reconnecting")
+                else listOf("Existing task session refreshed; live connection adopted without reconnecting")
+            ).takeLast(40),
+            lastResult = priorSession?.lastResult.orEmpty(),
             updatedAtMs = System.currentTimeMillis()
         )
     }
