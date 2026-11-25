@@ -758,11 +758,11 @@ class IntelEngine(
 
     private fun registerNfc() {
         reg(
-            id = "nfc.open_tools", title = "Open tap-card tools",
+            id = "nfc.open_tools", title = "Tap a card in NFC tools",
             riskLevel = "READ", verified = false,
             sourceMethod = "Manual: NFC TOOLS screen",
-            effects = "Opens the tap-card tools — you tap a real card yourself. Ghost Tap cannot tap a card for you.",
-            detail = "This needs a real card tap — Ghost Tap can't reach out and touch a card by itself.",
+            effects = "Requires you to open NFC TOOLS and physically tap a real card. This capability does not navigate or read a tag by itself.",
+            detail = "Hands off to the NFC workspace for a physical card tap; Ghost Tap continues after the tag is detected.",
             category = "NFC",
             preconditions = listOf("NFC tag must be physically tapped to the phone", "open NFC TOOLS screen"),
             run = { _ ->
