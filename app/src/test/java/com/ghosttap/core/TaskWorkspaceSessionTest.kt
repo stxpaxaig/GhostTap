@@ -1,5 +1,8 @@
 package com.ghosttap.core
 
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -109,5 +112,20 @@ class TaskWorkspaceSessionTest {
     @Test
     fun `first concrete category in the plan determines the workspace`() {
         assertEquals("nfc_tools", workspaceRouteForCategories(listOf("SYSTEM", "NFC", "NETWORK")))
+    }
+
+    @Test
+    fun `task workspace survives serialization with controls evidence and next actions`() {
+        val original = session("network_tools").copy(
+            controls = listOf("scan", "inspect host"),
+            evidence = listOf("host responded"),
+            events = listOf("investigation completed"),
+            lastResult = "Host is reachable",
+            nextActions = listOf("Inspect services")
+        )
+        val restored = Json.decodeFromString<TaskWorkspaceSession>(
+            Json.encodeToString(original)
+        )
+        assertEquals(original, restored)
     }
 }
