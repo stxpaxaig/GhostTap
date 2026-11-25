@@ -60,6 +60,23 @@ fun TaskWorkspaceSession.continuationPrompt(instruction: String): String = build
     append("Next instruction: ${instruction.trim()}")
 }
 
+/** Human-readable transport state that does not imply a link survived restart. */
+fun workspaceConnectionLabel(session: TaskWorkspaceSession): String = when (session.connectionState) {
+    "CONNECTED" -> "Live connection"
+    "CONTEXT_READY" -> if (session.targetKind.equals("NFC", ignoreCase = true)) {
+        "NFC tag not present · context retained"
+    } else {
+        "Task context retained · connection needs verification"
+    }
+    "CONNECTION_LOST" -> "Connection lost"
+    "CONNECTION_UNVERIFIED" -> "Connection not yet verified"
+    "CONNECTING" -> "Connecting"
+    "FAILED" -> "Setup failed"
+    else -> session.connectionState.replace('_', ' ')
+        .lowercase()
+        .replaceFirstChar { it.uppercase() }
+}
+
 /** A task can exist before it has a physical target or transport connection. */
 /**
  * A restored task should reopen its last function workspace when possible.
