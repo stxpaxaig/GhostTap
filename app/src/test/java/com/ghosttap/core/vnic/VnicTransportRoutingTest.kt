@@ -20,7 +20,7 @@ class VnicTransportRoutingTest {
     }
 
     @Test
-    fun networkCandidateUsesDiscoveredIpv4Address() {
+    fun unverifiedResearchUrlDoesNotTriggerDeviceConnection() {
         val targets = vnicDetectBringUpTargets(
             subject = "LED sign",
             text = "Investigate the sign on Wi-Fi",
@@ -30,13 +30,42 @@ class VnicTransportRoutingTest {
                     title = "Device admin page",
                     url = "http://192.168.4.27/",
                     snippet = "The controller responds at 192.168.4.27",
-                    source = "fixture",
-                    confidence = 0.8
+                    source = "web research",
+                    confidence = 0.8,
+                    verified = false
                 )
             )
         )
-        val network = targets.single { it.kind == VnicBringUpKind.NETWORK }
-        assertEquals("192.168.4.27", network.id)
+        assertTrue(targets.none { it.kind == VnicBringUpKind.NETWORK })
+    }
+
+    @Test
+    fun objectiveSuppliedIpv4AddressCanTriggerNetworkBringUp() {
+        val targets = vnicDetectBringUpTargets(
+            subject = "LED sign",
+            text = "Connect to the LED sign at 192.168.4.27"
+        )
+        assertEquals("192.168.4.27", targets.single { it.kind == VnicBringUpKind.NETWORK }.id)
+    }
+
+    @Test
+    fun verifiedDeviceEvidenceCanTriggerNetworkBringUp() {
+        val targets = vnicDetectBringUpTargets(
+            subject = "LED sign",
+            text = "Investigate the sign on Wi-Fi",
+            findings = listOf(
+                VnicFinding(
+                    query = "LED sign",
+                    title = "LED sign controller",
+                    url = "http://192.168.4.27/",
+                    snippet = "Controller found on the local network",
+                    source = "on-device discovery",
+                    confidence = 0.95,
+                    verified = true
+                )
+            )
+        )
+        assertEquals("192.168.4.27", targets.single { it.kind == VnicBringUpKind.NETWORK }.id)
     }
 
     @Test
