@@ -32,7 +32,10 @@ fun GhostCommandCenterHeader(
     status: String,
     bluetoothEnabled: Boolean,
     scanning: Boolean,
-    targetCount: Int
+    targetCount: Int,
+    activeTaskTitle: String? = null,
+    activeTaskState: String? = null,
+    activeTaskRoute: String? = null
 ) {
     Column(
         modifier = Modifier
@@ -65,6 +68,25 @@ fun GhostCommandCenterHeader(
             StatusPill("Bluetooth", if (bluetoothEnabled) "On" else "Off", bluetoothEnabled)
             StatusPill("Discovery", if (scanning) "Running" else "Idle", scanning)
             StatusPill("Targets", targetCount.toString(), targetCount > 0)
+        }
+        if (!activeTaskTitle.isNullOrBlank()) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = CommandAccent.copy(alpha = 0.09f),
+                shape = RoundedCornerShape(14.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CommandAccent.copy(alpha = 0.32f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text("ACTIVE TASK · ${activeTaskState ?: "IN CONTEXT"}", color = CommandAccent, style = MaterialTheme.typography.labelSmall)
+                    Text(activeTaskTitle, color = CommandText, style = MaterialTheme.typography.titleSmall)
+                    if (!activeTaskRoute.isNullOrBlank()) {
+                        Text("WORKSPACE  /  $activeTaskRoute", color = CommandMuted, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
         }
         if (status.isNotBlank()) {
             Text(status, color = CommandMuted, style = MaterialTheme.typography.bodySmall)
