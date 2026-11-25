@@ -85,8 +85,11 @@ class VnicClosedLoopTest {
         const val HOST = "127.0.0.1"
         const val IO_TIMEOUT_MS = 3000
         const val SUBJECT = "ESP32-TEST-NODE-01"
+        // The harness knows its synthetic TCP emulator is bound to loopback.
+        // Supplying that exact endpoint exercises NETWORK bring-up; ESP32
+        // alone must never silently route a physical board to VirtualESP32.
         const val OBSERVATION =
-            "Investigate the ESP32-TEST-NODE-01 microcontroller node over TCP — ESP32 WiFi Bluetooth UART GPIO"
+            "Investigate the ESP32-TEST-NODE-01 microcontroller node at 127.0.0.1 over TCP — ESP32 WiFi Bluetooth UART GPIO"
     }
 
     // ---- Emulator protocol: pure line -> response, unit-testable without sockets ----
@@ -669,7 +672,7 @@ class VnicClosedLoopTest {
             assertTrue("connection must still be held after the cycle", bringUp.connectionHeld)
             assertEquals(listOf("UART", "GPIO2", "GPIO4"), result.controlsMapped)
             assertTrue(result.learned.any { it.contains("reward=0.9") })
-            assertTrue(result.phases.any { it.contains("ACT: bring-up ESP32 -> CONTROLLABLE") })
+            assertTrue(result.phases.any { it.contains("ACT: multi-transport bring-up -> CONTROLLABLE") })
 
             // ---- Held-connection proof: socket open + a fresh status read returns live data ----
             assertTrue("socket must still be open after the cycle", session.isOpen())
