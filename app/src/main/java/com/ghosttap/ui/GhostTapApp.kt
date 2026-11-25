@@ -423,7 +423,9 @@ fun GhostTapApp(
                 action = cycle.action,
                 result = cycle.executionEvidence.ifBlank { cycle.resultEvaluation.joinToString(" · ") },
                 controls = cycle.controlsMapped,
-                evidence = cycle.findings.map { "${it.title}: ${it.snippet}" }
+                evidence = cycle.findings.map { "${it.title}: ${it.snippet}" },
+                objective = text,
+                subject = cycle.subject
             )
             // VNIC already acted through the shared registry/execution bridge,
             // or established a live bring-up. Never run the same objective twice.
