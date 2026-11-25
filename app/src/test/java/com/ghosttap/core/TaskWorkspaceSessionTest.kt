@@ -115,6 +115,21 @@ class TaskWorkspaceSessionTest {
     }
 
     @Test
+    fun `restored physical task resumes its last function workspace`() {
+        assertEquals("network_tools", workspaceResumeDestination(session("network_tools")))
+        assertEquals("target/ble-42", workspaceResumeDestination(session()))
+    }
+
+    @Test
+    fun `context task on home does not trigger redundant navigation`() {
+        assertEquals(null, workspaceResumeDestination(createContextTaskSession(
+            taskId = "task-home",
+            objective = "Research a device",
+            subject = "Unknown device"
+        )))
+    }
+
+    @Test
     fun `task workspace survives serialization with controls evidence and next actions`() {
         val original = session("network_tools").copy(
             controls = listOf("scan", "inspect host"),
