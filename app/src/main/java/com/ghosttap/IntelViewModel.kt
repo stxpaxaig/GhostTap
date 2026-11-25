@@ -459,12 +459,16 @@ class IntelViewModel(
         if (current.targetKind != "TASK" || planIds.isEmpty()) return
         val categories = planIds.mapNotNull { CapabilityRegistry.get(it)?.category }
         val route = workspaceRouteForCategories(categories) ?: return
-        if (current.route == route) return
-        activeTaskSession = current.copy(
-            route = route,
-            events = (current.events + "Intelligence selected the $route workspace from the live capability plan").takeLast(40),
-            updatedAtMs = System.currentTimeMillis()
-        )
+        if (current.route != route) {
+            activeTaskSession = current.copy(
+                route = route,
+                events = (current.events + "Intelligence selected the $route workspace from the live capability plan").takeLast(40),
+                updatedAtMs = System.currentTimeMillis()
+            )
+        }
+        // Re-emit the destination even when the task already owns this route:
+        // the user may have navigated elsewhere since the last cycle. Session
+        // identity and any live transport remain untouched.
         bringUpDestination = route
     }
 
