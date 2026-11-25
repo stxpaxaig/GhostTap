@@ -415,7 +415,7 @@ class IntelViewModel(
     private val taskWorkspaceState = mutableStateOf<TaskWorkspaceSession?>(null)
     var activeTaskSession: TaskWorkspaceSession?
         get() = taskWorkspaceState.value
-        set(value) {
+        private set(value) {
             taskWorkspaceState.value = value
             persistTaskWorkspace(value)
         }
