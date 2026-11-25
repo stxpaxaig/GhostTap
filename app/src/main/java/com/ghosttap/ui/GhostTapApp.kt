@@ -428,6 +428,10 @@ fun GhostTapApp(
                 objective = text,
                 subject = cycle.subject
             )
+            // If the intelligence plan selected a concrete capability family
+            // without establishing a physical transport, continue in that
+            // family's existing workspace. A live bring-up route is preserved.
+            intelVm.routeTaskWorkspaceForPlan(cycle.plan)
             // VNIC already acted through the shared registry/execution bridge,
             // or established a live bring-up. Never run the same objective twice.
             if (cycle.action != "store_context" && (cycle.plan.isNotEmpty() || cycle.bringUp != null)) return
