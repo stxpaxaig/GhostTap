@@ -20,3 +20,20 @@ data class TaskWorkspaceSession(
     val lastResult: String = "",
     val updatedAtMs: Long = System.currentTimeMillis()
 )
+
+/**
+ * Matches a task's concrete destination against Navigation Compose's
+ * destination route. Parameterized routes are exposed as patterns, so
+ * the target id must be checked separately.
+ */
+fun TaskWorkspaceSession.matchesDestination(
+    destinationRoute: String?,
+    destinationTargetId: String? = null
+): Boolean {
+    if (route.isBlank() || destinationRoute.isNullOrBlank()) return false
+    if (destinationRoute == route || destinationRoute.startsWith("$route/")) return true
+    return destinationRoute == "target/{id}" &&
+        destinationTargetId != null &&
+        destinationTargetId == targetId &&
+        route == "target/$targetId"
+}
