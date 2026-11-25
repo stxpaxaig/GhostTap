@@ -66,8 +66,27 @@ fun TaskWorkspaceSession.continuationPrompt(instruction: String): String = build
  * Home is already the safe landing page for context-only work; a physical
  * target route is reopened with CONTEXT_READY until its transport is verified.
  */
-fun workspaceResumeDestination(session: TaskWorkspaceSession): String? =
-    session.route.takeIf { it.isNotBlank() && it != "home" }
+fun workspaceResumeDestination(session: TaskWorkspaceSession): String? {
+    val route = session.route.trim()
+    if (route.isBlank() || route == "home") return null
+
+    // Resume only destinations that exist in the current navigation graph.
+    // A stale/unknown serialized route must not strand startup navigation.
+    val knownWorkspaceRoutes = setOf(
+        "logs",
+        "usb_uart",
+        "vesp32",
+        "network_tools",
+        "nfc_tools",
+        "visual_intel",
+        "investigations"
+    )
+    if (route in knownWorkspaceRoutes) return route
+    if (route.startsWith("target/") && route.removePrefix("target/").isNotBlank()) {
+        return route
+    }
+    return null
+}
 
 fun createContextTaskSession(
     taskId: String,
