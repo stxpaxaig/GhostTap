@@ -25,6 +25,29 @@ data class TaskWorkspaceSession(
     val updatedAtMs: Long = System.currentTimeMillis()
 )
 
+
+/**
+ * Reuses a task only when the incoming instruction is the same objective
+ * or explicitly carries this session's original objective marker. A loose
+ * substring match can accidentally merge unrelated tasks.
+ */
+fun matchesTaskObjectiveContext(existingObjective: String, incomingInstruction: String): Boolean {
+    val existing = existingObjective.trim()
+    val incoming = incomingInstruction.trim()
+    if (existing.isEmpty() || incoming.isEmpty()) return false
+    if (existing.equals(incoming, ignoreCase = true)) return true
+    val marker = "Original objective:"
+    val markerIndex = incoming.indexOf(marker, ignoreCase = true)
+    if (markerIndex < 0) return false
+    val valueStart = markerIndex + marker.length
+    val originalLine = incoming.substring(valueStart)
+        .lineSequence()
+        .firstOrNull()
+        ?.trim()
+        .orEmpty()
+    return originalLine.equals(existing, ignoreCase = true)
+}
+
 /**
  * Matches a task's concrete destination against Navigation Compose's
  * destination route. Parameterized routes are exposed as patterns, so
