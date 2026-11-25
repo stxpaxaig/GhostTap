@@ -1214,7 +1214,10 @@ private fun HomeScreen(
             status = status,
             bluetoothEnabled = btEnabled,
             scanning = isScanning,
-            targetCount = targets.size
+            targetCount = targets.size,
+            activeTaskTitle = activeTaskSession?.targetTitle,
+            activeTaskState = activeTaskSession?.connectionState,
+            activeTaskRoute = activeTaskSession?.route
         )
 
         // The home command box is the primary entry point. The engine
