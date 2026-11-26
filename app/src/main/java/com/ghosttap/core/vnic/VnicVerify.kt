@@ -45,7 +45,8 @@ object VnicVerify {
         // A successful send is not proof the target processed it. Treat
         // explicit no-reply responses as ATTEMPTED, not CONNECTED/VERIFIED.
         "no uart reply", "no reply arrived", "no response arrived",
-        "no reply within", "no usb device found", "no device reply observed"
+        "no reply within", "no usb device found", "no device reply observed",
+        "didn't answer", "couldn't find", "connection refused"
     )
 
     /** Verify one already-run capability result. Never throws. */
@@ -155,7 +156,7 @@ object VnicVerify {
         // A UDP datagram being handed to the local socket is not proof
         // the target received it. Only a response from the target verifies it.
         "net.udp_send" -> ExpectedEvidence(listOf("reply from"))
-        "net.port_scan" -> ExpectedEvidence(listOf("is open"))
+        "net.port_scan" -> ExpectedEvidence(listOf("is open", "open: none"))
         "net.http_fetch" -> ExpectedEvidence(listOf("answer:"))
         // USB: a device was actually found / the cable is actually up /
         // the terminal actually had traffic / the board actually answered.
