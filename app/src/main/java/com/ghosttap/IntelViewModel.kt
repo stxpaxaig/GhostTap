@@ -1371,17 +1371,28 @@ class IntelViewModel(
                 } else {
                     loop.runCycle(state) { events.add(it) }
                 }
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                // Stop requests and ViewModel teardown must remain cancellable.
+                throw cancel
             } catch (e: Exception) {
                 events.add("That step failed safely: ${e.message ?: "unknown problem"}")
                 state.copy(
                     status = "DEAD_END",
                     endReason = "A step crashed safely (${e.message ?: "unknown problem"}) — stopping."
                 )
+            } finally {
+                // Restore event handling on success, failure, and cancellation.
+                eventMute.set(false)
             }
-            eventMute.set(false)
             // VNIC observes every round into its own persistent memory.
-            // onLoopRound never throws and never blocks the loop.
-            runCatching { vnicEngine.onLoopRound(state, events) }
+            // Cancellation must propagate instead of being swallowed by runCatching.
+            try {
+                vnicEngine.onLoopRound(state, events)
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
+            } catch (_: Exception) {
+                // Memory enrichment is best-effort; it must not break the task.
+            }
             val done = state
             withContext(Dispatchers.Main) {
                 events.forEach { loopLog.add(it) }
