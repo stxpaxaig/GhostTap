@@ -86,6 +86,24 @@ class VnicVerifyTest {
     }
 
     @Test
+    fun emptyAsyncNetworkFallbackIsNotReportedAsConnected() {
+        val result = VnicVerify.verify(
+            "net.ping",
+            OpResult(true, "Ping finished with no output.", "")
+        )
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
+    }
+
+    @Test
+    fun missingNfcTapIsNotReportedAsSuccessfulRead() {
+        val result = VnicVerify.verify(
+            "nfc.read_summary",
+            OpResult(true, "No tag tapped yet.", "")
+        )
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
+    }
+
+    @Test
     fun uartSendWithoutReplyIsOnlyAttempted() {
         val result = VnicVerify.verify(
             "vesp32.send_uart",
