@@ -444,7 +444,13 @@ class IntelEngine(
                     } else {
                         ble.connectBle(id)
                         delay(6000)
-                        OpResult(true, "Connect attempted: ${ble.gattStatusText(id)}")
+                        val status = ble.gattStatusText(id)
+                        val connected = status.startsWith("CONNECTED", ignoreCase = true)
+                        OpResult(
+                            connected,
+                            if (connected) "Bluetooth link established: $status"
+                            else "Bluetooth connection not established: $status"
+                        )
                     }
                 } catch (e: Exception) {
                     OpResult(false, "Connect failed: ${e.message ?: "unknown problem"}")
@@ -703,7 +709,12 @@ class IntelEngine(
                 try {
                     usb.connect()
                     delay(2000)
-                    OpResult(true, usb.usbStatus)
+                    val connected = usb.isConnected
+                    OpResult(
+                        connected,
+                        if (connected) usb.usbStatus
+                        else "USB connection not established: ${usb.usbStatus}"
+                    )
                 } catch (e: Exception) {
                     OpResult(false, "USB connect failed: ${e.message ?: "unknown problem"}")
                 }
@@ -713,7 +724,7 @@ class IntelEngine(
             id = "usb.send", title = "Send text over the USB cable",
             riskLevel = "WRITE", verified = true,
             sourceMethod = "UsbUartViewModel.sendTx",
-            effects = "Sends the given text down the cable to the attached device. The device receives it.",
+            effects = "Writes the given text to the USB serial connection. Receipt is only confirmed when new bytes arrive from the attached device.",
             detail = "Sends a line of text down the USB cable.",
             category = "USB",
             inputs = listOf("text"),
@@ -723,11 +734,36 @@ class IntelEngine(
                     val text = args["text"].orEmpty()
                     if (text.isBlank()) {
                         OpResult(false, "Nothing to send — text was empty.")
+                    } else if (!usb.isConnected) {
+                        OpResult(false, "USB serial is not connected; nothing was sent.")
                     } else {
+                        val rxBefore = usb.rxOnlyText
+                        val logBefore = usb.copyLog()
                         usb.updateTxText(text)
                         usb.sendTx()
                         delay(1500)
-                        OpResult(true, "Sent. Recent reply: ${usb.rxText.takeLast(300).ifBlank { "(nothing came back yet)" }}")
+                        val logAfter = usb.copyLog()
+                        val writeLog = logAfter.removePrefix(logBefore)
+                        val writeConfirmed = "TX: " in writeLog
+                        if (!writeConfirmed) {
+                            OpResult(false, "USB write was not confirmed by the serial driver. ${writeLog.takeLast(240)}")
+                        } else {
+                            val rxAfter = usb.rxOnlyText
+                            val reply = if (rxAfter.startsWith(rxBefore)) {
+                                rxAfter.removePrefix(rxBefore).trim().takeLast(300)
+                            } else {
+                                ""
+                            }
+                            OpResult(
+                                true,
+                                if (reply.isBlank()) {
+                                    "USB write completed; no device reply observed in the response window."
+                                } else {
+                                    "USB write completed. Recent device reply: $reply"
+                                },
+                                reply
+                            )
+                        }
                     }
                 } catch (e: Exception) {
                     OpResult(false, "Send failed: ${e.message ?: "unknown problem"}")
