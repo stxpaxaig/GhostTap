@@ -47,7 +47,7 @@ object VnicVerify {
         "no uart reply", "no reply arrived", "no response arrived",
         "no reply within", "no usb device found", "no device reply observed",
         "didn't answer", "couldn't find", "connection refused",
-        "finished with no output", "port scan finished.", "fetch finished.",
+        "finished with no output", "port scan finished.", "fetch finished.", "manual step required:",
         "connection test finished.", "no tag tapped yet"
     )
 
