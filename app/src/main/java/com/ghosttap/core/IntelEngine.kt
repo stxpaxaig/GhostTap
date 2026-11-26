@@ -782,7 +782,11 @@ class IntelEngine(
                 try {
                     usb.testEsp32()
                     delay(4000)
-                    OpResult(true, "ESP32 test: ${usb.esp32Status}")
+                    val answered = usb.esp32Status.startsWith("The board answered", ignoreCase = true)
+                    OpResult(
+                        answered,
+                        "ESP32 test: ${usb.esp32Status}"
+                    )
                 } catch (e: Exception) {
                     OpResult(false, "ESP32 test failed: ${e.message ?: "unknown problem"}")
                 }
