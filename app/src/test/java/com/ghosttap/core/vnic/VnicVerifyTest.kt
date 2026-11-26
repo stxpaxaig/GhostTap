@@ -59,6 +59,33 @@ class VnicVerifyTest {
     }
 
     @Test
+    fun unansweredNetworkPingIsNotReportedAsConnected() {
+        val result = VnicVerify.verify(
+            "net.ping",
+            OpResult(true, "192.168.1.20 didn't answer (it may block this check, or be offline).", "")
+        )
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
+    }
+
+    @Test
+    fun refusedTcpConnectionIsNotReportedAsConnected() {
+        val result = VnicVerify.verify(
+            "net.tcp_connect",
+            OpResult(true, "Connection refused at 192.168.1.20:80.", "")
+        )
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
+    }
+
+    @Test
+    fun completedPortScanWithNoOpenPortsIsStillVerified() {
+        val result = VnicVerify.verify(
+            "net.port_scan",
+            OpResult(true, "Port check — done. Open: none. Closed or blocked: 80, 443", "")
+        )
+        assertEquals(VnicExecutionState.VERIFIED, result.state)
+    }
+
+    @Test
     fun uartSendWithoutReplyIsOnlyAttempted() {
         val result = VnicVerify.verify(
             "vesp32.send_uart",
