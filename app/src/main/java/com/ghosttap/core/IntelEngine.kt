@@ -472,7 +472,15 @@ class IntelEngine(
                         OpResult(false, "No device was picked.")
                     } else {
                         ble.disconnectBle(id)
-                        OpResult(true, "Disconnected: ${ble.gattStatusText(id)}")
+                        delay(1500)
+                        val status = ble.gattStatusText(id)
+                        val disconnected = !status.startsWith("Disconnecting", ignoreCase = true) &&
+                            !status.startsWith("CONNECTED", ignoreCase = true)
+                        OpResult(
+                            disconnected,
+                            if (disconnected) "Bluetooth disconnected: $status"
+                            else "Bluetooth disconnect is still pending: $status"
+                        )
                     }
                 } catch (e: Exception) {
                     OpResult(false, "Disconnect failed: ${e.message ?: "unknown problem"}")
