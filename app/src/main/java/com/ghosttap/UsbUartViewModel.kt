@@ -100,6 +100,9 @@ class UsbUartViewModel(application: Application) : AndroidViewModel(application)
         private set
     var rxText by mutableStateOf("")
         private set
+    /** Incoming bytes only; excludes the phone-side TX echo in the combined terminal. */
+    var rxOnlyText by mutableStateOf("")
+        private set
     var txText by mutableStateOf("")
         private set
     var hexMode by mutableStateOf(false)
@@ -618,6 +621,7 @@ class UsbUartViewModel(application: Application) : AndroidViewModel(application)
 
     fun clearTerminal() {
         rxText = ""
+        rxOnlyText = ""
     }
 
     fun setDtr(asserted: Boolean) {
@@ -1024,6 +1028,8 @@ class UsbUartViewModel(application: Application) : AndroidViewModel(application)
                                 }
                             }
                             rxText += "ESP32 → PHONE: $display\n"
+                            rxOnlyText += display + "\n"
+                            if (rxOnlyText.length > 8000) rxOnlyText = rxOnlyText.takeLast(6000)
                             // Autonomous Investigations: the board just
                             // talked for the first time — investigate it
                             // with its own first words as evidence.
