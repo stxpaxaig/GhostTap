@@ -45,7 +45,7 @@ object VnicVerify {
         // A successful send is not proof the target processed it. Treat
         // explicit no-reply responses as ATTEMPTED, not CONNECTED/VERIFIED.
         "no uart reply", "no reply arrived", "no response arrived",
-        "no reply within", "no usb device found"
+        "no reply within", "no usb device found", "no device reply observed"
     )
 
     /** Verify one already-run capability result. Never throws. */
@@ -166,8 +166,8 @@ object VnicVerify {
         "usb.read_log" -> ExpectedEvidence(listOf("last terminal traffic captured"))
         "usb.connect" -> ExpectedEvidence(listOf("connected — ready to use"))
         "usb.send" -> ExpectedEvidence(
-            anyOf = listOf("recent reply:"),
-            noneOf = listOf("(nothing came back yet)")
+            anyOf = listOf("recent device reply:"),
+            noneOf = listOf("no device reply observed")
         )
         "usb.test_esp32" -> ExpectedEvidence(listOf("the board answered"))
         // NFC: a real card summary was read / emulation is actually on.
