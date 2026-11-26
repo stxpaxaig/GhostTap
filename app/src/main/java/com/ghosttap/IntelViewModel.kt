@@ -2163,13 +2163,22 @@ class IntelViewModel(
         // Mute the event bus while the engine runs: the tool ViewModels now
         // publish their own result events, and the loop records results
         // itself — without the mute every step would be logged twice.
-        eventMute.set(true)
-        val result = if (cap == null) {
-            com.ghosttap.core.OpResult(false, "Unknown control '${step.capabilityId}' — skipped.")
-        } else {
-            engine.run(step.capabilityId, step.args)
+        val result = try {
+            eventMute.set(true)
+            if (cap == null) {
+                com.ghosttap.core.OpResult(false, "Unknown control '${step.capabilityId}' — skipped.")
+            } else {
+                engine.run(step.capabilityId, step.args)
+            }
+        } catch (e: Exception) {
+            com.ghosttap.core.OpResult(
+                false,
+                "Control '${step.capabilityId}' failed safely: ${e.message ?: e::class.simpleName ?: "unknown error"}"
+            )
+        } finally {
+            // A throwing capability must never leave the shared event bus muted.
+            eventMute.set(false)
         }
-        eventMute.set(false)
         // Feed the result back into the reasoning engine's evidence.
         try {
             currentProvider.noteResult(step.capabilityId, result)
