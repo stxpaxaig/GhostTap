@@ -809,16 +809,15 @@ class IntelEngine(
             id = "nfc.open_tools", title = "Tap a card in NFC tools",
             riskLevel = "READ", verified = false,
             sourceMethod = "Manual: NFC TOOLS screen",
-            effects = "Requires you to open NFC TOOLS and physically tap a real card. This capability does not navigate or read a tag by itself.",
-            detail = "Hands off to the NFC workspace for a physical card tap; Ghost Tap continues after the tag is detected.",
+            effects = "Routes the task into the NFC workspace. A physical card tap is still required before a tag can be read.",
+            detail = "Opens the NFC workspace for the physical tap, then keeps the task context ready for follow-up once a tag is detected.",
             category = "NFC",
-            preconditions = listOf("NFC tag must be physically tapped to the phone", "open NFC TOOLS screen"),
+            preconditions = listOf("NFC tag must be physically tapped to the phone"),
             run = { _ ->
                 OpResult(
-                    false,
-                    "Manual action required — the NFC tools were not opened and no card was read. " +
-                        "Open NFC TOOLS and physically tap the card; Ghost Tap can continue once the tag is detected.",
-                    "manual_required"
+                    true,
+                    "NFC workspace selected — hold the card against the phone to begin the physical read.",
+                    "nfc_tools"
                 )
             }
         )
