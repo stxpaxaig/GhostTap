@@ -104,6 +104,15 @@ class VnicVerifyTest {
     }
 
     @Test
+    fun manualInstructionIsNotReportedAsExecuted() {
+        val result = VnicVerify.verify(
+            "sys.manual_step",
+            OpResult(true, "Manual step required: Turn the switch off, then continue.", "manual")
+        )
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
+    }
+
+    @Test
     fun uartSendWithoutReplyIsOnlyAttempted() {
         val result = VnicVerify.verify(
             "vesp32.send_uart",
