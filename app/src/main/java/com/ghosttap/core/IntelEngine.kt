@@ -916,7 +916,7 @@ class IntelEngine(
             category = "SYSTEM",
             inputs = listOf("instruction"),
             run = { args ->
-                OpResult(true, args["instruction"] ?: "Do the manual step, then continue.", "manual")
+                OpResult(true, "Manual step required: ${args["instruction"] ?: "Do the manual step, then continue."}", "manual")
             }
         )
         reg(
