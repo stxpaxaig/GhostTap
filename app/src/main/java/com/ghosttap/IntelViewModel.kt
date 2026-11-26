@@ -902,15 +902,15 @@ class IntelViewModel(
         statusLine = "Running your approved step…"
         loopJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                // The approved step is the loop's action — no auto-triggers from it.
-                eventMute.set(true)
+                // executeStep owns event muting and always restores it.
                 executeStep(inv.id, step, approved = true)
-                eventMute.set(false)
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
                 val resumed = (loopState?.copy(status = "RUNNING", pendingStep = null))
                     ?: LoopState(investigationId = inv.id, target = targetOf(inv))
                 withContext(Dispatchers.Main) { loopState = resumed }
                 runLoop(resumed, currentProvider)
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Approved step failed: ${e.message ?: "unknown problem"}"
@@ -1655,10 +1655,13 @@ class IntelViewModel(
                 eventMute.set(true)
                 val result = try {
                     engine.run(draft.proposeId, draft.proposeArgs)
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+                    throw cancel
                 } catch (e: Exception) {
                     OpResult(false, "Crashed while testing the new control: ${e.message ?: "unknown error"}")
+                } finally {
+                    eventMute.set(false)
                 }
-                eventMute.set(false)
                 try { currentProvider.noteResult(draft.proposeId, result) } catch (_: Exception) { }
                 try {
                     db.observationDao().insert(
@@ -2181,6 +2184,8 @@ class IntelViewModel(
             } else {
                 engine.run(step.capabilityId, step.args)
             }
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (e: Exception) {
             com.ghosttap.core.OpResult(
                 false,
