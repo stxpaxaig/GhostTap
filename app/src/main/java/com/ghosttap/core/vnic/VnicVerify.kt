@@ -159,7 +159,7 @@ object VnicVerify {
         // the target received it. Only a response from the target verifies it.
         "net.udp_send" -> ExpectedEvidence(listOf("reply from"))
         "net.port_scan" -> ExpectedEvidence(listOf("is open", "open: none"))
-        "net.http_fetch" -> ExpectedEvidence(listOf("answer:"))
+        "net.http_fetch" -> ExpectedEvidence(listOf("answer: 2"))
         // USB: a device was actually found / the cable is actually up /
         // the terminal actually had traffic / the board actually answered.
         // "No USB device found", "Connection failed" and "The board
