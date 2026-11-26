@@ -808,7 +808,7 @@ class IntelEngine(
         reg(
             id = "nfc.open_tools", title = "Tap a card in NFC tools",
             riskLevel = "READ", verified = false,
-            sourceMethod = "Manual: NFC TOOLS screen",
+            sourceMethod = "IntelViewModel.routeTaskWorkspaceForPlan",
             effects = "Routes the task into the NFC workspace. A physical card tap is still required before a tag can be read.",
             detail = "Opens the NFC workspace for the physical tap, then keeps the task context ready for follow-up once a tag is detected.",
             category = "NFC",
