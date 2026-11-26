@@ -33,6 +33,32 @@ class VnicVerifyTest {
     }
 
     @Test
+    fun usbSendPhoneTransmitEchoIsNotMistakenForDeviceReply() {
+        val result = VnicVerify.verify(
+            "usb.send",
+            OpResult(
+                true,
+                "USB write completed; no device reply observed in the response window.",
+                "PHONE → ESP32: AT"
+            )
+        )
+        assertEquals(VnicExecutionState.ATTEMPTED, result.state)
+    }
+
+    @Test
+    fun usbSendWithFreshDeviceReplyIsVerified() {
+        val result = VnicVerify.verify(
+            "usb.send",
+            OpResult(
+                true,
+                "USB write completed. Recent device reply: OK",
+                "OK"
+            )
+        )
+        assertEquals(VnicExecutionState.VERIFIED, result.state)
+    }
+
+    @Test
     fun uartSendWithoutReplyIsOnlyAttempted() {
         val result = VnicVerify.verify(
             "vesp32.send_uart",
