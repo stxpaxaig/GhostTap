@@ -113,6 +113,24 @@ class VnicVerifyTest {
     }
 
     @Test
+    fun successfulHttpStatusVerifiesPageFetch() {
+        val result = VnicVerify.verify(
+            "net.http_fetch",
+            OpResult(true, "Answer: 200 OK", "Page text: example")
+        )
+        assertEquals(VnicExecutionState.VERIFIED, result.state)
+    }
+
+    @Test
+    fun httpErrorResponseProvesServerAnsweredButNotSuccessfulFetch() {
+        val result = VnicVerify.verify(
+            "net.http_fetch",
+            OpResult(true, "Answer: 404 Not Found", "Page text: missing")
+        )
+        assertEquals(VnicExecutionState.CONNECTED, result.state)
+    }
+
+    @Test
     fun uartSendWithoutReplyIsOnlyAttempted() {
         val result = VnicVerify.verify(
             "vesp32.send_uart",
