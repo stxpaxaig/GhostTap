@@ -109,13 +109,21 @@ object CapabilityRegistry {
      * against the actual ViewModel code via reflection and reports public
      * methods with no registry entry as wiring candidates.
      */
+    @Synchronized
     fun register(c: IntelCapability) {
         caps[c.id] = c
     }
 
+    @Synchronized
     fun all(): List<IntelCapability> = caps.values.toList()
+
+    @Synchronized
     fun get(id: String): IntelCapability? = caps[id]
+
+    @Synchronized
     fun ids(): Set<String> = caps.keys.toSet()
+
+    @Synchronized
     fun byCategory(category: String): List<IntelCapability> =
         caps.values.filter { it.category == category }
 }
