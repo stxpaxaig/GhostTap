@@ -37,6 +37,17 @@ class IntelEngine(
     private val additionalViewModels: List<Any> = emptyList()
 ) {
 
+    // Runtime-attached components (such as the separately-created VirtualESP32
+    // IPC client) join the same audit surface once the app has attached them.
+    // CopyOnWriteArrayList keeps scans safe if a component attaches mid-session.
+    private val runtimeAuditTargets = java.util.concurrent.CopyOnWriteArrayList<Any>().apply {
+        addAll(additionalViewModels)
+    }
+
+    fun addAuditTarget(target: Any) {
+        if (runtimeAuditTargets.none { it === target }) runtimeAuditTargets.add(target)
+    }
+
     init {
         registerVisual()
         registerBle()
@@ -221,7 +232,7 @@ class IntelEngine(
     }
 
     /** Every live ViewModel that contributes operational surfaces to capability audits. */
-    fun viewModels(): List<Any> = listOf(ble, net, usb, visual) + additionalViewModels
+    fun viewModels(): List<Any> = listOf(ble, net, usb, visual) + runtimeAuditTargets
 
     // ---------- VISUAL ----------
 
