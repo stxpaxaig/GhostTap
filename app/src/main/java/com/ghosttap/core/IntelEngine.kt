@@ -1022,6 +1022,8 @@ class IntelEngine(
                                         confidence = 1.0
                                     )
                                 )
+                            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                                throw cancel
                             } catch (_: Exception) {
                             }
                         }
