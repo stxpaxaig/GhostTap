@@ -235,6 +235,8 @@ object DynamicCapabilityRuntime {
             val resolved = step.args.mapValues { (_, v) -> substitute(v, emptyMap(), prev) }
             val res = try {
                 engine.run(step.capabilityId, resolved)
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
             } catch (e: Exception) {
                 OpResult(false, "Crashed during test: ${e.message ?: "unknown error"}")
             }
@@ -325,6 +327,8 @@ object DynamicCapabilityRuntime {
                         confidence = 1.0
                     )
                 )
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
             } catch (_: Exception) {
             }
         }
@@ -346,6 +350,8 @@ object DynamicCapabilityRuntime {
                 val resolved = step.args.mapValues { (_, v) -> substitute(v, args, prev) }
                 val res = try {
                     engine.run(step.capabilityId, resolved)
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+                    throw cancel
                 } catch (e: Exception) {
                     OpResult(false, "Step '${step.capabilityId}' crashed: ${e.message ?: "unknown error"}")
                 }
@@ -360,6 +366,8 @@ object DynamicCapabilityRuntime {
                 }
             }
             OpResult(true, "Composite '${def.title}' ran $ran step(s).", prev?.data.orEmpty().take(1200))
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (e: Exception) {
             OpResult(false, "Composite '${def.id}' crashed: ${e.message ?: "unknown error"}")
         }
