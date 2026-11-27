@@ -874,6 +874,8 @@ class IntelViewModel(
         loopJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 runLoop(initial, provider)
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Auto-investigate stopped: ${e.message ?: "unknown problem"}"
@@ -1594,6 +1596,8 @@ class IntelViewModel(
             val report = CapabilityScanner.scan(engine.viewModels(), CapabilityRegistry)
             withContext(Dispatchers.Main) { scanReport = report }
             report
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 statusLine = "Check of available controls failed: ${e.message ?: "unknown problem"}"
@@ -1611,6 +1615,8 @@ class IntelViewModel(
         val inv = activeInvestigation ?: return emptyList()
         return try {
             Researcher.researchWithWeb(targetOf(inv), db, learnedStore, currentProvider, inv.id)
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (_: Exception) {
             emptyList()
         }
