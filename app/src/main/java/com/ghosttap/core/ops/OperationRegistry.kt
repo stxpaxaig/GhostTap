@@ -125,7 +125,9 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
                     is OperationResult.NeedsUserChoice ->
                         OpResult(false, result.reason, result.evidence)
                 }
-            } catch (e: Exception) {
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                 OpResult(false, "Operation '$id' failed: ${e.message ?: "unknown problem"}")
             } finally {
                 context.pendingChoice = savedChoice
