@@ -19,17 +19,21 @@ object OperationRegistry {
     private val ops = LinkedHashMap<String, Operation>()
 
     /** Register one operation (overwrites any earlier definition with the same id). */
+    @Synchronized
     fun register(op: Operation) {
         ops[op.id] = op
     }
 
     /** Look one operation up by id. Null when nothing is registered under that id. */
+    @Synchronized
     fun get(id: String): Operation? = ops[id]
 
     /** Every registered operation, in registration order. */
+    @Synchronized
     fun all(): List<Operation> = ops.values.toList()
 
     /** Every registered operation in one area, in registration order. */
+    @Synchronized
     fun byArea(area: OperationArea): List<Operation> =
         ops.values.filter { it.area == area }
 
@@ -37,6 +41,7 @@ object OperationRegistry {
     fun areas(): List<OperationArea> = ops.values.map { it.area }.distinct()
 
     /** Test-only: empties the registry so tests start from a known state. Never called by the app. */
+    @Synchronized
     internal fun clear() {
         ops.clear()
     }
@@ -48,6 +53,7 @@ object OperationRegistry {
      * capability. Idempotent — safe to call again when new operations
      * are registered later.
      */
+    @Synchronized
     fun publishToCapabilityRegistry(context: OperationContext) {
         ops.values.forEach { op ->
             CapabilityRegistry.register(op.asCapability(context))
