@@ -2212,6 +2212,8 @@ class IntelViewModel(
         // Feed the result back into the reasoning engine's evidence.
         try {
             currentProvider.noteResult(step.capabilityId, result)
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (_: Exception) {
         }
         try {
@@ -2237,10 +2239,14 @@ class IntelViewModel(
                     confidence = if (result.ok) 1.0 else 0.9
                 )
             )
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (_: Exception) {
         }
         try {
             withContext(Dispatchers.Main) { hypotheses = currentProvider.hypotheses() }
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+            throw cancel
         } catch (_: Exception) {
         }
         return result
