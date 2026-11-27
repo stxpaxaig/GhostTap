@@ -1662,7 +1662,11 @@ class IntelViewModel(
                 } finally {
                     eventMute.set(false)
                 }
-                try { currentProvider.noteResult(draft.proposeId, result) } catch (_: Exception) { }
+                try {
+                    currentProvider.noteResult(draft.proposeId, result)
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+                    throw cancel
+                } catch (_: Exception) { }
                 try {
                     db.observationDao().insert(
                         Observation(
@@ -1677,6 +1681,8 @@ class IntelViewModel(
                             confidence = if (result.ok) 1.0 else 0.4
                         )
                     )
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+                    throw cancel
                 } catch (_: Exception) { }
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
                 if (result.ok) {
@@ -1701,6 +1707,8 @@ class IntelViewModel(
                         statusLine = "The new control failed its test — nothing was switched on. ${result.summary.take(200)}"
                     }
                 }
+            } catch (cancel: kotlinx.coroutines.CancellationException) {
+                throw cancel
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Approved control failed: ${e.message ?: "unknown problem"}"
