@@ -36,10 +36,24 @@ object CapabilityScanner {
     )
 
     fun scan(viewModels: List<Any>, registry: CapabilityRegistry): ScanReport {
+        // Keep ownership in the match: a method registered for one
+        // ViewModel must never make a same-named method on another ViewModel
+        // look integrated.
         val knownSources = registry.all()
-            .map { it.sourceMethod.substringAfterLast('.').substringBefore('(').trim() }
-            .filter { it.isNotEmpty() && !it.startsWith("Manual") && it != "IntelViewModel (manual instruction)" }
-            .toSet()
+            .mapNotNull { capability ->
+                val source = capability.sourceMethod.substringBefore('(').trim()
+                if (source.isEmpty() || source.startsWith("Manual:") ||
+                    source == "IntelViewModel (manual instruction)" || '.' !in source
+                ) {
+                    null
+                } else {
+                    val owner = source.substringBeforeLast('.').substringAfterLast('.')
+                    val method = normalize(source.substringAfterLast('.')) ?: return@mapNotNull null
+                    owner to method
+                }
+            }
+            .groupBy({ it.first }, { it.second })
+            .mapValues { (_, methods) -> methods.toSet() }
         // Map normalized method name -> owning class names that declare it.
         val declared = mutableMapOf<String, MutableSet<String>>()
         // Map "Class.method" -> signature for display.
@@ -82,10 +96,7 @@ object CapabilityScanner {
                         (normalize(it.substringAfter('.').substringBefore('(')) == norm)
                 }
                 val display = sigKey?.let { signatures[it] } ?: "$owner.$norm()"
-                if (norm in knownSources || knownSources.any { src ->
-                        src.substringAfterLast('.') == norm ||
-                            normalize(src.substringAfterLast('.')) == norm
-                    }) {
+                if (norm in knownSources[owner].orEmpty()) {
                     registered.add(display)
                 } else {
                     candidates.add(display)
