@@ -32,7 +32,9 @@ class IntelEngine(
     private val usb: UsbUartViewModel,
     private val visual: VisualIntelViewModel,
     /** Optional: when present, proposed extensions are persisted for restore. */
-    private val db: IntelDatabase? = null
+    private val db: IntelDatabase? = null,
+    /** Additional live ViewModels whose public operations must be included in capability audits. */
+    private val additionalViewModels: List<Any> = emptyList()
 ) {
 
     init {
@@ -218,8 +220,8 @@ class IntelEngine(
         )
     }
 
-    /** ViewModel instances behind the registry — used by [CapabilityScanner]. */
-    fun viewModels(): List<Any> = listOf(ble, net, usb, visual)
+    /** Every live ViewModel that contributes operational surfaces to capability audits. */
+    fun viewModels(): List<Any> = listOf(ble, net, usb, visual) + additionalViewModels
 
     // ---------- VISUAL ----------
 
