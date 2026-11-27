@@ -50,7 +50,9 @@ class IntelEngine(
             ?: return OpResult(false, "Unknown capability '$id' — not in the registry.")
         return try {
             cap.run(args)
-        } catch (e: Exception) {
+        } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
             OpResult(false, "Capability '$id' crashed: ${e.message ?: "unknown problem"}")
         }
     }
@@ -267,7 +269,9 @@ class IntelEngine(
                     } else {
                         OpResult(false, "No finding arrived — ${visual.statusLine}")
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Capture failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -304,7 +308,9 @@ class IntelEngine(
                         visual.copyToClipboard("intel", text)
                         OpResult(true, "Copied ${text.length} characters to clipboard.")
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Copy failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -330,7 +336,9 @@ class IntelEngine(
                                 "BARCODES: ${f.barcodes.joinToString("; ") { it.rawValue.take(80) }}"
                         )
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Read failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -362,7 +370,9 @@ class IntelEngine(
                             }
                         )
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "List failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -391,7 +401,9 @@ class IntelEngine(
                             "${it.name} (${it.id.take(17)}) rssi=${it.rssi ?: "?"}"
                         }
                     )
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Scan failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -407,7 +419,9 @@ class IntelEngine(
                 try {
                     ble.stopScan()
                     OpResult(true, "Scan stopped.")
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Stop failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -423,7 +437,9 @@ class IntelEngine(
             run = { _ ->
                 try {
                     OpResult(true, ble.scanStatus)
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Status read failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -453,7 +469,9 @@ class IntelEngine(
                             else "Bluetooth connection not established: $status"
                         )
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Connect failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -483,7 +501,9 @@ class IntelEngine(
                             else "Bluetooth disconnect is still pending: $status"
                         )
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Disconnect failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -513,7 +533,9 @@ class IntelEngine(
                         val lines = captureNetLines(before)
                         OpResult(true, lines.lastOrNull() ?: "Ping finished with no output.", lines.joinToString("\n"))
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Ping failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -539,7 +561,9 @@ class IntelEngine(
                         val lines = captureNetLines(before)
                         OpResult(true, lines.lastOrNull() ?: "Connection test finished.", lines.joinToString("\n"))
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Connection test failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -564,7 +588,9 @@ class IntelEngine(
                     } else {
                         OpResult(true, net.sendHeldTcpMessage(host, port, message))
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Held TCP exchange failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -590,7 +616,9 @@ class IntelEngine(
                         val lines = captureNetLines(before)
                         OpResult(true, lines.lastOrNull() ?: "Message test finished.", lines.joinToString("\n"))
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Message test failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -615,7 +643,9 @@ class IntelEngine(
                         val lines = captureNetLines(before, 20000)
                         OpResult(true, lines.lastOrNull() ?: "Port scan finished.", lines.joinToString("\n"))
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Port scan failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -640,7 +670,9 @@ class IntelEngine(
                         val lines = captureNetLines(before)
                         OpResult(true, lines.lastOrNull() ?: "Fetch finished.", lines.joinToString("\n"))
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Fetch failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -664,7 +696,9 @@ class IntelEngine(
                     usb.refreshDevices()
                     delay(1500)
                     OpResult(true, usb.usbStatus)
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Refresh failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -684,7 +718,9 @@ class IntelEngine(
                         "${usb.usbStatus} — connected=${usb.isConnected}, " +
                             "device=${usb.selectedDevice?.let { "attached" } ?: "none"}"
                     )
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Status read failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -701,7 +737,9 @@ class IntelEngine(
                 try {
                     val tail = usb.copyLog().takeLast(1500)
                     OpResult(true, if (tail.isBlank()) "Terminal is empty." else "Last terminal traffic captured.", tail)
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Log read failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -724,7 +762,9 @@ class IntelEngine(
                         if (connected) usb.usbStatus
                         else "USB connection not established: ${usb.usbStatus}"
                     )
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "USB connect failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -774,7 +814,9 @@ class IntelEngine(
                             )
                         }
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Send failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -796,7 +838,9 @@ class IntelEngine(
                         answered,
                         "ESP32 test: ${usb.esp32Status}"
                     )
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "ESP32 test failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -833,7 +877,9 @@ class IntelEngine(
             run = { _ ->
                 try {
                     OpResult(true, ble.lastNfcReadSummary)
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Read failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -850,7 +896,9 @@ class IntelEngine(
                 try {
                     val state = if (ble.isEmulating) "ON" else "OFF"
                     OpResult(true, "Tag emulation is $state. ${ble.emulatedSummary()}")
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Read failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -878,7 +926,9 @@ class IntelEngine(
                             "(${report.registered.size} already wired).",
                         report.candidates.take(40).joinToString("\n").ifBlank { "(none — everything found is wired)" }
                     )
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Scan failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -902,7 +952,9 @@ class IntelEngine(
                                 "${if (it.verified) "" else " (unverified)"} — ${it.title}"
                         }
                     )
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "List failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -988,7 +1040,9 @@ class IntelEngine(
                             report.notes.joinToString("\n").take(1500)
                         )
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Propose failed: ${e.message ?: "unknown problem"}")
                 }
             }
@@ -1055,7 +1109,9 @@ class IntelEngine(
                             report.notes.joinToString("\n").take(1500)
                         )
                     }
-                } catch (e: Exception) {
+                } catch (cancel: kotlinx.coroutines.CancellationException) {
+     throw cancel
+ } catch (e: Exception) {
                     OpResult(false, "Propose script failed: ${e.message ?: "unknown problem"}")
                 }
             }
