@@ -2,6 +2,7 @@ package com.ghosttap.core.ops
 
 import com.ghosttap.core.CapabilityRegistry
 import com.ghosttap.core.OpResult
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -163,6 +164,20 @@ class OperationRegistryTest {
         val result = cap!!.run(emptyMap())
         assertTrue(result.ok)
         assertEquals("test evidence", result.data)
+    }
+
+    @Test
+    fun asCapabilityPropagatesCoroutineCancellation() = runBlocking {
+        val op = testOp("test.pkg0.cancel").copy(
+            execute = { throw CancellationException("operator stopped the task") }
+        )
+        val cap = op.asCapability(OperationContext())
+        try {
+            cap.run(emptyMap())
+            throw AssertionError("Cancellation must propagate through the capability bridge.")
+        } catch (expected: CancellationException) {
+            assertEquals("operator stopped the task", expected.message)
+        }
     }
 
     @Test
