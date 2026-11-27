@@ -36,7 +36,10 @@ class MainActivity : ComponentActivity() {
         object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val engine = IntelEngine(vm, netVm, usbVm, visualIntelVm, IntelDb.get(application))
+                val engine = IntelEngine(
+                    vm, netVm, usbVm, visualIntelVm, IntelDb.get(application),
+                    additionalViewModels = listOf(termuxVm)
+                )
                 return IntelViewModel(application, engine) as T
             }
         }
