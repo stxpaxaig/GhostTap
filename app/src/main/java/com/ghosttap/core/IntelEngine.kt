@@ -15,11 +15,12 @@ import java.util.UUID
  * Wires Ghost Tap's real viewmodels into the [CapabilityRegistry].
  *
  * Every capability below calls an ACTUAL viewmodel function — never a stub,
- * never a fake. Full autonomous mode: steps auto-run at every risk level
- * with no confirmation gates. Each step's riskLevel (READ / CONFIGURE /
- * WRITE / CONTROL) is recorded on the step and every auto-run action is
- * logged to the investigations timeline. Access controls are never bypassed:
- * pairing/password-gated operations fail honestly instead of running.
+ * never a fake. Risk levels (READ / CONFIGURE / WRITE / CONTROL) describe
+ * operation impact; the planner and approval policy determine which steps
+ * may run automatically and which require explicit user approval. Executed
+ * actions are logged to the investigations timeline. Access controls are
+ * never bypassed: pairing/password-gated operations fail honestly instead
+ * of running.
  *
  * To add a new tool: register() one [IntelCapability] here (see the contract
  * KDoc on [CapabilityRegistry.register]). Nothing else needs to change — the
