@@ -295,9 +295,7 @@ class IntelViewModel(
             if (provider is RemoteLlmReasoner && provider.configured) {
                 val aiText = try {
                     provider.backgroundOn(aiPromptFor(target.report))
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) {
+                } catch (_: Exception) {
                     ""
                 }
                 if (aiText.isNotBlank()) {
@@ -790,9 +788,7 @@ class IntelViewModel(
                     lastAutoTriggerMs.remove(bringUpKey(target))
                     loopLog.add("Couldn't get it ready: \"${target.title}\" — ${result.failReason}")
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 bringUpState = BringUpState.FAILED
                 bringUpStatus = "Setting it up hit a problem: ${e.message ?: "unknown"}."
                 activeTaskSession = activeTaskSession?.copy(
@@ -865,9 +861,7 @@ class IntelViewModel(
             target = targetOf(inv),
             hypotheses = try {
                 provider.hypotheses()
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
                 emptyList()
             }
         )
@@ -880,9 +874,7 @@ class IntelViewModel(
         loopJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 runLoop(initial, provider)
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Auto-investigate stopped: ${e.message ?: "unknown problem"}"
                     loopActive = false
@@ -919,9 +911,7 @@ class IntelViewModel(
                 runLoop(resumed, currentProvider)
             } catch (cancel: kotlinx.coroutines.CancellationException) {
                 throw cancel
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Approved step failed: ${e.message ?: "unknown problem"}"
                     loopActive = false
@@ -1088,9 +1078,7 @@ class IntelViewModel(
                 )
                 correlateIdentifiers(inv, detail)
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -1107,18 +1095,14 @@ class IntelViewModel(
             if (ids.isEmpty()) return
             val titles = try {
                 db.investigationDao().listAll().associate { it.id to it.title }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
                 emptyMap()
             }
             val linked = mutableListOf<String>()
             for (id in ids.take(4)) {
                 val hits = try {
                     db.observationDao().search(id)
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) {
+                } catch (_: Exception) {
                     emptyList()
                 }.filter { it.investigationId != inv.id }.take(2)
                 for (h in hits) {
@@ -1143,9 +1127,7 @@ class IntelViewModel(
                     )
                 )
             }
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
         }
     }
 
@@ -1176,9 +1158,7 @@ class IntelViewModel(
                 for (id in ids.take(4)) {
                     val hits = try {
                         db.observationDao().search(id)
-                    } catch (cancel: kotlinx.coroutines.CancellationException) {
-                    }     throw cancel
-                    } } catch (_: Exception) {
+                    } catch (_: Exception) {
                         emptyList()
                     }.filter { it.kind == "bringup" || it.kind == "result" }.take(2)
                     for (h in hits) {
@@ -1206,9 +1186,7 @@ class IntelViewModel(
                         )
                     }
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -1254,9 +1232,7 @@ class IntelViewModel(
                 for (obs in db.observationDao().byKind("script_def")) {
                     val def = try {
                         ScriptDef.fromJson(obs.detail)
-                    } catch (cancel: kotlinx.coroutines.CancellationException) {
-                    }     throw cancel
-                    } } catch (_: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                     if (def == null) {
@@ -1286,9 +1262,7 @@ class IntelViewModel(
                     )
                     val ok = try {
                         ScriptRuntime.register(def, engine, db, report, persist = false)
-                    } catch (cancel: kotlinx.coroutines.CancellationException) {
-                    }     throw cancel
-                    } } catch (e: Exception) {
+                    } catch (e: Exception) {
                         problems.add(
                             "Script '${def.title}' crashed while loading again: " +
                                 (e.message ?: "unknown problem")
@@ -1300,9 +1274,7 @@ class IntelViewModel(
                 for (obs in db.observationDao().byKind("dynamic_capability")) {
                     val def = try {
                         DynamicCapabilityDef.fromJson(obs.detail)
-                    } catch (cancel: kotlinx.coroutines.CancellationException) {
-                    }     throw cancel
-                    } } catch (_: Exception) {
+                    } catch (_: Exception) {
                         null
                     }
                     if (def == null) {
@@ -1331,9 +1303,7 @@ class IntelViewModel(
                     )
                     val ok = try {
                         DynamicCapabilityRuntime.register(def, engine, report, null)
-                    } catch (cancel: kotlinx.coroutines.CancellationException) {
-                    }     throw cancel
-                    } } catch (e: Exception) {
+                    } catch (e: Exception) {
                         problems.add(
                             "Saved control '${def.title}' crashed while loading again: " +
                                 (e.message ?: "unknown problem")
@@ -1342,9 +1312,7 @@ class IntelViewModel(
                     }
                     if (ok) restored.add(def.id)
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 problems.add("Restoring saved extras failed: ${e.message ?: "unknown problem"}")
             }
             // Restoration problems go on the record — never silent.
@@ -1362,9 +1330,7 @@ class IntelViewModel(
                             confidence = 1.0
                         )
                     )
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) {
+                } catch (_: Exception) {
                 }
             }
             withContext(Dispatchers.Main) {
@@ -1408,9 +1374,7 @@ class IntelViewModel(
             } catch (cancel: kotlinx.coroutines.CancellationException) {
                 // Stop requests and ViewModel teardown must remain cancellable.
                 throw cancel
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 events.add("That step failed safely: ${e.message ?: "unknown problem"}")
                 state.copy(
                     status = "DEAD_END",
@@ -1426,9 +1390,7 @@ class IntelViewModel(
                 vnicEngine.onLoopRound(state, events)
             } catch (cancel: kotlinx.coroutines.CancellationException) {
                 throw cancel
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
                 // Memory enrichment is best-effort; it must not break the task.
             }
             val done = state
@@ -1437,9 +1399,7 @@ class IntelViewModel(
                 loopState = done
                 hypotheses = try {
                     provider.hypotheses()
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) {
+                } catch (_: Exception) {
                     hypotheses
                 }
                 loadTimeline(inv.id)
@@ -1468,9 +1428,7 @@ class IntelViewModel(
                     viewModelScope.launch(Dispatchers.IO) {
                         val saved = try {
                             ProcedureSynthesizer.maybeSaveProcedure(final, db)
-                        } catch (cancel: kotlinx.coroutines.CancellationException) {
-                        }     throw cancel
-                        } } catch (_: Exception) {
+                        } catch (_: Exception) {
                             null
                         }
                         withContext(Dispatchers.Main) {
@@ -1537,14 +1495,10 @@ class IntelViewModel(
                 IntelEventBus.events.collect { event ->
                     try {
                         handleIntelEvent(event)
-                    } catch (cancel: kotlinx.coroutines.CancellationException) {
-                    }     throw cancel
-                    } } catch (_: Exception) {
+                    } catch (_: Exception) {
                     }
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -1568,9 +1522,7 @@ class IntelViewModel(
                     vnicProcedures.clear()
                     vnicProcedures.addAll(vnicProcs)
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -1609,9 +1561,7 @@ class IntelViewModel(
             try {
                 val report = withContext(Dispatchers.IO) { VnicAiDiagnostic(vnicEngine).run() }
                 aiDiagnosticReport = report
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
                 // The diagnostic runner reports failures as stages; this
                 // only fires if the engine itself could not be reached.
                 aiDiagnosticReport = VnicDiagReport(
@@ -1644,9 +1594,7 @@ class IntelViewModel(
             val report = CapabilityScanner.scan(engine.viewModels(), CapabilityRegistry)
             withContext(Dispatchers.Main) { scanReport = report }
             report
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (e: Exception) {
+        } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 statusLine = "Check of available controls failed: ${e.message ?: "unknown problem"}"
             }
@@ -1663,9 +1611,7 @@ class IntelViewModel(
         val inv = activeInvestigation ?: return emptyList()
         return try {
             Researcher.researchWithWeb(targetOf(inv), db, learnedStore, currentProvider, inv.id)
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
     }
@@ -1711,9 +1657,7 @@ class IntelViewModel(
                     engine.run(draft.proposeId, draft.proposeArgs)
                 } catch (cancel: kotlinx.coroutines.CancellationException) {
                     throw cancel
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (e: Exception) {
+                } catch (e: Exception) {
                     OpResult(false, "Crashed while testing the new control: ${e.message ?: "unknown error"}")
                 } finally {
                     eventMute.set(false)
@@ -1722,9 +1666,7 @@ class IntelViewModel(
                     currentProvider.noteResult(draft.proposeId, result)
                 } catch (cancel: kotlinx.coroutines.CancellationException) {
                     throw cancel
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) { }
+                } catch (_: Exception) { }
                 try {
                     db.observationDao().insert(
                         Observation(
@@ -1741,9 +1683,7 @@ class IntelViewModel(
                     )
                 } catch (cancel: kotlinx.coroutines.CancellationException) {
                     throw cancel
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) { }
+                } catch (_: Exception) { }
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
                 if (result.ok) {
                     val resumed = (loopState?.copy(
@@ -1769,9 +1709,7 @@ class IntelViewModel(
                 }
             } catch (cancel: kotlinx.coroutines.CancellationException) {
                 throw cancel
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Approved control failed: ${e.message ?: "unknown problem"}"
                     loopActive = false
@@ -1808,9 +1746,7 @@ class IntelViewModel(
                     )
                 )
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) { }
+            } catch (_: Exception) { }
         }
     }
 
@@ -1898,9 +1834,7 @@ class IntelViewModel(
                     (if (memoryNotes.isNotBlank()) "\nPAST FINDINGS:\n$memoryNotes" else "")
                 val refined = try {
                     provider.refinePlan(target, rawPlan, knowledge)
-                } catch (cancel: kotlinx.coroutines.CancellationException) {
-                }     throw cancel
-                } } catch (_: Exception) {
+                } catch (_: Exception) {
                     rawPlan
                 }
                 val validated = refined.filter { CapabilityRegistry.get(it.capabilityId) != null }
@@ -1930,9 +1864,7 @@ class IntelViewModel(
                         startAutoLoop(inv.id)
                     }
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Couldn't start investigation: ${e.message ?: "unknown problem"}"
                 }
@@ -1961,9 +1893,7 @@ class IntelViewModel(
                 }
             }
             notes.distinct().take(8).joinToString("\n")
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             ""
         }
     }
@@ -1978,9 +1908,7 @@ class IntelViewModel(
             try {
                 withContext(Dispatchers.Main) { statusLine = "Re-planning from evidence…" }
                 replanNow()
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Re-plan failed: ${e.message ?: "unknown problem"}"
                 }
@@ -2019,9 +1947,7 @@ class IntelViewModel(
         val knowledge = knowledgeString()
         val refined = try {
             provider.refinePlan(target, rawPlan, knowledge)
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             rawPlan
         }
         val validated = refined.filter { CapabilityRegistry.get(it.capabilityId) != null }
@@ -2073,9 +1999,7 @@ class IntelViewModel(
                         "Opened \"${inv.title}\"."
                     }
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2098,9 +2022,7 @@ class IntelViewModel(
                     if (activeInvestigation?.id == inv.id) closeInvestigation()
                     refreshLists()
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2111,9 +2033,7 @@ class IntelViewModel(
             try {
                 db.investigationDao().setStatus(inv.id, "closed")
                 withContext(Dispatchers.Main) { refreshLists() }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2130,9 +2050,7 @@ class IntelViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 runAutoSteps()
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Discovery stopped: ${e.message ?: "unknown problem"}"
                 }
@@ -2229,9 +2147,7 @@ class IntelViewModel(
                     )
                 )
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2256,9 +2172,7 @@ class IntelViewModel(
                     statusLine = "Step done — see the timeline."
                     loadTimeline(inv.id)
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Step failed: ${e.message ?: "unknown problem"}"
                 }
@@ -2280,9 +2194,7 @@ class IntelViewModel(
             }
         } catch (cancel: kotlinx.coroutines.CancellationException) {
             throw cancel
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (e: Exception) {
+        } catch (e: Exception) {
             com.ghosttap.core.OpResult(
                 false,
                 "Control '${step.capabilityId}' failed safely: ${e.message ?: e::class.simpleName ?: "unknown error"}"
@@ -2294,9 +2206,7 @@ class IntelViewModel(
         // Feed the result back into the reasoning engine's evidence.
         try {
             currentProvider.noteResult(step.capabilityId, result)
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
         }
         try {
             db.observationDao().insert(
@@ -2321,15 +2231,11 @@ class IntelViewModel(
                     confidence = if (result.ok) 1.0 else 0.9
                 )
             )
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
         }
         try {
             withContext(Dispatchers.Main) { hypotheses = currentProvider.hypotheses() }
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
         }
         return result
     }
@@ -2354,9 +2260,7 @@ class IntelViewModel(
                     )
                 )
                 withContext(Dispatchers.Main) { loadTimeline(inv.id) }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2384,9 +2288,7 @@ class IntelViewModel(
                     statusLine = "Procedure \"$name\" saved."
                     refreshLists()
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Couldn't save: ${e.message ?: "unknown problem"}"
                 }
@@ -2399,9 +2301,7 @@ class IntelViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 loadProcedureNow(p)
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Couldn't load: ${e.message ?: "unknown problem"}"
                 }
@@ -2428,9 +2328,7 @@ class IntelViewModel(
                 ListSerializer(StoredStep.serializer()),
                 p.stepsJson
             )
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
         val categories = stored.mapNotNull { CapabilityRegistry.get(it.id)?.category }
@@ -2488,9 +2386,7 @@ class IntelViewModel(
     suspend fun loadVnicProcedureNow(name: String): Boolean {
         val stored = try {
             vnicEngine.listVnicProcedures().firstOrNull { it.name == name }
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             null
         } ?: run {
             withContext(Dispatchers.Main) {
@@ -2503,9 +2399,7 @@ class IntelViewModel(
         runCatching { vnicEngine.ensureProcedureRegistered(name) }
         val ids: List<String> = try {
             json.decodeFromString(ListSerializer(String.serializer()), stored.stepsJson)
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
         if (ids.isEmpty()) {
@@ -2533,9 +2427,7 @@ class IntelViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 loadVnicProcedureNow(name)
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (e: Exception) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     statusLine = "Couldn't load: ${e.message ?: "unknown problem"}"
                 }
@@ -2548,9 +2440,7 @@ class IntelViewModel(
             try {
                 db.procedureDao().delete(p.id)
                 withContext(Dispatchers.Main) { refreshLists() }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2564,9 +2454,7 @@ class IntelViewModel(
             try {
                 val hits = db.observationDao().search(q)
                 withContext(Dispatchers.Main) { searchResults = hits }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2581,9 +2469,7 @@ class IntelViewModel(
                     timeline.clear()
                     timeline.addAll(obs)
                 }
-            } catch (cancel: kotlinx.coroutines.CancellationException) {
-            }     throw cancel
-            } } catch (_: Exception) {
+            } catch (_: Exception) {
             }
         }
     }
@@ -2593,9 +2479,7 @@ class IntelViewModel(
             db.observationDao().latest(20)
                 .joinToString("\n") { "${it.kind}: ${it.title}" }
                 .take(3000)
-        } catch (cancel: kotlinx.coroutines.CancellationException) {
-        }     throw cancel
-        } } catch (_: Exception) {
+        } catch (_: Exception) {
             ""
         }
     }
