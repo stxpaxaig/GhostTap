@@ -133,6 +133,10 @@ class IntelViewModel(
      */
     fun attachVesp32(client: VirtualEsp32Client) {
         vesp32Client = client
+        // Audit the real companion client too: its public IPC controls are
+        // part of Ghost Tap's operational surface, even though the client is
+        // not an Android ViewModel and is created after the engine factory.
+        engine.addAuditTarget(client)
         runCatching { vnicEngine.attachVesp32(client) }
     }
 
