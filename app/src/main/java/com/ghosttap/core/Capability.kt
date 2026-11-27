@@ -20,8 +20,9 @@ package com.ghosttap.core
  *   Derived from riskLevel: true only when riskLevel == "READ".
  * @param riskLevel one of "READ" (observes only), "CONFIGURE" (opens/closes a
  *   link), "WRITE" (sends data out), "CONTROL" (drives hardware behavior).
- *   Full autonomous mode: every level auto-runs with no confirmation gates.
- *   The level is recorded on every step and every auto-run action is logged
+ *   Risk levels describe impact; execution and approval policy decide which
+ *   steps may run automatically and which require explicit user approval.
+ *   The level is recorded on every step and every executed action is logged
  *   to the investigations timeline.
  * @param effects plain-English description of what the operation ACTUALLY does
  *   to the target, the phone, or the radio — shown next to APPROVE & RUN so the
