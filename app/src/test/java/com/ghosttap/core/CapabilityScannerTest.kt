@@ -90,4 +90,16 @@ class CapabilityScannerTest {
         assertTrue(report.registered.any { it.startsWith("PropertyOwner.getReady(") })
         assertTrue(report.candidates.none { it.startsWith("PropertyOwner.getReady(") })
     }
+    class OverloadedOwner {
+        fun inspect() = Unit
+        fun inspect(value: Int) = value
+    }
+
+    @Test
+    fun scannerPreservesEveryOverloadedMethodSignature() {
+        val report = CapabilityScanner.scan(listOf(OverloadedOwner()), CapabilityRegistry)
+
+        assertTrue(report.candidates.any { it == "OverloadedOwner.inspect()" })
+        assertTrue(report.candidates.any { it == "OverloadedOwner.inspect(Int)" })
+    }
 }
