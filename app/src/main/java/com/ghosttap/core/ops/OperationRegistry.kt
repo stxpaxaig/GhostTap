@@ -98,7 +98,11 @@ fun Operation.asCapability(context: OperationContext): IntelCapability =
         riskLevel = riskLevel,
         effects = description,
         verified = verified,
-        sourceMethod = if (route != null) "Manual: $route screen (operation $id)" else "Operation: $id",
+        sourceMethod = when {
+            sourceMethods.isNotEmpty() -> sourceMethods.joinToString(";")
+            route != null -> "Manual: $route screen (operation $id)"
+            else -> "Operation: $id"
+        },
         run = { args ->
             val savedChoice = context.pendingChoice
             val savedArgs = context.pendingArgs
