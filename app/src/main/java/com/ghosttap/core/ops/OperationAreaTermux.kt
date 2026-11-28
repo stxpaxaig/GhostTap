@@ -32,6 +32,7 @@ fun registerAreaTermuxOperations() {
             title = "Use Termux tools",
             description = "Uses the installed Termux companion app as Ghost Tap's command-execution backend when a probed Termux capability is selected. Ghost Tap dispatches commands and receives results through the existing bridge; Termux remains a separate Android app.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.checkInstalledNow", "TermuxViewModel.bridgeHealthCheck", "TermuxViewModel.discoverTermux"),
             execute = { context ->
                 val termux = context.termux
                 if (termux != null) {
@@ -70,6 +71,7 @@ fun registerAreaTermuxOperations() {
             title = "Check Termux is on this phone",
             description = "Checks whether the Termux companion is installed, its command bridge is permitted, and its helper app is available.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.checkInstalledNow"),
             execute = { context ->
                 val termux = context.termux
                     ?: return@Operation OpResult(false, "Termux tools aren't available right now.")
@@ -87,6 +89,7 @@ fun registerAreaTermuxOperations() {
             title = "Check the link to Termux",
             description = "Checks whether Ghost Tap's own link — the one Termux scripts send answers back on — is up and answering.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.checkInstalledNow", "TermuxViewModel.bridgeHealthCheck"),
             preparation = listOf(
                 PreparationStep("Checking Termux is there") { context ->
                     val termux = context.termux
@@ -113,6 +116,7 @@ fun registerAreaTermuxOperations() {
             title = "Run a Termux script",
             description = "Runs one of the helper scripts in Termux and brings the answer back — one that came with Ghost Tap, or one you added in Termux yourself.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.userScripts", "TermuxViewModel.runScriptAndWait"),
             preparation = listOf(
                 PreparationStep("Picking a script to run") { context ->
                     val termux = context.termux
@@ -157,6 +161,7 @@ fun registerAreaTermuxOperations() {
             title = "Run a command in Termux",
             description = "Runs a command you typed — or one the plan put together — in Termux, exactly as written, and brings the answer back. Pipes and redirects work.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.recentFreeCommands", "TermuxViewModel.runFreeCommandAndWait"),
             inputs = listOf("command"),
             preparation = listOf(
                 PreparationStep("Getting the command") { context ->
@@ -204,6 +209,7 @@ fun registerAreaTermuxOperations() {
             title = "Check what scripts are in Termux",
             description = "Asks Termux what scripts you put there yourself and shows them under Your scripts.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.checkInstalledNow", "TermuxViewModel.refreshLibrary"),
             preparation = listOf(
                 PreparationStep("Checking Termux is there") { context ->
                     val termux = context.termux
@@ -231,6 +237,7 @@ fun registerAreaTermuxOperations() {
             title = "List your Termux scripts",
             description = "Says which scripts you added in Termux yourself, from the last check.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.libraryScripts"),
             execute = { context ->
                 val termux = context.termux
                     ?: return@Operation OpResult(false, "Termux tools aren't available right now.")
@@ -253,6 +260,7 @@ fun registerAreaTermuxOperations() {
             title = "List what Termux can do",
             description = "Says what Termux can do on this phone, from the last real check — Python, network checks, file tools, and the rest.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.capabilitySummary"),
             execute = { context ->
                 val termux = context.termux
                     ?: return@Operation OpResult(false, "Termux tools aren't available right now.")
@@ -274,6 +282,7 @@ fun registerAreaTermuxOperations() {
             title = "Check Aircrack-ng readiness",
             description = "Checks whether Aircrack-ng tools are already installed in Termux and whether the Wi-Fi driver reports monitor-mode support. This is a read-only local check; it does not capture traffic or change network settings.",
             area = OperationArea.TERMUX,
+            sourceMethods = listOf("TermuxViewModel.checkInstalledNow", "TermuxViewModel.runFreeCommandAndWait"),
             prerequisites = listOf(
                 "Termux is installed and Ghost Tap is allowed to run commands in it"
             ),
