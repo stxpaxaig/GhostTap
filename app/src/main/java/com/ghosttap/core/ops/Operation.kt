@@ -230,7 +230,9 @@ data class Operation(
     val verified: Boolean = false,
     val route: String? = null,
     /** Named planner inputs consumed by this operation through its argument map. */
-    val inputs: List<String> = emptyList()
+    val inputs: List<String> = emptyList(),
+    /** Concrete implementation methods this operation exposes to the capability audit. */
+    val sourceMethods: List<String> = emptyList()
 ) {
     /** True when this operation opens a screen instead of driving a device. */
     val isScreenFirst: Boolean get() = route != null
