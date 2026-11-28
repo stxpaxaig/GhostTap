@@ -56,10 +56,14 @@ object CapabilityScanner {
             }
             .groupBy({ it.first }, { it.second })
             .mapValues { (_, methods) -> methods.toSet() }
-        // Map normalized method name -> owning class names that declare it.
-        val declared = mutableMapOf<String, MutableSet<String>>()
-        // Map "Class.method" -> signature for display.
-        val signatures = mutableMapOf<String, String>()
+        // Keep each concrete signature: overloaded methods are distinct
+        // implementation entry points and must not overwrite one another.
+        data class ScannedMethod(
+            val owner: String,
+            val normalizedName: String,
+            val display: String
+        )
+        val declaredMethods = mutableListOf<ScannedMethod>()
 
         for (vm in viewModels) {
             val cls = vm.javaClass
@@ -70,14 +74,38 @@ object CapabilityScanner {
                     if (!Modifier.isPublic(m.modifiers)) continue
                     val raw = m.name
                     if (raw in skipNames) continue
-                    if ('$' in raw) continue
+                    if ('
+        return ScanReport(
+            registered = registered.sorted(),
+            candidates = candidates.sorted()
+        )
+    }
+
+    /**
+     * Kotlin `val foo` compiles to `getFoo()`/`isFoo()`; normalize both to
+     * "foo" so property-style sourceMethods ("GhostTapViewModel.allTargets")
+     * match their accessors. Returns null for names we should ignore.
+     */
+    private fun normalize(raw: String): String? {
+        if (raw.startsWith("get") && raw.length > 3 && raw[3].isUpperCase()) {
+            return raw.substring(3).replaceFirstChar { it.lowercase() }
+        }
+        if (raw.startsWith("is") && raw.length > 2 && raw[2].isUpperCase()) {
+            return raw.substring(2).replaceFirstChar { it.lowercase() }
+        }
+        if (raw.startsWith("set") && raw.length > 3 && raw[3].isUpperCase()) {
+            return null // setters are not capability surface
+        }
+        return raw
+    }
+}
+ in raw) continue
                     if (raw.startsWith("component")) continue
                     if (raw == "copy") continue
                     val norm = normalize(raw) ?: continue
                     val sig = "$clsName.$raw(" +
                         m.parameterTypes.joinToString(", ") { it.simpleName } + ")"
-                    declared.getOrPut(norm) { mutableSetOf() }.add(clsName)
-                    signatures["$clsName.$raw"] = sig
+                    declaredMethods.add(ScannedMethod(clsName, norm, sig))
                 } catch (_: Exception) {
                     // One bad method must never break the scan.
                 }
@@ -86,23 +114,13 @@ object CapabilityScanner {
 
         val registered = mutableListOf<String>()
         val candidates = mutableListOf<String>()
-        // For each declared method, check whether any registry sourceMethod
-        // names it (comparing normalized names to tolerate getFoo/foo style).
-        val seen = mutableSetOf<String>()
-        for ((norm, owners) in declared) {
-            for (owner in owners) {
-                val key = "$owner.$norm"
-                if (!seen.add(key)) continue
-                val sigKey = signatures.keys.firstOrNull {
-                    it.substringBefore('.') == owner &&
-                        (normalize(it.substringAfter('.').substringBefore('(')) == norm)
-                }
-                val display = sigKey?.let { signatures[it] } ?: "$owner.$norm()"
-                if (norm in knownSources[owner].orEmpty()) {
-                    registered.add(display)
-                } else {
-                    candidates.add(display)
-                }
+        // For each concrete signature, check its own class and normalized
+        // method name. This preserves overloads while retaining owner safety.
+        for (method in declaredMethods.distinctBy { it.owner to it.display }) {
+            if (method.normalizedName in knownSources[method.owner].orEmpty()) {
+                registered.add(method.display)
+            } else {
+                candidates.add(method.display)
             }
         }
         return ScanReport(
