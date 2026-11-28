@@ -41,6 +41,35 @@ class CapabilityScannerTest {
         assertTrue(report.candidates.any { it.startsWith("UnregisteredOwner.probe(") })
     }
 
+    class SecondaryOwner {
+        fun status() = Unit
+    }
+
+    @Test
+    fun operationCanDeclareMultipleConcreteSourceMethods() {
+        CapabilityRegistry.register(
+            IntelCapability(
+                id = "test.scanner.multiple-sources",
+                title = "Scanner test multiple sources",
+                detail = "Test-only operation with multiple concrete sources.",
+                category = "TEST",
+                readOnly = true,
+                riskLevel = "READ",
+                sourceMethod = "RegisteredOwner.probe;SecondaryOwner.status",
+                run = { OpResult(true, "ok") }
+            )
+        )
+
+        val report = CapabilityScanner.scan(
+            listOf(RegisteredOwner(), SecondaryOwner()),
+            CapabilityRegistry
+        )
+
+        assertTrue(report.registered.any { it.startsWith("RegisteredOwner.probe(") })
+        assertTrue(report.registered.any { it.startsWith("SecondaryOwner.status(") })
+        assertTrue(report.candidates.none { it.startsWith("SecondaryOwner.status(") })
+    }
+
     @Test
     fun kotlinPropertyAccessorMatchesItsRegisteredPropertyName() {
         CapabilityRegistry.register(
