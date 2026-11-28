@@ -38,6 +38,7 @@ object OperationRegistry {
         ops.values.filter { it.area == area }
 
     /** The areas that have at least one operation, in first-seen order. */
+    @Synchronized
     fun areas(): List<OperationArea> = ops.values.map { it.area }.distinct()
 
     /** Test-only: empties the registry so tests start from a known state. Never called by the app. */
