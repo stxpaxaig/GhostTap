@@ -1764,6 +1764,7 @@ fun registerAreaHardwareOperations() {
             title = "Is the practice-board app installed?",
             description = "Checks whether the practice-board app is on this phone — the practice board lives in that app, not in Ghost Tap.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.isInstalled"),
             execute = { context ->
                 val client = context.vesp32
                     ?: return@Operation OpResult(false, "The practice board isn't available right now.")
@@ -1788,6 +1789,7 @@ fun registerAreaHardwareOperations() {
             title = "Connect to the practice board",
             description = "Opens the link to the practice board in the other app, then checks the link is really open.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.isInstalled", "VirtualEsp32Client.connect"),
             preparation = listOf(
                 PreparationStep("Checking the practice-board app is installed") { context ->
                     val client = context.vesp32
@@ -1839,6 +1841,7 @@ fun registerAreaHardwareOperations() {
             title = "Disconnect the practice board",
             description = "Closes the link to the practice board.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.disconnect"),
             execute = { context ->
                 val client = context.vesp32
                     ?: return@Operation OpResult(false, "The practice board isn't available right now.")
@@ -1873,6 +1876,7 @@ fun registerAreaHardwareOperations() {
             title = "Use the practice board",
             description = "Does the whole practice-board flow in one tap: checks the app is installed, connects, loads software, and starts it.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.isInstalled", "VirtualEsp32Client.connect", "VirtualEsp32Client.useBuiltinFirmware", "VirtualEsp32Client.startGuest"),
             prerequisites = listOf("The practice-board app installed"),
             preparation = listOf(
                 PreparationStep("Checking the practice-board app is installed") { context ->
@@ -1975,6 +1979,7 @@ fun registerAreaHardwareOperations() {
             title = "Start the practice board's software",
             description = "Starts the software loaded on the practice board, then waits for it to report back.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.startGuest"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2025,6 +2030,7 @@ fun registerAreaHardwareOperations() {
             title = "Stop the practice board's software",
             description = "Stops the software running on the practice board.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.stopGuest"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2063,6 +2069,7 @@ fun registerAreaHardwareOperations() {
             title = "Restart the practice board's software",
             description = "Restarts the software running on the practice board.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.resetGuest"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2095,6 +2102,7 @@ fun registerAreaHardwareOperations() {
             title = "Send a message to the practice board",
             description = "Sends a quick message to the practice board and reports what comes back.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.sendUart"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2189,6 +2197,7 @@ fun registerAreaHardwareOperations() {
             title = "What is the practice board's light doing?",
             description = "Reads pin 2 — the board's output — and says whether it is on or off.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.readGpio2"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2232,6 +2241,7 @@ fun registerAreaHardwareOperations() {
             title = "Flip the practice board's switch",
             description = "Flips pin 4 — your switch into the practice board — on or off.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.setGpio4"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2272,6 +2282,7 @@ fun registerAreaHardwareOperations() {
             title = "Use the built-in test software",
             description = "Loads the built-in test software onto the practice board — no file to pick.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.useBuiltinFirmware"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
@@ -2322,6 +2333,7 @@ fun registerAreaHardwareOperations() {
             title = "How is the practice board doing?",
             description = "Asks the practice board for its status — what it is doing, what processor it pretends to be, and what software it is running — in plain words.",
             area = OperationArea.USB,
+            sourceMethods = listOf("VirtualEsp32Client.queryStatus"),
             preparation = listOf(
                 PreparationStep("Checking the practice board is connected") { context ->
                     val client = context.vesp32
