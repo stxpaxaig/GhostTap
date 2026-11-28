@@ -40,16 +40,18 @@ object CapabilityScanner {
         // ViewModel must never make a same-named method on another ViewModel
         // look integrated.
         val knownSources = registry.all()
-            .mapNotNull { capability ->
-                val source = capability.sourceMethod.substringBefore('(').trim()
-                if (source.isEmpty() || source.startsWith("Manual:") ||
-                    source == "IntelViewModel (manual instruction)" || '.' !in source
-                ) {
-                    null
-                } else {
-                    val owner = source.substringBeforeLast('.').substringAfterLast('.')
-                    val method = normalize(source.substringAfterLast('.')) ?: return@mapNotNull null
-                    owner to method
+            .flatMap { capability ->
+                capability.sourceMethod.split(';').mapNotNull { rawSource ->
+                    val source = rawSource.substringBefore('(').trim()
+                    if (source.isEmpty() || source.startsWith("Manual:") ||
+                        source == "IntelViewModel (manual instruction)" || '.' !in source
+                    ) {
+                        null
+                    } else {
+                        val owner = source.substringBeforeLast('.').substringAfterLast('.')
+                        val method = normalize(source.substringAfterLast('.')) ?: return@mapNotNull null
+                        owner to method
+                    }
                 }
             }
             .groupBy({ it.first }, { it.second })
